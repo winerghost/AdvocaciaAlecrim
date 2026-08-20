@@ -1,4 +1,4 @@
-import { getServices, getTestimonials } from "@/lib/api";
+import { getFaqs, getServices, getTestimonials } from "@/lib/api";
 import {
   About,
   Contact,
@@ -10,6 +10,7 @@ import {
   TrustStrip,
   WhatsappButton,
 } from "@/components/sections";
+import FAQ from "@/components/FAQ";
 import ScrollProgress from "@/components/ScrollProgress";
 
 // Conteúdo vem do Postgres via Flask - renderiza sempre no servidor a cada
@@ -21,7 +22,11 @@ export const dynamic = "force-dynamic";
 // Server Component: busca serviços e depoimentos direto do Flask (SSR),
 // com fallback vazio se a API estiver fora do ar.
 export default async function Home() {
-  const [services, testimonials] = await Promise.all([getServices(), getTestimonials()]);
+  const [services, testimonials, faqs] = await Promise.all([
+    getServices(),
+    getTestimonials(),
+    getFaqs(),
+  ]);
 
   return (
     <main>
@@ -32,6 +37,8 @@ export default async function Home() {
       <About />
       <Services services={services} />
       <Testimonials testimonials={testimonials} />
+      {/* Sem link no menu (Nav) por escolha do cliente - acessível só por scroll. */}
+      <FAQ faqs={faqs} />
       <Contact />
       <Footer />
       <WhatsappButton />

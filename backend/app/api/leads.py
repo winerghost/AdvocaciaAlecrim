@@ -13,23 +13,24 @@ schema = LeadSchema()
 @bp.post("/leads")
 @limiter.limit("5 per minute")
 def create_lead():
-    payload = request.get_json(silent=True) or {}
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return {"error": "invalid_json"}, 400
 
-    # Honeypot: bots preenchem campos ocultos que humanos não veem.
-    if payload.get("website"):
-        return {"data": {"received": True}}, 201
+    # Honeypot: bots preenchem campos ocultos que humanos não veem. Não
+    # damos nenhuma pista de que foi detectado: resposta 200 "de sucesso"
+    # e nada é persistido nem enviado por e-mail.
+    if str(payload.get("website") or "").strip():
+        return {"data": {"received": True}}, 200
 
     try:
         data = schema.load(payload)
     except ValidationError as err:
         return {"error": "validation_error", "details": err.messages}, 400
 
-    if not data.get("consent"):
-        return {
-            "error": "validation_error",
-            "details": {"consent": ["É necessário aceitar o uso dos dados (LGPD)."]},
-        }, 400
-
+    # `consent` já é validado como obrigatório e == True pelo schema
+    # (LeadSchema.consent), mas a garantia "de negócio" de fato mora aqui:
+    # nunca persistimos um lead sem o aceite LGPD.
     lead = Lead(
         name=data["name"],
         phone=data["phone"],

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { Service, Testimonial } from "@/lib/api";
+import { WHATSAPP_URL } from "@/lib/constants";
 import LeadForm from "./LeadForm";
 import MobileNav from "./MobileNav";
 import Reveal from "./Reveal";
@@ -12,8 +13,6 @@ const NAV_LINKS = [
   { href: "#depoimentos", label: "Depoimentos" },
   { href: "#contato", label: "Contato" },
 ];
-
-const WHATSAPP_URL = "https://wa.me/5563999941821";
 
 export function Nav() {
   return (
@@ -75,8 +74,8 @@ export function Hero() {
       }}
     >
       <div className="pointer-events-none absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold/50 to-transparent" />
-      <div className="pointer-events-none absolute -right-[8%] -top-[15%] aspect-square w-[60vw] max-w-[620px] rounded-full bg-[radial-gradient(circle,rgba(212,175,55,0.14)_0%,transparent_68%)]" />
-      <div className="pointer-events-none absolute -left-[10%] -bottom-[20%] aspect-square w-[50vw] max-w-[480px] rounded-full bg-[radial-gradient(circle,rgba(212,175,55,0.07)_0%,transparent_70%)]" />
+      <div className="animate-aurora-1 pointer-events-none absolute -right-[8%] -top-[15%] aspect-square w-[60vw] max-w-[620px] rounded-full bg-[radial-gradient(circle,rgba(212,175,55,0.14)_0%,transparent_68%)]" />
+      <div className="animate-aurora-2 pointer-events-none absolute -left-[10%] -bottom-[20%] aspect-square w-[50vw] max-w-[480px] rounded-full bg-[radial-gradient(circle,rgba(212,175,55,0.07)_0%,transparent_70%)]" />
 
       <div className="pointer-events-none absolute bottom-0 right-2 hidden h-full w-[42%] max-w-[560px] items-end justify-end opacity-90 sm:flex">
         <Image

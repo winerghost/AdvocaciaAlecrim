@@ -19,6 +19,12 @@ export type Testimonial = {
   rating: number;
 };
 
+export type Faq = {
+  id: number;
+  question: string;
+  answer: string;
+};
+
 async function safeFetch<T>(path: string, fallback: T): Promise<T> {
   try {
     const res = await fetch(`${API_URL}${path}`, { cache: "no-store" });
@@ -37,4 +43,8 @@ export function getServices(): Promise<Service[]> {
 
 export function getTestimonials(): Promise<Testimonial[]> {
   return safeFetch<Testimonial[]>("/api/testimonials", []);
+}
+
+export function getFaqs(): Promise<Faq[]> {
+  return safeFetch<Faq[]>("/api/faqs", []);
 }

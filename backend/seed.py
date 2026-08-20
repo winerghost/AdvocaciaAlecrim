@@ -10,7 +10,7 @@ Uso:
 
 from app import create_app
 from app.extensions import db
-from app.models import Service, Testimonial
+from app.models import Faq, Service, Testimonial
 
 SERVICES = [
     dict(
@@ -89,6 +89,52 @@ TESTIMONIALS = [
 ]
 
 
+FAQS = [
+    dict(
+        question="A primeira consulta é gratuita?",
+        answer=(
+            "Sim. A primeira conversa é sem custo e serve para entender o seu "
+            "caso e explicar os próximos passos antes de qualquer contratação."
+        ),
+        order=1,
+    ),
+    dict(
+        question="Quanto tempo leva um inventário judicial?",
+        answer=(
+            "Varia com a quantidade de bens e se há ou não divergência entre "
+            "herdeiros. Casos sem conflito tendem a ser mais rápidos; a "
+            "estimativa exata é passada já na primeira consulta."
+        ),
+        order=2,
+    ),
+    dict(
+        question="O escritório atende só em Palmas?",
+        answer=(
+            "Não. O atendimento cobre todo o estado do Tocantins, presencial "
+            "ou remoto conforme a necessidade do cliente."
+        ),
+        order=3,
+    ),
+    dict(
+        question="Quais documentos preciso levar na primeira reunião?",
+        answer=(
+            "Depende da área (inventário, aposentadoria, trabalhista ou "
+            "cível). Após o primeiro contato, o Dr. Alecrim informa a lista "
+            "específica para o seu caso."
+        ),
+        order=4,
+    ),
+    dict(
+        question="Em quanto tempo recebo um retorno após o contato?",
+        answer=(
+            "A resposta ao primeiro contato acontece no mesmo dia útil, seja "
+            "pelo formulário do site, telefone ou WhatsApp."
+        ),
+        order=5,
+    ),
+]
+
+
 def run() -> None:
     app = create_app()
     with app.app_context():
@@ -105,6 +151,12 @@ def run() -> None:
             print(f"Seed: {len(TESTIMONIALS)} depoimentos inseridos.")
         else:
             print("Seed: tabela 'testimonials' já tem dados, pulando.")
+
+        if not Faq.query.first():
+            db.session.bulk_save_objects([Faq(**f) for f in FAQS])
+            print(f"Seed: {len(FAQS)} perguntas frequentes inseridas.")
+        else:
+            print("Seed: tabela 'faqs' já tem dados, pulando.")
 
         db.session.commit()
 

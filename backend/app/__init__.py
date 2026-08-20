@@ -1,12 +1,31 @@
+import logging
+
 from flask import Flask
 
 from .config import Config
 from .extensions import cors, db, limiter, migrate
 
+_DEFAULT_SECRET_KEY = "change-me-in-production"
+
 
 def create_app(config_class: type[Config] = Config) -> Flask:
     app = Flask(__name__)
     app.config.from_object(config_class)
+
+    if app.config.get("SECRET_KEY") == _DEFAULT_SECRET_KEY:
+        # Não derruba o servidor (diferente do POSTGRES_PASSWORD, que o
+        # compose já força via `:?`) porque não temos certeza de que todo
+        # ambiente já trocou esse valor - um crash aqui poderia derrubar
+        # produção sem aviso. Mas isso precisa ser corrigido em
+        # backend/.env antes de ir pra produção de verdade: SECRET_KEY
+        # fraco/previsível enfraquece qualquer coisa que dependa dele
+        # (assinatura de sessão, tokens).
+        logging.getLogger(__name__).warning(
+            "SECRET_KEY está usando o valor padrão inseguro ('%s'). "
+            "Defina um valor forte e aleatório em backend/.env antes de "
+            "expor este serviço em produção.",
+            _DEFAULT_SECRET_KEY,
+        )
 
     db.init_app(app)
     migrate.init_app(app, db)

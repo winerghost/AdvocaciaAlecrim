@@ -15,6 +15,11 @@ class Config:
 
     RATELIMIT_STORAGE_URI = os.environ.get("RATELIMIT_STORAGE_URI", "memory://")
 
+    # Blindagem contra payloads absurdamente grandes (ex.: alguém mandando
+    # um body de vários MB para o /api/leads). Nenhum endpoint atual
+    # precisa de mais que uns poucos KB de JSON.
+    MAX_CONTENT_LENGTH = int(os.environ.get("MAX_CONTENT_LENGTH", str(256 * 1024)))
+
     # Notificação por e-mail de novos leads (opcional - se MAIL_SERVER
     # não for definido, o envio é simplesmente pulado).
     MAIL_SERVER = os.environ.get("MAIL_SERVER")

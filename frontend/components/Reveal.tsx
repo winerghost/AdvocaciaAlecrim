@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-// Fade + slide-up quando o elemento entra na tela (IntersectionObserver puro,
-// sem GSAP/Lenis). Dispara uma vez só; respeita prefers-reduced-motion.
+// Fade + slide-up + leve scale quando o elemento entra na tela
+// (IntersectionObserver puro, sem GSAP). Easing em expo-out pra imitar a
+// curva que o ScrollTrigger do mockup original usava. Dispara uma vez só;
+// respeita prefers-reduced-motion.
 export default function Reveal({
   children,
   className = "",
@@ -41,8 +43,8 @@ export default function Reveal({
   return (
     <div
       ref={ref}
-      className={`transition-all duration-700 ease-out ${
-        visible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+      className={`transition-all duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        visible ? "translate-y-0 scale-100 opacity-100" : "translate-y-8 scale-[0.98] opacity-0"
       } ${className}`}
       style={delay ? { transitionDelay: `${delay}ms` } : undefined}
     >
