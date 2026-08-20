@@ -3,6 +3,7 @@
 backend/.env
 frontend/.env
 *.md
+.claude
 # Backend
 backend/__pycache__/
 backend/**/__pycache__/

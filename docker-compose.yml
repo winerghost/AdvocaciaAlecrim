@@ -25,16 +25,12 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      # Sobrescreve o DATABASE_URL do .env para sempre apontar para o
-      # serviço "db" da rede interna do compose.
       DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-alecrim}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-alecrim}
     depends_on:
       db:
         condition: service_healthy
     ports:
-      # Só acessível localmente na própria VPS (curl/health-check manual).
-      # Exposição pública fica a cargo do Nginx no host, se necessário.
-      - "127.0.0.1:${BACKEND_PORT:-8000}:8000"
+      - "127.0.0.1:${BACKEND_PORT:-8001}:8000"
     networks:
       - internal
 
@@ -42,19 +38,17 @@ services:
     build:
       context: ./frontend
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8001}
     container_name: alecrim_frontend
     restart: unless-stopped
     env_file:
       - ./frontend/.env
     environment:
-      # Nome do serviço backend na rede docker interna - usado nas chamadas
-      # server-side (SSR e /api/leads route handler).
       API_INTERNAL_URL: http://backend:8000
     depends_on:
       - backend
     ports:
-      - "127.0.0.1:${FRONTEND_PORT:-3000}:3000"
+      - "127.0.0.1:${FRONTEND_PORT:-3001}:3000"
     networks:
       - internal
 
