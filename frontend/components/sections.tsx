@@ -25,12 +25,15 @@ export function Nav() {
             width={1536}
             height={293}
             priority
-            className="h-9 w-auto sm:h-11"
+            className="h-9 w-auto md:h-10 lg:h-11"
           />
         </a>
 
-        {/* Desktop: links inline. Some das telas dão >= 768px (md) */}
-        <nav className="ml-auto hidden items-center gap-6 md:flex lg:gap-8">
+        {/* Desktop: links inline. Some das telas dão >= 768px (md). Gap
+            reduzido em md (768-1023px) pra caber logo + 5 links + CTA sem
+            estourar a largura - a partir de lg (>=1024px) sobra espaço de
+            sobra e volta pro gap-8 original. */}
+        <nav className="ml-auto hidden items-center gap-4 md:flex lg:gap-8">
           {NAV_LINKS.map((link) => (
             <a key={link.href} href={link.href} className="text-sm text-slate-bg transition hover:text-gold">
               {link.label}

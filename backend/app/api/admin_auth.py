@@ -12,6 +12,11 @@ bp = Blueprint("admin_auth", __name__, url_prefix="/api/admin")
 
 MIN_NEW_PASSWORD_LENGTH = 10
 
+# Hash "dummy" fixo, gerado uma única vez na importação do módulo (nunca a
+# partir de dado de request). Usado só para dar a `check_password_hash` algo
+# para comparar quando o e-mail não existe - ver comentário em `login()`.
+_DUMMY_PASSWORD_HASH = generate_password_hash("timing-attack-mitigation-dummy")
+
 
 @bp.post("/login")
 @limiter.limit("5 per 15 minutes")
@@ -32,9 +37,21 @@ def login():
 
     admin = AdminUser.query.filter_by(email=email).first()
 
+    # `check_password_hash` roda de propósito devagar (scrypt) - se só
+    # chamássemos ela quando `admin` existe (ex.: `admin is None or not
+    # check_password_hash(...)`, que faz curto-circuito), um e-mail
+    # inexistente responderia bem mais rápido que um e-mail existente com
+    # senha errada. Mesmo devolvendo a mesma mensagem/status, isso vaza via
+    # TEMPO de resposta se o e-mail existe (timing attack de enumeração).
+    # Por isso comparamos sempre contra um hash de verdade - o do admin
+    # encontrado, ou um hash dummy fixo quando não há admin - mantendo o
+    # custo (e portanto o tempo) igual nos dois casos.
+    password_hash = admin.password_hash if admin is not None else _DUMMY_PASSWORD_HASH
+    password_ok = check_password_hash(password_hash, password)
+
     # Mesma mensagem genérica pros dois casos (e-mail inexistente ou senha
     # errada) - nunca revela se o e-mail existe.
-    if admin is None or not check_password_hash(admin.password_hash, password):
+    if admin is None or not password_ok:
         return {"error": "invalid_credentials"}, 401
 
     token = issue_token(admin)
