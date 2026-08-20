@@ -1,8 +1,14 @@
 import pytest
+from werkzeug.security import generate_password_hash
 
 from app import create_app
 from app.config import Config
 from app.extensions import db, limiter
+from app.models import AdminUser
+from app.utils.auth import issue_token
+
+ADMIN_EMAIL = "admin@example.com"
+ADMIN_PASSWORD = "SenhaForteDoAdmin123"
 
 
 class TestConfig(Config):
@@ -35,3 +41,24 @@ def app():
 @pytest.fixture
 def client(app):
     return app.test_client()
+
+
+@pytest.fixture
+def admin(app):
+    """O único AdminUser usado pelos testes do painel."""
+    user = AdminUser(
+        email=ADMIN_EMAIL,
+        password_hash=generate_password_hash(ADMIN_PASSWORD),
+    )
+    db.session.add(user)
+    db.session.commit()
+    return user
+
+
+@pytest.fixture
+def admin_token(app, admin):
+    """Token válido (mesmo formato que `POST /api/admin/login` devolve)
+    pronto para usar em `Authorization: Bearer <token>` nos testes que não
+    precisam exercitar o próprio fluxo de login.
+    """
+    return issue_token(admin)

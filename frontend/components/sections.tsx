@@ -18,25 +18,15 @@ export function Nav() {
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-navy">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-8">
-        <a href="#top" className="flex flex-shrink-0 items-center gap-3">
-          <svg width="40" height="40" viewBox="0 0 48 48" fill="none" aria-label="Advocacia Alecrim">
-            <defs>
-              <linearGradient id="alecrimGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" style={{ stopColor: "#d4af37", stopOpacity: 1 }} />
-                <stop offset="100%" style={{ stopColor: "#b4941f", stopOpacity: 1 }} />
-              </linearGradient>
-            </defs>
-            <rect x="1.5" y="1.5" width="45" height="45" rx="9" stroke="url(#alecrimGrad)" strokeWidth="1.8" fill="rgba(212,175,55,0.08)" />
-            <path d="M16.5 34 24 14l7.5 20" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-            <path d="M20.2 27h7.6" stroke="#d4af37" strokeWidth="1.8" strokeLinecap="round" />
-            <path d="M24 14v-4" stroke="#d4af37" strokeWidth="1.2" strokeLinecap="round" />
-            <ellipse cx="22" cy="11" rx="1.8" ry="0.8" fill="#d4af37" />
-            <ellipse cx="26" cy="10" rx="1.8" ry="0.8" fill="#d4af37" />
-          </svg>
-          <div className="flex flex-col leading-tight">
-            <span className="text-sm font-bold tracking-tight text-white">Advocacia</span>
-            <span className="text-xs font-semibold tracking-[0.08em] text-gold">ALECRIM</span>
-          </div>
+        <a href="#top" className="flex flex-shrink-0 items-center">
+          <Image
+            src="/images/logo-cabecalho.png"
+            alt="Advocacia Alecrim"
+            width={1536}
+            height={293}
+            priority
+            className="h-9 w-auto sm:h-11"
+          />
         </a>
 
         {/* Desktop: links inline. Some das telas dão >= 768px (md) */}

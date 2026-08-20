@@ -15,3 +15,8 @@ class Faq(db.Model):
             "question": self.question,
             "answer": self.answer,
         }
+
+    def to_admin_dict(self) -> dict:
+        # Só usado nas rotas /api/admin/* - inclui `order`, que controla a
+        # ordem de exibição (GET /api/faqs continua expondo só `to_dict()`).
+        return {**self.to_dict(), "order": self.order}

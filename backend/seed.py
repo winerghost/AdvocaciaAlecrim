@@ -8,9 +8,13 @@ Uso:
 É idempotente: só insere se a tabela correspondente estiver vazia.
 """
 
+import os
+
+from werkzeug.security import generate_password_hash
+
 from app import create_app
 from app.extensions import db
-from app.models import Faq, Service, Testimonial
+from app.models import AdminUser, Faq, Service, Testimonial
 
 SERVICES = [
     dict(
@@ -157,6 +161,30 @@ def run() -> None:
             print(f"Seed: {len(FAQS)} perguntas frequentes inseridas.")
         else:
             print("Seed: tabela 'faqs' já tem dados, pulando.")
+
+        # Bootstrap do único admin do painel (/admin, login em /login). É a
+        # ÚNICA vez que ADMIN_PASSWORD é lida - depois da troca de senha
+        # pelo painel, a env var vira só referência histórica, nunca mais é
+        # consultada (o hash já está no banco).
+        if not AdminUser.query.first():
+            admin_email = os.environ.get("ADMIN_EMAIL")
+            admin_password = os.environ.get("ADMIN_PASSWORD")
+            if admin_email and admin_password:
+                admin = AdminUser(
+                    email=admin_email.strip().lower(),
+                    password_hash=generate_password_hash(admin_password),
+                )
+                db.session.add(admin)
+                print(f"Seed: admin criado ({admin.email}).")
+            else:
+                print(
+                    "Seed: ADMIN_EMAIL/ADMIN_PASSWORD não definidos - o login "
+                    "em /login não vai funcionar até você configurar essas "
+                    "duas variáveis em backend/.env e rodar o seed de novo "
+                    "(ou reiniciar o container)."
+                )
+        else:
+            print("Seed: tabela 'admin_users' já tem dados, pulando.")
 
         db.session.commit()
 

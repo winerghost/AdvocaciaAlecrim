@@ -22,3 +22,9 @@ class Testimonial(db.Model):
             "content": self.content,
             "rating": self.rating,
         }
+
+    def to_admin_dict(self) -> dict:
+        # Só usado nas rotas /api/admin/* - inclui `approved`, que controla
+        # se o depoimento aparece no site público (GET /api/testimonials
+        # continua expondo só os campos de `to_dict()`).
+        return {**self.to_dict(), "approved": self.approved}
