@@ -1,0 +1,22 @@
+# Segredos - nunca commitar
+.env
+backend/.env
+frontend/.env
+*.md
+# Backend
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.pyc
+backend/.pytest_cache/
+backend/.venv/
+backend/venv/
+backend/*.db
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/next-env.d.ts
+
+# Diversos
+*.log
+.DS_Store

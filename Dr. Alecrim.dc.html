@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  html{scroll-behavior:auto;}
+  body{margin:0;background:#ffffff;font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;}
+  a{color:#d4af37;text-decoration:none;}
+  a:hover{color:#b4941f;}
+  @keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+</helmet>
+
+<div style="color:#0f172a;background:#ffffff;">
+  <!-- PROGRESS BAR -->
+  <div ref="{{ setProgressRef }}" style="position:fixed;top:0;left:0;width:0%;height:3px;background:linear-gradient(90deg,#d4af37,#b4941f);z-index:100;transition:width 0.2s ease-out;"></div>
+
+  <!-- NAV -->
+  <div ref="{{ setNavRef }}" style="position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:16px clamp(16px,5vw,56px);background:#0f172a;border-bottom:1px solid rgba(255,255,255,0.1);transition:all 0.3s;gap:16px;flex-wrap:wrap;">
+    <a href="#top" style="display:flex;align-items:center;gap:clamp(10px,2vw,14px);text-decoration:none;flex-shrink:0;">
+      <svg width="clamp(36px,8vw,48px)" height="clamp(36px,8vw,48px)" viewBox="0 0 48 48" fill="none" aria-label="Advocacia Alecrim"><defs><linearGradient id="alecrimGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#d4af37;stop-opacity:1"></stop><stop offset="100%" style="stop-color:#b4941f;stop-opacity:1"></stop></linearGradient></defs><rect x="1.5" y="1.5" width="45" height="45" rx="9" stroke="url(#alecrimGrad)" stroke-width="1.8" fill="rgba(212,175,55,0.08)"></rect><path d="M16.5 34 24 14l7.5 20" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"></path><path d="M20.2 27h7.6" stroke="#d4af37" stroke-width="1.8" stroke-linecap="round"></path><path d="M24 14v-4" stroke="#d4af37" stroke-width="1.2" stroke-linecap="round"></path><ellipse cx="22" cy="11" rx="1.8" ry="0.8" fill="#d4af37"></ellipse><ellipse cx="26" cy="10" rx="1.8" ry="0.8" fill="#d4af37"></ellipse></svg>
+      <div style="display:flex;flex-direction:column;gap:1px;line-height:1.1;">
+        <span style="font-size:clamp(14px,2.5vw,17px);font-weight:700;letter-spacing:-0.01em;color:#ffffff;">Advocacia</span>
+        <span style="font-size:clamp(12px,2vw,15px);font-weight:600;letter-spacing:0.08em;color:#d4af37;">ALECRIM</span>
+      </div>
+    </a>
+    <div style="display:flex;align-items:center;gap:clamp(12px,3vw,32px);margin-left:auto;flex-wrap:wrap;">
+      <a href="#top" style="font-size:clamp(12px,2vw,14px);color:#f8fafc;transition:color 0.2s;">Home</a>
+      <a href="#sobre" style="font-size:clamp(12px,2vw,14px);color:#f8fafc;transition:color 0.2s;">Sobre</a>
+      <a href="#especialidades" style="font-size:clamp(12px,2vw,14px);color:#f8fafc;transition:color 0.2s;">Especialidades</a>
+      <a href="#depoimentos" style="font-size:clamp(12px,2vw,14px);color:#f8fafc;transition:color 0.2s;">Depoimentos</a>
+      <a href="#contato" style="font-size:clamp(12px,2vw,14px);color:#f8fafc;transition:color 0.2s;">Contato</a>
+      <a href="https://wa.me/5563999941821" style="font-size:clamp(12px,2vw,14px);padding:clamp(8px,1.5vw,10px) clamp(16px,3vw,22px);background:#d4af37;color:#0f172a;border-radius:4px;font-weight:500;transition:all 0.25s;" style-hover="transform:translateY(-2px);box-shadow:0 6px 16px rgba(212,175,55,0.35);">Falar</a>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div id="top" style="position:relative;min-height:clamp(520px,90vh,780px);display:flex;align-items:center;overflow:hidden;background:radial-gradient(circle at 78% 30%, #1c2942 0%, #0f172a 55%, #080d18 100%);">
+    <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(212,175,55,0.5),transparent);z-index:3;"></div>
+    <div style="position:absolute;top:-15%;right:-8%;width:min(620px,60vw);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(212,175,55,0.14) 0%,transparent 68%);z-index:1;"></div>
+    <div style="position:absolute;bottom:-20%;left:-10%;width:min(480px,50vw);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(212,175,55,0.07) 0%,transparent 70%);z-index:1;"></div>
+    <div style="position:absolute;bottom:clamp(90px,20vh,250px);right:clamp(20px,8vw,140px);height:min(104%,860px);width:clamp(240px,42%,560px);z-index:1;pointer-events:none;display:flex;align-items:flex-end;justify-content:flex-end;opacity:0.82;">
+      <img src="assets/dr-alecrim-hero-hd2.png" alt="Dr. Alecrim" style="height: 100%; width: 100%; object-fit: contain; object-position: bottom right; opacity: 1; filter: saturate(1.02) contrast(1.03); -webkit-mask-image: radial-gradient(ellipse 68% 72% at 62% 52%,#000 26%,rgba(0,0,0,0.6) 58%,transparent 86%); mask-image: radial-gradient(ellipse 68% 72% at 62% 52%,#000 26%,rgba(0,0,0,0.6) 58%,transparent 86%); border-radius: 10px">
+    </div>
+    <div style="position:relative;z-index:2;max-width:1280px;margin:0 auto;padding:clamp(72px,11vw,132px) clamp(16px,5vw,56px) clamp(72px,11vw,132px);width:100%;box-sizing:border-box;"><div style="max-width:min(100%,620px);">
+      <div style="display:inline-flex;align-items:center;gap:10px;padding:7px 16px 7px 12px;border:1px solid rgba(212,175,55,0.32);background:rgba(212,175,55,0.07);border-radius:100px;margin-bottom:clamp(24px,4vw,32px);animation:fadeInUp 0.8s ease-out both;">
+        <span style="width:6px;height:6px;border-radius:50%;background:#d4af37;flex:none;"></span>
+        <span style="font-size:clamp(10px,1.6vw,12px);letter-spacing:0.16em;text-transform:uppercase;font-weight:600;color:#d4af37;">Advocacia em Palmas · Tocantins</span>
+      </div>
+      <h1 style="font-size:clamp(30px,5vw,4.25rem);line-height:1.06;font-weight:600;letter-spacing:-0.025em;margin:0 0 clamp(20px,3vw,28px);max-width:min(100%,620px);color:#ffffff;text-wrap:pretty;animation:fadeInUp 0.8s 0.1s ease-out both;">Seu direito conduzido com <span style="color:#d4af37;">clareza</span>, agilidade e atenção à sua família.</h1>
+      <p style="font-size:clamp(15px,1.9vw,19px);line-height:1.65;font-weight:300;color:rgba(255,255,255,0.72);max-width:min(100%,540px);margin:0 0 clamp(32px,5vw,44px);text-wrap:pretty;animation:fadeInUp 0.8s 0.2s ease-out both;">Inventários, aposentadorias, ações trabalhistas e cíveis. Atendimento pessoal do Dr. Alecrim, do primeiro contato à conclusão do processo.</p>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:clamp(40px,6vw,64px);animation:fadeInUp 0.8s 0.3s ease-out both;">
+        <a href="https://wa.me/5563999941821" style="display:inline-flex;align-items:center;gap:10px;background:#d4af37;color:#0f172a;padding:clamp(14px,2.2vw,17px) clamp(24px,4vw,34px);font-weight:600;font-size:clamp(14px,2vw,15px);border-radius:6px;transition:all 0.25s;" style-hover="transform:translateY(-3px);box-shadow:0 14px 30px rgba(212,175,55,0.32);">
+          Agendar Consulta
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"></path></svg>
+        </a>
+        <a href="#especialidades" style="display:inline-flex;align-items:center;background:transparent;color:#ffffff;padding:clamp(14px,2.2vw,17px) clamp(24px,4vw,34px);font-weight:500;font-size:clamp(14px,2vw,15px);border:1px solid rgba(255,255,255,0.22);border-radius:6px;transition:all 0.25s;" style-hover="background:rgba(255,255,255,0.07);border-color:rgba(212,175,55,0.5);transform:translateY(-3px);">Ver Especialidades</a>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:clamp(20px,4vw,44px);padding-top:clamp(24px,4vw,32px);border-top:1px solid rgba(255,255,255,0.09);animation:fadeInUp 0.8s 0.4s ease-out both;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M20 6 9 17l-5-5"></path></svg>
+          <span style="font-size:clamp(12px,1.9vw,14px);color:rgba(255,255,255,0.6);">Primeira consulta gratuita</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M20 6 9 17l-5-5"></path></svg>
+          <span style="font-size:clamp(12px,1.9vw,14px);color:rgba(255,255,255,0.6);">Atendimento em todo o Tocantins</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M20 6 9 17l-5-5"></path></svg>
+          <span style="font-size:clamp(12px,1.9vw,14px);color:rgba(255,255,255,0.6);">Resposta no mesmo dia</span>
+        </div>
+      </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRUST STRIP -->
+  <div style="background:#0f172a;padding:clamp(40px,8vw,80px) clamp(16px,5vw,56px);">
+    <div style="max-width:1280px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:clamp(20px,4vw,40px);">
+      <div style="text-align:center;opacity:0.75;">
+        <div style="font-size:clamp(24px,5vw,32px);font-weight:700;color:#d4af37;">100%</div>
+        <div style="font-size:clamp(12px,2vw,14px);color:#f8fafc;margin-top:8px;">Foco em Direito das Sucessões</div>
+      </div>
+      <div style="text-align:center;opacity:0.75;">
+        <div style="font-size:clamp(24px,5vw,32px);font-weight:700;color:#d4af37;">1:1</div>
+        <div style="font-size:clamp(12px,2vw,14px);color:#f8fafc;margin-top:8px;">Atendimento Personalizado</div>
+      </div>
+      <div style="text-align:center;opacity:0.75;">
+        <div style="font-size:clamp(24px,5vw,32px);font-weight:700;color:#d4af37;">Ágil</div>
+        <div style="font-size:clamp(12px,2vw,14px);color:#f8fafc;margin-top:8px;">Condução Eficiente</div>
+      </div>
+      <div style="text-align:center;opacity:0.75;">
+        <div style="font-size:clamp(24px,5vw,32px);font-weight:700;color:#d4af37;">TO</div>
+        <div style="font-size:clamp(12px,2vw,14px);color:#f8fafc;margin-top:8px;">Todo o Tocantins</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SOBRE -->
+  <div id="sobre" style="padding:clamp(80px,12vw,128px) clamp(16px,5vw,56px);background:#ffffff;">
+    <div style="max-width:1280px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:clamp(40px,6vw,80px);align-items:center;">
+      <div>
+        <div style="font-size:clamp(10px,1.6vw,12px);letter-spacing:0.18em;text-transform:uppercase;font-weight:600;color:#b4941f;margin-bottom:16px;">Sobre</div>
+        <h2 style="font-size:clamp(26px,5.5vw,3rem);font-weight:600;letter-spacing:-0.02em;line-height:1.12;margin:0 0 24px;color:#0f172a;text-wrap:pretty;">Dr. Alecrim</h2>
+        <p style="font-size:clamp(14px,2.2vw,17px);line-height:1.7;font-weight:300;color:#64748b;margin:0 0 20px;text-wrap:pretty;">Advogado atuante em Palmas e em todo o Tocantins, com foco em Direito das Sucessões, Previdenciário, Trabalhista e Cível. Cada caso é conduzido pessoalmente, sem intermediários.</p>
+        <p style="font-size:clamp(14px,2.2vw,17px);line-height:1.7;font-weight:300;color:#64748b;margin:0 0 32px;text-wrap:pretty;">A prática é orientada por um princípio simples: o cliente precisa entender o próprio processo. Linguagem clara, prazos reais e retorno rápido em cada etapa.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;">
+          <span style="padding:8px 16px;border:1px solid rgba(15,23,42,0.12);border-radius:100px;font-size:clamp(12px,1.9vw,13px);color:#0f172a;">Sucessões</span>
+          <span style="padding:8px 16px;border:1px solid rgba(15,23,42,0.12);border-radius:100px;font-size:clamp(12px,1.9vw,13px);color:#0f172a;">Previdenciário</span>
+          <span style="padding:8px 16px;border:1px solid rgba(15,23,42,0.12);border-radius:100px;font-size:clamp(12px,1.9vw,13px);color:#0f172a;">Trabalhista</span>
+          <span style="padding:8px 16px;border:1px solid rgba(15,23,42,0.12);border-radius:100px;font-size:clamp(12px,1.9vw,13px);color:#0f172a;">Cível</span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div style="padding:clamp(20px,3.5vw,32px);background:#f8fafc;border-radius:12px;">
+          <div style="font-size:clamp(22px,4.5vw,30px);font-weight:700;color:#0f172a;margin-bottom:8px;">1:1</div>
+          <div style="font-size:clamp(12px,1.9vw,14px);line-height:1.5;color:#64748b;">Atendimento direto com o advogado</div>
+        </div>
+        <div style="padding:clamp(20px,3.5vw,32px);background:#0f172a;border-radius:12px;">
+          <div style="font-size:clamp(22px,4.5vw,30px);font-weight:700;color:#d4af37;margin-bottom:8px;">TO</div>
+          <div style="font-size:clamp(12px,1.9vw,14px);line-height:1.5;color:rgba(255,255,255,0.72);">Atuação em todo o Tocantins</div>
+        </div>
+        <div style="padding:clamp(20px,3.5vw,32px);background:#0f172a;border-radius:12px;">
+          <div style="font-size:clamp(22px,4.5vw,30px);font-weight:700;color:#d4af37;margin-bottom:8px;">24h</div>
+          <div style="font-size:clamp(12px,1.9vw,14px);line-height:1.5;color:rgba(255,255,255,0.72);">Retorno de primeiro contato</div>
+        </div>
+        <div style="padding:clamp(20px,3.5vw,32px);background:#f8fafc;border-radius:12px;">
+          <div style="font-size:clamp(22px,4.5vw,30px);font-weight:700;color:#0f172a;margin-bottom:8px;">4</div>
+          <div style="font-size:clamp(12px,1.9vw,14px);line-height:1.5;color:#64748b;">Áreas de atuação especializadas</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ESPECIALIDADES -->
+  <div id="especialidades" style="padding:clamp(80px,12vw,120px) clamp(16px,5vw,56px);background:#ffffff;">
+    <div style="max-width:1280px;margin:0 auto;">
+      <h2 style="font-size:clamp(28px,6vw,3.5rem);font-weight:600;margin:0 0 40px;text-align:center;color:#0f172a;">Especialidades</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(clamp(240px,100%,320px),1fr));gap:32px;">
+        <div style="background:#ffffff;padding:clamp(24px,5vw,40px) clamp(20px,4vw,32px);border-radius:8px;border:1px solid rgba(15,23,42,0.1);transition:all 0.3s;" style-hover="border-color:#d4af37;box-shadow:0 12px 32px rgba(212,175,55,0.1);transform:translateY(-4px);">
+          <div style="width:clamp(44px,8vw,56px);height:clamp(44px,8vw,56px);background:#f0f4f8;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg></div>
+          <h3 style="font-size:clamp(16px,3vw,20px);font-weight:600;margin:0 0 12px;color:#0f172a;">Inventário Judicial</h3>
+          <p style="font-size:clamp(13px,2vw,15px);line-height:1.625;color:#64748b;margin:0;">Condução completa em juízo para casos com divergência entre herdeiros ou complexidade patrimonial.</p>
+        </div>
+        <div style="background:#ffffff;padding:clamp(24px,5vw,40px) clamp(20px,4vw,32px);border-radius:8px;border:1px solid rgba(15,23,42,0.1);transition:all 0.3s;" style-hover="border-color:#d4af37;box-shadow:0 12px 32px rgba(212,175,55,0.1);transform:translateY(-4px);">
+          <div style="width:clamp(44px,8vw,56px);height:clamp(44px,8vw,56px);background:#f0f4f8;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+          <h3 style="font-size:clamp(16px,3vw,20px);font-weight:600;margin:0 0 12px;color:#0f172a;">Aposentadoria</h3>
+          <p style="font-size:clamp(13px,2vw,15px);line-height:1.625;color:#64748b;margin:0;">Gestão completa de processos de aposentadoria com expertise em documentação e legislação previdenciária.</p>
+        </div>
+        <div style="background:#ffffff;padding:clamp(24px,5vw,40px) clamp(20px,4vw,32px);border-radius:8px;border:1px solid rgba(15,23,42,0.1);transition:all 0.3s;" style-hover="border-color:#d4af37;box-shadow:0 12px 32px rgba(212,175,55,0.1);transform:translateY(-4px);">
+          <div style="width:clamp(44px,8vw,56px);height:clamp(44px,8vw,56px);background:#f0f4f8;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6M15 6l6 6-6 6"></path></svg></div>
+          <h3 style="font-size:clamp(16px,3vw,20px);font-weight:600;margin:0 0 12px;color:#0f172a;">Ação Trabalhista</h3>
+          <p style="font-size:clamp(13px,2vw,15px);line-height:1.625;color:#64748b;margin:0;">Defesa de direitos trabalhistas com análise detalhada de contratos e reparação de danos.</p>
+        </div>
+        <div style="background:#ffffff;padding:clamp(24px,5vw,40px) clamp(20px,4vw,32px);border-radius:8px;border:1px solid rgba(15,23,42,0.1);transition:all 0.3s;" style-hover="border-color:#d4af37;box-shadow:0 12px 32px rgba(212,175,55,0.1);transform:translateY(-4px);">
+          <div style="width:clamp(44px,8vw,56px);height:clamp(44px,8vw,56px);background:#f0f4f8;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8m3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"></path></svg></div>
+          <h3 style="font-size:clamp(16px,3vw,20px);font-weight:600;margin:0 0 12px;color:#0f172a;">Ação Cível</h3>
+          <p style="font-size:clamp(13px,2vw,15px);line-height:1.625;color:#64748b;margin:0;">Representação em ações civis diversas com foco em indenizações e resolução de conflitos.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEPOIMENTOS -->
+  <div id="depoimentos" style="padding:clamp(80px,12vw,120px) clamp(16px,5vw,56px);background:#f0f4f8;">
+    <div style="max-width:1280px;margin:0 auto;">
+      <h2 style="font-size:clamp(28px,6vw,3.5rem);font-weight:600;margin:0 0 40px;text-align:center;color:#0f172a;">O que nossos clientes dizem</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(clamp(240px,100%,360px),1fr));gap:32px;">
+        <div style="background:#ffffff;padding:clamp(24px,5vw,32px);border-radius:8px;border-left:4px solid #d4af37;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+            <div style="width:48px;height:48px;border-radius:50%;background:#d4af37;color:#0f172a;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;">M</div>
+            <div>
+              <div style="font-size:14px;font-weight:600;color:#0f172a;">Maria Silva</div>
+              <div style="font-size:12px;color:#64748b;">Cliente satisfeita</div>
+            </div>
+          </div>
+          <p style="font-size:clamp(13px,2vw,15px);line-height:1.625;color:#64748b;margin:0;">"Dr. Alecrim foi muito atencioso no processo de inventário. Explicou tudo com clareza e resolveu rápido."</p>
+        </div>
+        <div style="background:#ffffff;padding:clamp(24px,5vw,32px);border-radius:8px;border-left:4px solid #d4af37;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+            <div style="width:48px;height:48px;border-radius:50%;background:#d4af37;color:#0f172a;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;">J</div>
+            <div>
+              <div style="font-size:14px;font-weight:600;color:#0f172a;">João Santos</div>
+              <div style="font-size:12px;color:#64748b;">Cliente satisfeito</div>
+            </div>
+          </div>
+          <p style="font-size:clamp(13px,2vw,15px);line-height:1.625;color:#64748b;margin:0;">"Excelente profissional. Conseguiu resolver meu caso trabalhista de forma justa e rápida."</p>
+        </div>
+        <div style="background:#ffffff;padding:clamp(24px,5vw,32px);border-radius:8px;border-left:4px solid #d4af37;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+            <div style="width:48px;height:48px;border-radius:50%;background:#d4af37;color:#0f172a;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;">A</div>
+            <div>
+              <div style="font-size:14px;font-weight:600;color:#0f172a;">Ana Martins</div>
+              <div style="font-size:12px;color:#64748b;">Cliente satisfeita</div>
+            </div>
+          </div>
+          <p style="font-size:clamp(13px,2vw,15px);line-height:1.625;color:#64748b;margin:0;">"Profissional experiente e humano. Entendeu perfeitamente a situação e deu a melhor orientação."</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div id="faq" style="padding:clamp(80px,12vw,128px) clamp(16px,5vw,56px);background:#ffffff;">
+    <div style="max-width:1280px;margin:0 auto;">
+      <div style="text-align:center;max-width:620px;margin:0 auto clamp(48px,7vw,72px);">
+        <div style="font-size:clamp(10px,1.6vw,12px);letter-spacing:0.18em;text-transform:uppercase;font-weight:600;color:#b4941f;margin-bottom:16px;">Dúvidas</div>
+        <h2 style="font-size:clamp(28px,6vw,3.25rem);font-weight:600;letter-spacing:-0.02em;margin:0 0 16px;color:#0f172a;text-wrap:pretty;">Perguntas frequentes</h2>
+        <p style="font-size:clamp(14px,2.2vw,17px);line-height:1.65;font-weight:300;color:#64748b;margin:0;">O que os clientes perguntam antes de fechar.</p>
+      </div>
+      <div style="max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:12px;">
+        <sc-for list="{{ faqs }}" as="faq" hint-placeholder-count="5">
+        <div ref="{{ registerFaqItem }}" data-faq-item="{{ $index }}" style="border:1px solid rgba(15,23,42,0.09);border-radius:12px;background:#ffffff;overflow:hidden;transition:border-color 0.3s,box-shadow 0.3s;" style-hover="border-color:rgba(212,175,55,0.45);box-shadow:0 6px 22px rgba(15,23,42,0.05);">
+          <button onClick="{{ toggleFaq }}" data-idx="{{ $index }}" style="width:100%;padding:clamp(18px,3.2vw,26px) clamp(18px,3.2vw,28px);background:transparent;border:none;text-align:left;cursor:pointer;display:flex;align-items:center;gap:16px;font-family:inherit;font-size:clamp(14px,2.1vw,17px);font-weight:600;line-height:1.45;color:#0f172a;transition:color 0.2s;" style-hover="color:#b4941f;">
+            <span style="flex:1;text-wrap:pretty;">{{ faq.pergunta }}</span>
+            <span data-faq-icon="{{ $index }}" style="flex:none;width:30px;height:30px;border-radius:50%;background:#f4f6f9;display:flex;align-items:center;justify-content:center;transition:background 0.3s,transform 0.35s cubic-bezier(0.4,0,0.2,1);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0f172a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>
+            </span>
+          </button>
+          <div data-faq-panel="{{ $index }}" style="max-height:0;overflow:hidden;transition:max-height 0.4s cubic-bezier(0.4,0,0.2,1);">
+            <div style="padding:0 clamp(18px,3.2vw,28px) clamp(20px,3.2vw,28px);font-size:clamp(13px,2vw,16px);line-height:1.7;font-weight:300;color:#64748b;text-wrap:pretty;">{{ faq.resposta }}</div>
+          </div>
+        </div>
+        </sc-for>
+      </div>
+      <div style="text-align:center;margin-top:clamp(40px,6vw,56px);">
+        <p style="font-size:clamp(13px,2vw,15px);color:#64748b;margin:0 0 20px;">Ficou com outra dúvida?</p>
+        <a href="https://wa.me/5563999941821" style="display:inline-flex;align-items:center;gap:10px;padding:14px 28px;border:1px solid rgba(212,175,55,0.5);color:#b4941f;font-size:clamp(13px,2vw,15px);font-weight:600;border-radius:6px;transition:all 0.25s;" style-hover="background:#d4af37;color:#0f172a;border-color:#d4af37;transform:translateY(-2px);">
+          Falar com o Dr. Alecrim
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"></path></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTATO -->
+  <div id="contato" style="padding:clamp(80px,12vw,120px) clamp(16px,5vw,56px);background:#0f172a;">
+    <div style="max-width:1280px;margin:0 auto;">
+      <h2 style="font-size:clamp(28px,6vw,3.5rem);font-weight:600;margin:0 0 60px;text-align:center;color:#ffffff;">Entre em Contato</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(clamp(240px,100%,280px),1fr));gap:32px;margin-bottom:60px;">
+        <div style="text-align:center;">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.5" style="margin:0 auto 16px;display:block;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+          <h3 style="font-size:clamp(16px,3vw,18px);font-weight:600;color:#ffffff;margin:0 0 12px;">Telefone</h3>
+          <a href="tel:+5563999941821" style="display:block;color:#d4af37;font-size:clamp(13px,2vw,15px);margin-bottom:8px;">(63) 99994-1821</a>
+          <a href="tel:+5563999362073" style="display:block;color:#d4af37;font-size:clamp(13px,2vw,15px);">(63) 99362-0731</a>
+        </div>
+        <div style="text-align:center;">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.5" style="margin:0 auto 16px;display:block;"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          <h3 style="font-size:clamp(16px,3vw,18px);font-weight:600;color:#ffffff;margin:0 0 12px;">Email</h3>
+          <a href="mailto:alecrimrio@gmail.com" style="display:block;color:#d4af37;font-size:clamp(13px,2vw,15px);">alecrimrio@gmail.com</a>
+        </div>
+        <div style="text-align:center;">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.5" style="margin:0 auto 16px;display:block;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+          <h3 style="font-size:clamp(16px,3vw,18px);font-weight:600;color:#ffffff;margin:0 0 12px;">Localização</h3>
+          <p style="font-size:clamp(13px,2vw,15px);color:#f8fafc;margin:0;">Palmas, Tocantins<br>Atendimento em todo o estado</p>
+        </div>
+        <div style="text-align:center;">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 16px;display:block;"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5"></rect><circle cx="12" cy="12" r="4.2"></circle><circle cx="17.4" cy="6.6" r="1.15" fill="#d4af37" stroke="none"></circle></svg>
+          <h3 style="font-size:clamp(16px,3vw,18px);font-weight:600;color:#ffffff;margin:0 0 12px;">Instagram</h3>
+          <a href="https://www.instagram.com/advocaciaalecrim_/" target="_blank" rel="noopener noreferrer" style="display:block;color:#d4af37;font-size:clamp(13px,2vw,15px);">@advocaciaalecrim_</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WHATSAPP FLUTUANTE -->
+  <a href="https://wa.me/5563999941821" aria-label="Fale conosco no WhatsApp" style="position:fixed;bottom:clamp(20px,4vw,36px);right:clamp(20px,4vw,36px);z-index:60;display:flex;align-items:center;gap:0;padding:0;text-decoration:none;">
+    <span style="position:relative;display:flex;align-items:center;justify-content:center;width:clamp(56px,11vw,64px);height:clamp(56px,11vw,64px);border-radius:50%;background:linear-gradient(145deg,#2ee06a 0%,#1faa53 100%);box-shadow:0 10px 28px rgba(31,170,83,0.42),0 0 0 1px rgba(255,255,255,0.14) inset;transition:transform 0.3s cubic-bezier(0.34,1.4,0.64,1),box-shadow 0.3s;" style-hover="transform:scale(1.08) translateY(-2px);box-shadow:0 16px 38px rgba(31,170,83,0.5),0 0 0 1px rgba(255,255,255,0.2) inset;">
+      <svg width="clamp(28px,6vw,34px)" height="clamp(28px,6vw,34px)" viewBox="0 0 32 32" fill="#ffffff" aria-hidden="true"><path d="M16.04 3.2c-7.09 0-12.84 5.75-12.84 12.84 0 2.26.6 4.47 1.73 6.42L3.2 28.8l6.5-1.7a12.79 12.79 0 0 0 6.34 1.66h.01c7.08 0 12.83-5.75 12.83-12.84 0-3.43-1.33-6.65-3.76-9.08a12.74 12.74 0 0 0-9.08-3.76Zm0 23.5h-.01a10.65 10.65 0 0 1-5.42-1.48l-.39-.23-4.03 1.06 1.08-3.93-.25-.4a10.63 10.63 0 0 1-1.63-5.68c0-5.89 4.79-10.68 10.68-10.68 2.85 0 5.53 1.11 7.54 3.13a10.6 10.6 0 0 1 3.13 7.56c0 5.89-4.8 10.65-10.7 10.65Zm5.86-7.98c-.32-.16-1.96-.97-2.26-1.08-.31-.11-.53-.16-.75.16-.22.33-.86 1.08-1.06 1.3-.19.22-.39.25-.71.09-.32-.16-1.36-.5-2.59-1.6-.96-.86-1.6-1.92-1.79-2.24-.19-.32-.02-.5.14-.66.15-.14.33-.38.49-.57.16-.19.22-.33.33-.55.11-.22.05-.41-.03-.57-.08-.16-.75-1.8-1.03-2.46-.27-.65-.54-.56-.75-.57-.19-.01-.41-.01-.63-.01-.22 0-.58.08-.88.41-.3.33-1.15 1.12-1.15 2.74s1.18 3.18 1.34 3.4c.16.22 2.31 3.53 5.6 4.95.78.34 1.4.54 1.87.69.79.25 1.5.22 2.07.13.63-.09 1.94-.79 2.21-1.56.28-.77.28-1.42.19-1.56-.08-.13-.3-.22-.62-.38Z"></path></svg>
+    </span>
+  </a>
+
+  <!-- FOOTER -->
+  <div style="background:#000000;padding:clamp(40px,8vw,60px) clamp(16px,5vw,56px);">
+    <div style="max-width:1280px;margin:0 auto;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(clamp(200px,100%,280px),1fr));gap:32px;margin-bottom:40px;">
+        <div>
+          <h4 style="font-size:14px;font-weight:600;color:#d4af37;margin:0 0 16px;letter-spacing:0.08em;">NAVEGAÇÃO</h4>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <a href="#top" style="font-size:13px;color:#f8fafc;transition:color 0.2s;">Home</a>
+            <a href="#especialidades" style="font-size:13px;color:#f8fafc;transition:color 0.2s;">Especialidades</a>
+            <a href="#depoimentos" style="font-size:13px;color:#f8fafc;transition:color 0.2s;">Depoimentos</a>
+            <a href="#faq" style="font-size:13px;color:#f8fafc;transition:color 0.2s;">FAQ</a>
+            <a href="#contato" style="font-size:13px;color:#f8fafc;transition:color 0.2s;">Contato</a>
+          </div>
+        </div>
+        <div>
+          <h4 style="font-size:14px;font-weight:600;color:#d4af37;margin:0 0 16px;letter-spacing:0.08em;">ESPECIALIDADES</h4>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <a href="#especialidades" style="font-size:13px;color:#f8fafc;transition:color 0.2s;">Inventário Judicial</a>
+            <a href="#especialidades" style="font-size:13px;color:#f8fafc;transition:color 0.2s;">Aposentadoria</a>
+            <a href="#especialidades" style="font-size:13px;color:#f8fafc;transition:color 0.2s;">Ação Trabalhista</a>
+            <a href="#especialidades" style="font-size:13px;color:#f8fafc;transition:color 0.2s;">Ação Cível</a>
+          </div>
+        </div>
+        <div>
+          <h4 style="font-size:14px;font-weight:600;color:#d4af37;margin:0 0 16px;letter-spacing:0.08em;">CONTATO</h4>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <a href="tel:+5563999941821" style="font-size:13px;color:#f8fafc;transition:color 0.2s;">(63) 99994-1821</a>
+            <a href="mailto:alecrimrio@gmail.com" style="font-size:13px;color:#f8fafc;transition:color 0.2s;">alecrimrio@gmail.com</a>
+          </div>
+        </div>
+        <div>
+          <h4 style="font-size:14px;font-weight:600;color:#d4af37;margin:0 0 16px;letter-spacing:0.08em;">REDES SOCIAIS</h4>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;">
+            <a href="https://wa.me/5563999941821" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp da Advocacia Alecrim" style="width:clamp(40px,9vw,44px);height:clamp(40px,9vw,44px);display:flex;align-items:center;justify-content:center;background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.22);border-radius:50%;transition:background 0.25s,border-color 0.25s,transform 0.25s;" style-hover="background:#d4af37;border-color:#d4af37;transform:translateY(-3px);">
+              <svg width="19" height="19" viewBox="0 0 32 32" fill="#d4af37" aria-hidden="true"><path d="M16.04 3.2c-7.09 0-12.84 5.75-12.84 12.84 0 2.26.6 4.47 1.73 6.42L3.2 28.8l6.5-1.7a12.79 12.79 0 0 0 6.34 1.66h.01c7.08 0 12.83-5.75 12.83-12.84 0-3.43-1.33-6.65-3.76-9.08a12.74 12.74 0 0 0-9.08-3.76Zm0 23.5h-.01a10.65 10.65 0 0 1-5.42-1.48l-.39-.23-4.03 1.06 1.08-3.93-.25-.4a10.63 10.63 0 0 1-1.63-5.68c0-5.89 4.79-10.68 10.68-10.68 2.85 0 5.53 1.11 7.54 3.13a10.6 10.6 0 0 1 3.13 7.56c0 5.89-4.8 10.65-10.7 10.65Zm5.86-7.98c-.32-.16-1.96-.97-2.26-1.08-.31-.11-.53-.16-.75.16-.22.33-.86 1.08-1.06 1.3-.19.22-.39.25-.71.09-.32-.16-1.36-.5-2.59-1.6-.96-.86-1.6-1.92-1.79-2.24-.19-.32-.02-.5.14-.66.15-.14.33-.38.49-.57.16-.19.22-.33.33-.55.11-.22.05-.41-.03-.57-.08-.16-.75-1.8-1.03-2.46-.27-.65-.54-.56-.75-.57-.19-.01-.41-.01-.63-.01-.22 0-.58.08-.88.41-.3.33-1.15 1.12-1.15 2.74s1.18 3.18 1.34 3.4c.16.22 2.31 3.53 5.6 4.95.78.34 1.4.54 1.87.69.79.25 1.5.22 2.07.13.63-.09 1.94-.79 2.21-1.56.28-.77.28-1.42.19-1.56-.08-.13-.3-.22-.62-.38Z"></path></svg>
+            </a>
+            <a href="https://www.instagram.com/advocaciaalecrim_/" target="_blank" rel="noopener noreferrer" aria-label="Instagram da Advocacia Alecrim" style="width:clamp(40px,9vw,44px);height:clamp(40px,9vw,44px);display:flex;align-items:center;justify-content:center;background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.22);border-radius:50%;transition:background 0.25s,border-color 0.25s,transform 0.25s;" style-hover="background:#d4af37;border-color:#d4af37;transform:translateY(-3px);">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5"></rect><circle cx="12" cy="12" r="4.2"></circle><circle cx="17.4" cy="6.6" r="1.15" fill="#d4af37" stroke="none"></circle></svg>
+            </a>
+          </div>
+          <a href="https://www.instagram.com/advocaciaalecrim_/" target="_blank" rel="noopener noreferrer" style="display:inline-block;margin-top:14px;font-size:13px;color:#f8fafc;transition:color 0.2s;" style-hover="color:#d4af37;">@advocaciaalecrim_</a>
+        </div>
+      </div>
+      <div style="border-top:1px solid rgba(212,175,55,0.2);padding-top:32px;text-align:center;">
+        <p style="font-size:12px;color:#f8fafc;margin:0;">© 2026 Advocacia Alecrim. Todos os direitos reservados. | Desenvolvido com excelência</p>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  state = {
+    faqOpen: {},
+    scrollProgress: 0
+  };
+
+  componentDidMount() {
+    this._onScroll = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const p = max > 0 ? (window.scrollY / max) * 100 : 0;
+      if (this._progressRef) this._progressRef.style.width = p + '%';
+      if (this._navRef) this._navRef.style.boxShadow = window.scrollY > 24 ? '0 6px 24px rgba(0,0,0,0.35)' : 'none';
+    };
+    this._onResize = () => {
+      document.querySelectorAll('[data-faq-panel]').forEach(p => {
+        if (p.style.maxHeight && p.style.maxHeight !== '0px') p.style.maxHeight = p.scrollHeight + 'px';
+      });
+    };
+    window.addEventListener('scroll', this._onScroll, { passive: true });
+    window.addEventListener('resize', this._onResize);
+    this._onScroll();
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('scroll', this._onScroll);
+    window.removeEventListener('resize', this._onResize);
+  }
+
+  renderVals() {
+    return {
+      faqs: [
+        { pergunta: "Qual é o prazo típico para um inventário judicial?", resposta: "O prazo varia de 1 a 3 anos dependendo da complexidade patrimonial e de possíveis contestações. O Dr. Alecrim trabalha para agilizar todo o processo." },
+        { pergunta: "Como funciona o processo de aposentadoria?", resposta: "Analisamos seu histórico de contribuição, preparamos a documentação necessária e acompanhamos todo o processo junto ao INSS ou justiça." },
+        { pergunta: "Qual é o valor da consulta inicial?", resposta: "A primeira consulta é gratuita para avaliar seu caso e explicar as melhores estratégias para sua situação." },
+        { pergunta: "Vocês atendem em todo o Tocantins?", resposta: "Sim! O Dr. Alecrim oferece atendimento em todo o estado, com opção de videoconferência para maior comodidade." },
+        { pergunta: "Como é calculado o valor dos honorários?", resposta: "Os honorários são estabelecidos por acordo, podendo ser por hora, percentual do resultado ou tabela específica conforme o tipo de caso." }
+      ],
+      faqOpen: this.state.faqOpen,
+      registerFaqItem: (el) => {
+        if (!el) return;
+        this._faqEls = this._faqEls || {};
+        this._faqEls[el.dataset.faqItem] = el;
+      },
+      toggleFaq: (e) => {
+        const btn = e.currentTarget;
+        const idx = btn.dataset.idx;
+        const item = btn.closest('[data-faq-item]');
+        if (!item) return;
+        const panel = item.querySelector('[data-faq-panel]');
+        const icon = item.querySelector('[data-faq-icon]');
+        const open = panel.style.maxHeight && panel.style.maxHeight !== '0px';
+        // close siblings
+        const root = item.parentElement;
+        root.querySelectorAll('[data-faq-panel]').forEach(p => { p.style.maxHeight = '0px'; });
+        root.querySelectorAll('[data-faq-icon]').forEach(i => {
+          i.style.transform = 'rotate(0deg)';
+          i.style.background = '#f4f6f9';
+        });
+        if (!open) {
+          panel.style.maxHeight = panel.scrollHeight + 'px';
+          icon.style.transform = 'rotate(180deg)';
+          icon.style.background = '#d4af37';
+        }
+      },
+      setNavRef: (el) => { this._navRef = el; },
+      setProgressRef: (el) => { this._progressRef = el; }
+    };
+  }
+}
+</script>
+</body>
+</html>
