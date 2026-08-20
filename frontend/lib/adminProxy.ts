@@ -36,6 +36,13 @@ export async function proxyAdmin(path: string, init?: RequestInit): Promise<Next
     cache: "no-store",
   });
 
+  // 204 (DELETE bem-sucedido) não pode ter corpo - a spec HTTP proíbe, e
+  // NextResponse.json(...) com status 204 lança um erro interno do Next
+  // (Response with null body status cannot have body), virando 500.
+  if (res.status === 204) {
+    return new NextResponse(null, { status: 204 });
+  }
+
   const data = await res.json().catch(() => ({}));
   return NextResponse.json(data, { status: res.status });
 }
