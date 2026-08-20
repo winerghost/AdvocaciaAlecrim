@@ -1,6 +1,8 @@
 import Image from "next/image";
 import type { Service, Testimonial } from "@/lib/api";
 import LeadForm from "./LeadForm";
+import MobileNav from "./MobileNav";
+import Reveal from "./Reveal";
 import { Check, ServiceIcon } from "./icons";
 
 const NAV_LINKS = [
@@ -16,7 +18,7 @@ const WHATSAPP_URL = "https://wa.me/5563999941821";
 export function Nav() {
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-navy">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-8">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-8">
         <a href="#top" className="flex flex-shrink-0 items-center gap-3">
           <svg width="40" height="40" viewBox="0 0 48 48" fill="none" aria-label="Advocacia Alecrim">
             <defs>
@@ -37,7 +39,9 @@ export function Nav() {
             <span className="text-xs font-semibold tracking-[0.08em] text-gold">ALECRIM</span>
           </div>
         </a>
-        <nav className="ml-auto flex flex-wrap items-center gap-4 sm:gap-8">
+
+        {/* Desktop: links inline. Some das telas dão >= 768px (md) */}
+        <nav className="ml-auto hidden items-center gap-6 md:flex lg:gap-8">
           {NAV_LINKS.map((link) => (
             <a key={link.href} href={link.href} className="text-sm text-slate-bg transition hover:text-gold">
               {link.label}
@@ -52,6 +56,9 @@ export function Nav() {
             Falar
           </a>
         </nav>
+
+        {/* Mobile: menu sanduíche */}
+        <MobileNav links={NAV_LINKS} whatsappUrl={WHATSAPP_URL} />
       </div>
     </header>
   );
@@ -88,29 +95,41 @@ export function Hero() {
         />
       </div>
 
-      <div className="relative z-10 mx-auto w-full max-w-6xl px-4 py-24 sm:px-8">
+      <div className="relative z-10 mx-auto w-full max-w-6xl px-4 py-16 sm:px-8 sm:py-24">
         <div className="max-w-xl">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/[0.07] px-4 py-2">
+          <div
+            className="animate-fade-in-up mb-6 inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/[0.07] px-4 py-2"
+            style={{ animationDelay: "0s" }}
+          >
             <span className="h-1.5 w-1.5 flex-none rounded-full bg-gold" />
-            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-gold">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gold sm:text-xs">
               Advocacia em Palmas · Tocantins
             </span>
           </div>
 
-          <h1 className="mb-6 text-4xl font-semibold leading-[1.06] tracking-tight text-white sm:text-6xl">
+          <h1
+            className="animate-fade-in-up mb-5 text-3xl font-semibold leading-[1.12] tracking-tight text-white sm:mb-6 sm:text-5xl sm:leading-[1.06] md:text-6xl"
+            style={{ animationDelay: "0.1s" }}
+          >
             Seu direito conduzido com <span className="text-gold">clareza</span>, agilidade e atenção à sua família.
           </h1>
 
-          <p className="mb-9 max-w-md text-base font-light leading-relaxed text-white/70 sm:text-lg">
+          <p
+            className="animate-fade-in-up mb-8 max-w-md text-sm font-light leading-relaxed text-white/70 sm:mb-9 sm:text-lg"
+            style={{ animationDelay: "0.2s" }}
+          >
             Inventários, aposentadorias, ações trabalhistas e cíveis. Atendimento pessoal do Dr. Alecrim, do primeiro contato à conclusão do processo.
           </p>
 
-          <div className="mb-12 flex flex-wrap gap-3.5">
+          <div
+            className="animate-fade-in-up mb-10 flex flex-col gap-3 sm:mb-12 sm:flex-row sm:flex-wrap sm:gap-3.5"
+            style={{ animationDelay: "0.3s" }}
+          >
             <a
               href={WHATSAPP_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2.5 rounded-md bg-gold px-8 py-4 text-sm font-semibold text-navy transition hover:-translate-y-0.5 hover:shadow-xl"
+              className="inline-flex items-center justify-center gap-2.5 rounded-md bg-gold px-8 py-4 text-sm font-semibold text-navy transition hover:-translate-y-0.5 hover:shadow-xl"
             >
               Agendar Consulta
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -119,13 +138,16 @@ export function Hero() {
             </a>
             <a
               href="#especialidades"
-              className="inline-flex items-center rounded-md border border-white/20 px-8 py-4 text-sm font-medium text-white transition hover:-translate-y-0.5 hover:border-gold/50 hover:bg-white/5"
+              className="inline-flex items-center justify-center rounded-md border border-white/20 px-8 py-4 text-sm font-medium text-white transition hover:-translate-y-0.5 hover:border-gold/50 hover:bg-white/5"
             >
               Ver Especialidades
             </a>
           </div>
 
-          <div className="flex flex-wrap gap-6 border-t border-white/10 pt-7">
+          <div
+            className="animate-fade-in-up flex flex-col gap-3 border-t border-white/10 pt-6 sm:flex-row sm:flex-wrap sm:gap-6 sm:pt-7"
+            style={{ animationDelay: "0.4s" }}
+          >
             {[
               "Primeira consulta gratuita",
               "Atendimento em todo o Tocantins",
@@ -153,14 +175,14 @@ const TRUST_STATS = [
 export function TrustStrip() {
   return (
     <div className="bg-navy px-4 py-14 sm:px-8">
-      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-8 sm:grid-cols-4">
+      <Reveal className="mx-auto grid max-w-6xl grid-cols-2 gap-8 sm:grid-cols-4">
         {TRUST_STATS.map((stat) => (
           <div key={stat.label} className="text-center opacity-75">
             <div className="text-2xl font-bold text-gold sm:text-3xl">{stat.value}</div>
             <div className="mt-2 text-xs text-slate-bg sm:text-sm">{stat.label}</div>
           </div>
         ))}
-      </div>
+      </Reveal>
     </div>
   );
 }
@@ -168,7 +190,7 @@ export function TrustStrip() {
 export function About() {
   return (
     <section id="sobre" className="bg-white px-4 py-20 sm:px-8 sm:py-28">
-      <div className="mx-auto grid max-w-6xl gap-12 sm:grid-cols-2 sm:items-center">
+      <Reveal className="mx-auto grid max-w-6xl gap-12 sm:grid-cols-2 sm:items-center">
         <div>
           <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-gold-dark">Sobre</p>
           <h2 className="mb-6 text-3xl font-semibold text-navy sm:text-4xl">Dr. Alecrim</h2>
@@ -207,7 +229,7 @@ export function About() {
             <div className="text-sm text-slate-muted">Áreas de atuação especializadas</div>
           </div>
         </div>
-      </div>
+      </Reveal>
     </section>
   );
 }
@@ -216,19 +238,20 @@ export function Services({ services }: { services: Service[] }) {
   return (
     <section id="especialidades" className="bg-white px-4 py-20 sm:px-8 sm:py-28">
       <div className="mx-auto max-w-6xl">
-        <h2 className="mb-12 text-center text-3xl font-semibold text-navy sm:text-4xl">Especialidades</h2>
+        <Reveal>
+          <h2 className="mb-12 text-center text-3xl font-semibold text-navy sm:text-4xl">Especialidades</h2>
+        </Reveal>
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          {services.map((service) => (
-            <div
-              key={service.id}
-              className="rounded-lg border border-navy/10 p-8 transition hover:-translate-y-1 hover:border-gold hover:shadow-[0_12px_32px_rgba(212,175,55,0.1)]"
-            >
-              <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-lg bg-slate-bg">
-                <ServiceIcon slug={service.slug} className="text-gold" size={28} />
+          {services.map((service, index) => (
+            <Reveal key={service.id} delay={index * 80}>
+              <div className="h-full rounded-lg border border-navy/10 p-8 transition hover:-translate-y-1 hover:border-gold hover:shadow-[0_12px_32px_rgba(212,175,55,0.1)]">
+                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-lg bg-slate-bg">
+                  <ServiceIcon slug={service.slug} className="text-gold" size={28} />
+                </div>
+                <h3 className="mb-3 text-lg font-semibold text-navy">{service.title}</h3>
+                <p className="text-sm leading-relaxed text-slate-muted">{service.description}</p>
               </div>
-              <h3 className="mb-3 text-lg font-semibold text-navy">{service.title}</h3>
-              <p className="text-sm leading-relaxed text-slate-muted">{service.description}</p>
-            </div>
+            </Reveal>
           ))}
         </div>
       </div>
@@ -240,23 +263,27 @@ export function Testimonials({ testimonials }: { testimonials: Testimonial[] }) 
   return (
     <section id="depoimentos" className="bg-slate-bg px-4 py-20 sm:px-8 sm:py-28">
       <div className="mx-auto max-w-6xl">
-        <h2 className="mb-12 text-center text-3xl font-semibold text-navy sm:text-4xl">
-          O que nossos clientes dizem
-        </h2>
+        <Reveal>
+          <h2 className="mb-12 text-center text-3xl font-semibold text-navy sm:text-4xl">
+            O que nossos clientes dizem
+          </h2>
+        </Reveal>
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {testimonials.map((t) => (
-            <div key={t.id} className="rounded-lg border-l-4 border-gold bg-white p-8">
-              <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gold text-lg font-bold text-navy">
-                  {t.author.charAt(0)}
+          {testimonials.map((t, index) => (
+            <Reveal key={t.id} delay={index * 100}>
+              <div className="h-full rounded-lg border-l-4 border-gold bg-white p-8">
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gold text-lg font-bold text-navy">
+                    {t.author.charAt(0)}
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-navy">{t.author}</div>
+                    <div className="text-xs text-slate-muted">{t.role}</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-sm font-semibold text-navy">{t.author}</div>
-                  <div className="text-xs text-slate-muted">{t.role}</div>
-                </div>
+                <p className="text-sm leading-relaxed text-slate-muted">&ldquo;{t.content}&rdquo;</p>
               </div>
-              <p className="text-sm leading-relaxed text-slate-muted">&ldquo;{t.content}&rdquo;</p>
-            </div>
+            </Reveal>
           ))}
         </div>
       </div>
@@ -268,8 +295,10 @@ export function Contact() {
   return (
     <section id="contato" className="bg-navy px-4 py-20 sm:px-8 sm:py-28">
       <div className="mx-auto max-w-6xl">
-        <h2 className="mb-14 text-center text-3xl font-semibold text-white sm:text-4xl">Entre em Contato</h2>
-        <div className="grid gap-12 sm:grid-cols-2">
+        <Reveal>
+          <h2 className="mb-14 text-center text-3xl font-semibold text-white sm:text-4xl">Entre em Contato</h2>
+        </Reveal>
+        <Reveal className="grid gap-12 sm:grid-cols-2">
           <div className="space-y-6 text-center sm:text-left">
             <div>
               <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gold">Telefone</h3>
@@ -304,7 +333,7 @@ export function Contact() {
           </div>
 
           <LeadForm />
-        </div>
+        </Reveal>
       </div>
     </section>
   );
@@ -325,10 +354,10 @@ export function WhatsappButton() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Fale conosco no WhatsApp"
-      className="fixed bottom-6 right-6 z-50 flex h-16 w-16 items-center justify-center rounded-full shadow-lg transition hover:-translate-y-0.5 hover:scale-105"
+      className="fixed bottom-4 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition hover:-translate-y-0.5 hover:scale-105 sm:bottom-6 sm:right-6 sm:h-16 sm:w-16"
       style={{ background: "linear-gradient(145deg, #2ee06a 0%, #1faa53 100%)" }}
     >
-      <svg width="30" height="30" viewBox="0 0 32 32" fill="#ffffff" aria-hidden="true">
+      <svg width="26" height="26" viewBox="0 0 32 32" fill="#ffffff" aria-hidden="true" className="sm:h-[30px] sm:w-[30px]">
         <path d="M16.04 3.2c-7.09 0-12.84 5.75-12.84 12.84 0 2.26.6 4.47 1.73 6.42L3.2 28.8l6.5-1.7a12.79 12.79 0 0 0 6.34 1.66h.01c7.08 0 12.83-5.75 12.83-12.84 0-3.43-1.33-6.65-3.76-9.08a12.74 12.74 0 0 0-9.08-3.76Zm0 23.5h-.01a10.65 10.65 0 0 1-5.42-1.48l-.39-.23-4.03 1.06 1.08-3.93-.25-.4a10.63 10.63 0 0 1-1.63-5.68c0-5.89 4.79-10.68 10.68-10.68 2.85 0 5.53 1.11 7.54 3.13a10.6 10.6 0 0 1 3.13 7.56c0 5.89-4.8 10.65-10.7 10.65Zm5.86-7.98c-.32-.16-1.96-.97-2.26-1.08-.31-.11-.53-.16-.75.16-.22.33-.86 1.08-1.06 1.3-.19.22-.39.25-.71.09-.32-.16-1.36-.5-2.59-1.6-.96-.86-1.6-1.92-1.79-2.24-.19-.32-.02-.5.14-.66.15-.14.33-.38.49-.57.16-.19.22-.33.33-.55.11-.22.05-.41-.03-.57-.08-.16-.75-1.8-1.03-2.46-.27-.65-.54-.56-.75-.57-.19-.01-.41-.01-.63-.01-.22 0-.58.08-.88.41-.3.33-1.15 1.12-1.15 2.74s1.18 3.18 1.34 3.4c.16.22 2.31 3.53 5.6 4.95.78.34 1.4.54 1.87.69.79.25 1.5.22 2.07.13.63-.09 1.94-.79 2.21-1.56.28-.77.28-1.42.19-1.56-.08-.13-.3-.22-.62-.38Z" />
       </svg>
     </a>
