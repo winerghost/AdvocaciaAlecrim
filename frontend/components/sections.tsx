@@ -18,15 +18,27 @@ export function Nav() {
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-navy">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-8">
-        <a href="#top" className="flex flex-shrink-0 items-center">
+        {/* Ícone recortado de assets/logoAlecrim.png (fundo transparente,
+            tingido em gold pra bater com o resto da marca) + nome tipografado
+            em HTML - fica nítido em qualquer tamanho de tela, ao contrário
+            de manter "Advocacia Alecrim" preso dentro de um PNG. */}
+        <a href="#top" className="flex flex-shrink-0 items-center gap-2.5 sm:gap-3" aria-label="Advocacia Alecrim - início">
           <Image
-            src="/images/logo-cabecalho.png"
-            alt="Advocacia Alecrim"
-            width={1536}
-            height={293}
+            src="/images/logo-icone.png"
+            alt=""
+            width={762}
+            height={414}
             priority
-            className="h-9 w-auto md:h-10 lg:h-11"
+            className="h-8 w-auto sm:h-9 md:h-10"
           />
+          <span className="flex flex-col leading-none">
+            <span className="text-[9px] font-medium uppercase tracking-[0.22em] text-slate-bg/75 sm:text-[10px] md:text-[11px]">
+              Advocacia
+            </span>
+            <span className="text-base font-semibold uppercase tracking-wide text-gold sm:text-lg md:text-xl">
+              Alecrim
+            </span>
+          </span>
         </a>
 
         {/* Desktop: links inline. Some das telas dão >= 768px (md). Gap
@@ -74,15 +86,15 @@ export function Hero() {
         <Image
           src="/images/dr-alecrim-hero.png"
           alt="Dr. Alecrim"
-          width={560}
-          height={860}
+          width={747}
+          height={1653}
           priority
-          className="h-full w-full object-contain object-right-bottom"
+          className="h-full w-full object-contain object-bottom"
           style={{
             maskImage:
-              "radial-gradient(ellipse 68% 72% at 62% 52%, #000 26%, rgba(0,0,0,0.6) 58%, transparent 86%)",
+              "linear-gradient(to top, transparent 0%, #000 6%, #000 92%, transparent 100%)",
             WebkitMaskImage:
-              "radial-gradient(ellipse 68% 72% at 62% 52%, #000 26%, rgba(0,0,0,0.6) 58%, transparent 86%)",
+              "linear-gradient(to top, transparent 0%, #000 6%, #000 92%, transparent 100%)",
           }}
         />
       </div>
