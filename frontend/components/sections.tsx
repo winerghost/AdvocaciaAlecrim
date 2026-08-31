@@ -310,7 +310,7 @@ export function Contact() {
                 (63) 99994-1821
               </a>
               <a href="tel:+5563999362073" className="block text-slate-bg hover:text-gold">
-                (63) 99362-0731
+                (62) 99362-0731
               </a>
             </div>
             <div>

@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
-import { proxyAdmin, readJsonBody } from "@/lib/adminProxy";
+import { isValidId, proxyAdmin, readJsonBody } from "@/lib/adminProxy";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function PUT(request: Request, { params }: RouteContext) {
   const { id } = await params;
+  if (!isValidId(id)) {
+    return NextResponse.json({ error: "invalid_id" }, { status: 400 });
+  }
+
   const parsed = await readJsonBody(request);
   if (!parsed.ok) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
@@ -19,5 +23,9 @@ export async function PUT(request: Request, { params }: RouteContext) {
 
 export async function DELETE(_request: Request, { params }: RouteContext) {
   const { id } = await params;
+  if (!isValidId(id)) {
+    return NextResponse.json({ error: "invalid_id" }, { status: 400 });
+  }
+
   return proxyAdmin(`/api/admin/services/${id}`, { method: "DELETE" });
 }

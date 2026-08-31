@@ -1,5 +1,6 @@
 from marshmallow import Schema, ValidationError, fields, pre_load, validate, validates
 
+from ..models.lead import LEAD_STATUSES
 from ..utils.sanitize import is_valid_br_phone, sanitize_text
 
 # Precisa ficar em sincronia com as <option> do <select name="area"> em
@@ -94,3 +95,13 @@ class LeadSchema(Schema):
         # original parecesse ter conteúdo (ex.: só tags HTML).
         if len(value) < 2:
             raise ValidationError("Nome muito curto.")
+
+
+class LeadStatusSchema(Schema):
+    """Usado só por PUT /api/admin/leads/<id> - o único campo de Lead que o
+    painel admin pode alterar. Os demais (name/phone/email/...) são o que o
+    visitante enviou; não faz sentido o admin "editar" a mensagem de outra
+    pessoa.
+    """
+
+    status = fields.Str(required=True, validate=validate.OneOf(LEAD_STATUSES))

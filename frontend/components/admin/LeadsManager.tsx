@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { AdminLead } from "@/lib/adminTypes";
-import { extractList } from "@/lib/adminTypes";
+import type { AdminLead, LeadStatus } from "@/lib/adminTypes";
+import { extractList, LEAD_STATUS_LABELS } from "@/lib/adminTypes";
+
+const STATUS_OPTIONS = Object.keys(LEAD_STATUS_LABELS) as LeadStatus[];
 
 function formatDate(value: string): string {
   const date = new Date(value);
@@ -52,6 +54,27 @@ export default function LeadsManager() {
     }
   }
 
+  async function handleStatusChange(id: number, status: LeadStatus) {
+    setError(null);
+    // Otimista: atualiza a UI na hora, sem esperar o round-trip - reverte
+    // via `load()` se a chamada falhar.
+    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, status } : item)));
+    try {
+      const res = await fetch(`/api/admin/leads/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) {
+        setError("Não foi possível atualizar o status.");
+        await load();
+      }
+    } catch {
+      setError("Falha de conexão.");
+      await load();
+    }
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-lg font-bold text-[#343a40]">Leads</h1>
@@ -89,6 +112,7 @@ export default function LeadsManager() {
                   <th className="px-4 py-3">E-mail</th>
                   <th className="px-4 py-3">Área</th>
                   <th className="px-4 py-3">Mensagem</th>
+                  <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3 text-right">Ações</th>
                 </tr>
               </thead>
@@ -104,6 +128,19 @@ export default function LeadsManager() {
                     <td className="px-4 py-3 text-[#6c757d]">{item.area || "—"}</td>
                     <td className="max-w-xs px-4 py-3 text-[#6c757d]">{item.message || "—"}</td>
                     <td className="px-4 py-3">
+                      <select
+                        value={item.status}
+                        onChange={(e) => handleStatusChange(item.id, e.target.value as LeadStatus)}
+                        className="rounded border border-[#ced4da] bg-white px-2 py-1 text-xs font-medium text-[#343a40]"
+                      >
+                        {STATUS_OPTIONS.map((status) => (
+                          <option key={status} value={status}>
+                            {LEAD_STATUS_LABELS[status]}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-4 py-3">
                       <div className="flex justify-end">
                         <button
                           type="button"
@@ -118,7 +155,7 @@ export default function LeadsManager() {
                 ))}
                 {items.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-6 text-center text-[#6c757d]">
+                    <td colSpan={8} className="px-4 py-6 text-center text-[#6c757d]">
                       Nenhum lead recebido ainda.
                     </td>
                   </tr>

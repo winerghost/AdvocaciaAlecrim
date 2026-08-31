@@ -14,9 +14,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
 
+  // Repassa o IP real do visitante (setado pelo Nginx do host, ver
+  // DEPLOY-HOSTINGER.md) para o Flask - sem isso, o rate limit de login
+  // (`5 per 15 minutes`) enxerga sempre o IP interno do container do Next,
+  // e vira um limite global compartilhado por todo mundo em vez de por
+  // atacante. O Flask confia nesse header via ProxyFix (app/__init__.py),
+  // que só considera 1 hop - o do Next, único caminho pra chegar até ele.
+  const forwardedFor = request.headers.get("x-forwarded-for");
+
   const res = await fetch(`${API_URL}/api/admin/login`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(forwardedFor ? { "X-Forwarded-For": forwardedFor } : {}),
+    },
     body: JSON.stringify(body),
   });
 

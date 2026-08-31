@@ -26,6 +26,21 @@ export type AdminFaq = {
   order: number;
 };
 
+// Mesmo padrão de AREA_CHOICES em backend/app/schemas/lead.py: essa lista é
+// só UX (rótulo do <select> no painel) - quem de fato decide quais valores
+// são aceitos é o backend (LeadStatusSchema, validate.OneOf(LEAD_STATUSES)
+// em backend/app/models/lead.py). Mandar um status fora dessa lista pra API
+// direto (sem passar pelo <select>) é rejeitado lá, não aqui - o frontend
+// nunca valida, só exibe e repassa o que o admin escolheu.
+export type LeadStatus = "novo" | "em_contato" | "convertido" | "descartado";
+
+export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
+  novo: "Novo",
+  em_contato: "Em contato",
+  convertido: "Convertido",
+  descartado: "Descartado",
+};
+
 export type AdminLead = {
   id: number;
   name: string;
@@ -33,6 +48,7 @@ export type AdminLead = {
   email: string | null;
   area: string | null;
   message: string | null;
+  status: LeadStatus;
   created_at: string;
 };
 

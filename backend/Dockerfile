@@ -1,4 +1,8 @@
-FROM python:3.12-slim
+# ---- builder ----
+# gcc/libpq-dev só existem pra compilar as dependências Python (algumas
+# ainda trazem sdist sem wheel pronto pra essa combinação de plataforma) -
+# não precisam sobreviver na imagem final que roda em produção.
+FROM python:3.12-slim AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
@@ -10,7 +14,25 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# ---- runtime ----
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# libpq5 é só a lib cliente do Postgres em runtime (sem headers/compilador)
+# - psycopg2-binary já embute a maior parte do necessário, mas mantemos
+# isso como garantia sem aumentar a superfície com gcc/libpq-dev na imagem
+# que roda exposta.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libpq5 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /install /usr/local
 
 COPY . .
 RUN chmod +x entrypoint.sh \

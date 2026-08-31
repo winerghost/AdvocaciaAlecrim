@@ -18,9 +18,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
 
+  // Repassa o IP real do visitante (setado pelo Nginx do host, ver
+  // DEPLOY-HOSTINGER.md) - sem isso, o rate limit de "5 per minute" do
+  // Flask vê sempre o IP interno do container do Next e vira um limite
+  // global compartilhado por todo mundo em vez de por remetente.
+  const forwardedFor = request.headers.get("x-forwarded-for");
+
   const res = await fetch(`${API_URL}/api/leads`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(forwardedFor ? { "X-Forwarded-For": forwardedFor } : {}),
+    },
     body: JSON.stringify(body),
   });
 

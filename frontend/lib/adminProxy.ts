@@ -48,6 +48,18 @@ export async function proxyAdmin(path: string, init?: RequestInit): Promise<Next
 }
 
 /**
+ * Valida que o segmento `[id]` das rotas de proxy (faqs/leads/services/
+ * testimonials) é só dígitos antes de compor a URL de destino no Flask.
+ * Todo `id` real nesses modelos é um inteiro auto-increment do SQLAlchemy
+ * - qualquer outra coisa (`..`, `%2F`, texto) é rejeitada aqui em vez de
+ * virar parte da URL repassada, fechando a possibilidade de o segmento
+ * alcançar um path diferente do endpoint pretendido.
+ */
+export function isValidId(id: string): boolean {
+  return /^\d+$/.test(id);
+}
+
+/**
  * Checagem básica da FORMA do corpo (é um objeto JSON, não array/nulo) -
  * mesmo espírito de app/api/leads/route.ts: não reimplementa validação de
  * negócio (isso é responsabilidade do Flask), só evita repassar lixo óbvio.

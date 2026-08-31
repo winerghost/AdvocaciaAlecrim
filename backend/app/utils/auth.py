@@ -4,6 +4,7 @@
 guarda o token no navegador (cookie ou storage) é o Next.
 """
 
+import hashlib
 from functools import wraps
 
 from flask import current_app, g, request
@@ -23,14 +24,33 @@ def _serializer() -> URLSafeTimedSerializer:
     return URLSafeTimedSerializer(current_app.config["SECRET_KEY"], salt=_SALT)
 
 
+def _password_fingerprint(admin: AdminUser) -> str:
+    """Fingerprint curto do hash de senha atual, embutido no token assinado.
+
+    Não é a senha nem o hash completo (não dá pra reconstruir nenhum dos
+    dois a partir disso) - serve só pra invalidar tokens emitidos antes de
+    uma troca de senha: `change_password()` gera um `password_hash` novo, e
+    qualquer token com o fingerprint antigo deixa de bater aqui. Sem isso,
+    um token vazado continuaria válido até expirar sozinho (até 4h) mesmo
+    depois do admin trocar a senha por suspeita de comprometimento.
+
+    É um SHA-256 do hash completo, não um prefixo cru dele: os primeiros
+    caracteres de um hash `werkzeug.security` (scrypt) são só os parâmetros
+    fixos do algoritmo (ex. "scrypt:32768:8:1$"), iguais pra qualquer senha
+    - um prefixo cru não mudaria nunca entre trocas de senha.
+    """
+    return hashlib.sha256(admin.password_hash.encode("utf-8")).hexdigest()[:16]
+
+
 def issue_token(admin: AdminUser) -> str:
-    return _serializer().dumps({"admin_id": admin.id})
+    return _serializer().dumps({"admin_id": admin.id, "pv": _password_fingerprint(admin)})
 
 
 def verify_token(token: str | None) -> AdminUser | None:
     """Retorna o `AdminUser` do token, ou `None` para qualquer falha
-    (assinatura inválida, token expirado, payload malformado, ou admin_id
-    que não existe mais no banco). Nunca lança exceção para o chamador.
+    (assinatura inválida, token expirado, payload malformado, admin_id que
+    não existe mais no banco, ou senha trocada depois que o token foi
+    emitido). Nunca lança exceção para o chamador.
     """
     if not token:
         return None
@@ -49,7 +69,14 @@ def verify_token(token: str | None) -> AdminUser | None:
     if admin_id is None:
         return None
 
-    return db.session.get(AdminUser, admin_id)
+    admin = db.session.get(AdminUser, admin_id)
+    if admin is None:
+        return None
+
+    if data.get("pv") != _password_fingerprint(admin):
+        return None
+
+    return admin
 
 
 def _extract_bearer_token() -> str | None:

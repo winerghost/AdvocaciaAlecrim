@@ -1,4 +1,5 @@
 import pytest
+from cryptography.fernet import Fernet
 from werkzeug.security import generate_password_hash
 
 from app import create_app
@@ -16,6 +17,10 @@ class TestConfig(Config):
     TESTING = True
     # Nunca dispara SMTP de verdade nos testes.
     MAIL_SERVER = None
+    # Chave fixa só pra suíte de testes (não vem de env var - `Config`
+    # exigiria isso via FIELD_ENCRYPTION_KEY, mas aqui sobrescrevemos
+    # direto, igual já é feito com SQLALCHEMY_DATABASE_URI acima).
+    FIELD_ENCRYPTION_KEY = Fernet.generate_key().decode()
 
 
 @pytest.fixture

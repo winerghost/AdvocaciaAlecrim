@@ -70,6 +70,7 @@ def me():
 
 @bp.post("/change-password")
 @require_admin
+@limiter.limit("5 per 15 minutes")
 def change_password():
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):

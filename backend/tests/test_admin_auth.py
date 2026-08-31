@@ -127,12 +127,26 @@ def test_change_password_success_updates_hash(client, admin, admin_token):
     assert refreshed.password_hash != old_hash
     assert check_password_hash(refreshed.password_hash, "novaSenhaForte123")
 
-    # o token antigo continua válido (não é sessão) mas a senha antiga não
-    # funciona mais para um novo login.
+    # a senha antiga não funciona mais para um novo login.
     login_resp = client.post(
         "/api/admin/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD}
     )
     assert login_resp.status_code == 401
+
+    # o token antigo é invalidado assim que a senha muda (fingerprint do
+    # hash embutido no token deixa de bater - ver utils/auth.py) - mitiga
+    # um token vazado continuar válido até expirar sozinho.
+    stale_resp = client.get("/api/admin/me", headers=auth_headers(admin_token))
+    assert stale_resp.status_code == 401
+
+    # um novo login com a senha nova emite um token novo, que funciona.
+    new_login_resp = client.post(
+        "/api/admin/login", json={"email": ADMIN_EMAIL, "password": "novaSenhaForte123"}
+    )
+    assert new_login_resp.status_code == 200
+    new_token = new_login_resp.get_json()["token"]
+    fresh_resp = client.get("/api/admin/me", headers=auth_headers(new_token))
+    assert fresh_resp.status_code == 200
 
 
 def test_change_password_wrong_current_password_fails(client, admin, admin_token):

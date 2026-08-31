@@ -4,6 +4,7 @@ from marshmallow import ValidationError
 from ..extensions import db
 from ..models import Faq, Lead, Service, Testimonial
 from ..schemas.faq import FaqSchema
+from ..schemas.lead import LeadStatusSchema
 from ..schemas.service import ServiceSchema
 from ..schemas.testimonial import TestimonialSchema
 from ..utils.auth import require_admin
@@ -13,6 +14,7 @@ bp = Blueprint("admin_content", __name__, url_prefix="/api/admin")
 service_schema = ServiceSchema()
 testimonial_schema = TestimonialSchema()
 faq_schema = FaqSchema()
+lead_status_schema = LeadStatusSchema()
 
 
 def _apply_partial(instance, loaded: dict, raw_payload: dict, field_names: tuple[str, ...]) -> None:
@@ -221,6 +223,29 @@ def delete_faq(faq_id):
 def list_leads():
     leads = Lead.query.order_by(Lead.created_at.desc()).all()
     return {"data": [lead.to_dict() for lead in leads]}, 200
+
+
+@bp.put("/leads/<int:lead_id>")
+@require_admin
+def update_lead_status(lead_id):
+    # Único campo editável de um lead é o status (ver LeadStatusSchema) -
+    # o resto é o que o visitante mandou, não é editável pelo admin.
+    lead = db.session.get(Lead, lead_id)
+    if lead is None:
+        return {"error": "not_found"}, 404
+
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return {"error": "invalid_json"}, 400
+
+    try:
+        data = lead_status_schema.load(payload)
+    except ValidationError as err:
+        return {"error": "validation_error", "details": err.messages}, 400
+
+    lead.status = data["status"]
+    db.session.commit()
+    return {"data": lead.to_dict()}, 200
 
 
 @bp.delete("/leads/<int:lead_id>")

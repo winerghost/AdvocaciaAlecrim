@@ -4,6 +4,21 @@ import os
 class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "change-me-in-production")
 
+    # Chave Fernet (AES-128-CBC + HMAC) usada por app/utils/crypto.py pra
+    # criptografar em repouso os campos de PII de Lead (name/phone/email/
+    # message) - ver app/models/lead.py. Sem default: diferente de
+    # SECRET_KEY (que tem histórico de deploys sem esse valor trocado),
+    # essa é uma feature nova sem nenhum deploy dependendo dela ainda, então
+    # dá pra ser estrita desde o primeiro dia - ver validação em
+    # app/__init__.py, que derruba o boot se isso não estiver definido.
+    FIELD_ENCRYPTION_KEY = os.environ.get("FIELD_ENCRYPTION_KEY")
+
+    # Retenção de leads (LGPD) - ver purge_leads.py. Leads com status
+    # diferente de "convertido" e mais antigos que isso são elegíveis pra
+    # expurgo automático quando o script roda (não roda sozinho - precisa
+    # de um cron externo, ver DEPLOY-HOSTINGER.md).
+    LEAD_RETENTION_DAYS = int(os.environ.get("LEAD_RETENTION_DAYS", "180"))
+
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "sqlite:///dev.db")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 

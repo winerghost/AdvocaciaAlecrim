@@ -1,10 +1,9 @@
 from app import create_app
-from app.config import Config
+from conftest import TestConfig
 
-
-class TestConfig(Config):
-    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
-    TESTING = True
+# TestConfig vem de conftest.py (não redefinido aqui) porque já inclui
+# FIELD_ENCRYPTION_KEY - sem isso create_app() derruba o boot (ver
+# app/__init__.py).
 
 
 def test_health_ok():

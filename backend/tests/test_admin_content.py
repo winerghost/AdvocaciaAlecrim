@@ -25,6 +25,7 @@ def auth_headers(token):
         ("put", "/api/admin/faqs/1"),
         ("delete", "/api/admin/faqs/1"),
         ("get", "/api/admin/leads"),
+        ("put", "/api/admin/leads/1"),
         ("delete", "/api/admin/leads/1"),
     ],
 )
@@ -248,6 +249,63 @@ def test_list_leads(client, admin_token, app):
     assert len(data) == 1
     assert data[0]["name"] == "Fulano"
     assert data[0]["id"] == lead.id
+    assert data[0]["status"] == "novo"  # default
+
+
+def test_lead_status_defaults_to_novo(app):
+    from app.extensions import db
+
+    lead = Lead(name="Fulano", phone="11987654321", consent=True)
+    db.session.add(lead)
+    db.session.commit()
+
+    assert lead.status == "novo"
+
+
+def test_update_lead_status_success(client, admin_token, app):
+    from app.extensions import db
+
+    lead = Lead(name="Fulano", phone="11987654321", consent=True)
+    db.session.add(lead)
+    db.session.commit()
+
+    resp = client.put(
+        f"/api/admin/leads/{lead.id}",
+        json={"status": "convertido"},
+        headers=auth_headers(admin_token),
+    )
+
+    assert resp.status_code == 200
+    assert resp.get_json()["data"]["status"] == "convertido"
+    assert db.session.get(Lead, lead.id).status == "convertido"
+
+
+def test_update_lead_status_invalid_value_is_rejected(client, admin_token, app):
+    from app.extensions import db
+
+    lead = Lead(name="Fulano", phone="11987654321", consent=True)
+    db.session.add(lead)
+    db.session.commit()
+
+    resp = client.put(
+        f"/api/admin/leads/{lead.id}",
+        json={"status": "nao-existe"},
+        headers=auth_headers(admin_token),
+    )
+
+    assert resp.status_code == 400
+    assert resp.get_json()["error"] == "validation_error"
+    assert db.session.get(Lead, lead.id).status == "novo"  # não mudou
+
+
+def test_update_nonexistent_lead_status_returns_404(client, admin_token):
+    resp = client.put(
+        "/api/admin/leads/9999",
+        json={"status": "convertido"},
+        headers=auth_headers(admin_token),
+    )
+
+    assert resp.status_code == 404
 
 
 def test_delete_lead(client, admin_token, app):
