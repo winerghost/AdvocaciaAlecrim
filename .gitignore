@@ -22,3 +22,6 @@ frontend/tsconfig.tsbuildinfo
 # Diversos
 *.log
 .DS_Store
+
+ .claude/scheduled_tasks.lock 
+frontend/tsconfig.tsbuildinfo

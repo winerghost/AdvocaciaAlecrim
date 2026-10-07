@@ -81,6 +81,7 @@ def create_app(config_class: type[Config] = Config) -> Flask:
 
     from .api.admin_auth import bp as admin_auth_bp
     from .api.admin_content import bp as admin_content_bp
+    from .api.admin_users import bp as admin_users_bp
     from .api.content import bp as content_bp
     from .api.health import bp as health_bp
     from .api.leads import bp as leads_bp
@@ -90,6 +91,7 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     app.register_blueprint(leads_bp)
     app.register_blueprint(admin_auth_bp)
     app.register_blueprint(admin_content_bp)
+    app.register_blueprint(admin_users_bp)
 
     @app.errorhandler(404)
     def not_found(_error):

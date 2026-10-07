@@ -309,11 +309,7 @@ export function Contact() {
               <a href="tel:+5563999941821" className="block text-slate-bg hover:text-gold">
                 (63) 99994-1821
               </a>
-<<<<<<< HEAD
-              <a href="tel:+5563999362073" className="block text-slate-bg hover:text-gold">
-=======
-              <a href="tel:+5562999362073" className="block text-slate-bg hover:text-gold">
->>>>>>> 98aef5c (alter_phone)
+              <a href="tel:+5562993620731" className="block text-slate-bg hover:text-gold">
                 (62) 99362-0731
               </a>
             </div>

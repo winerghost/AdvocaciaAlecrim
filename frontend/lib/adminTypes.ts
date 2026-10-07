@@ -19,6 +19,12 @@ export type AdminTestimonial = {
   approved: boolean;
 };
 
+export type AdminUserItem = {
+  id: number;
+  email: string;
+  created_at: string | null;
+};
+
 export type AdminFaq = {
   id: number;
   question: string;
