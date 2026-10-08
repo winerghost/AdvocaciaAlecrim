@@ -5,6 +5,7 @@ apenas logado e pulado — a captura do lead no banco não depende disso.
 """
 
 import smtplib
+import ssl
 from email.message import EmailMessage
 
 from flask import current_app
@@ -42,9 +43,21 @@ def notify_new_lead(lead: Lead) -> None:
         f"Mensagem:\n{sanitize_text(lead.message or '', allow_newline=True) or '-'}"
     )
 
+    use_tls = current_app.config["MAIL_USE_TLS"]
+    username = current_app.config["MAIL_USERNAME"]
+    if username and not use_tls:
+        # Sem TLS, `smtp.login()` mandaria MAIL_PASSWORD (e depois os dados
+        # do lead) em texto claro pela rede - melhor não notificar do que
+        # vazar a credencial. Quem chama (app/api/leads.py) já trata a
+        # exceção sem falhar a captura do lead.
+        raise RuntimeError("MAIL_USE_TLS=false com MAIL_USERNAME definido - envio recusado.")
+
     with smtplib.SMTP(server, current_app.config["MAIL_PORT"], timeout=10) as smtp:
-        if current_app.config["MAIL_USE_TLS"]:
-            smtp.starttls()
-        if current_app.config["MAIL_USERNAME"]:
-            smtp.login(current_app.config["MAIL_USERNAME"], current_app.config["MAIL_PASSWORD"])
+        if use_tls:
+            # `starttls()` sem `context` usa um contexto que NÃO valida
+            # certificado nem hostname - um intermediário na rede conseguiria
+            # se passar pelo servidor SMTP e capturar senha + dados do lead.
+            smtp.starttls(context=ssl.create_default_context())
+        if username:
+            smtp.login(username, current_app.config["MAIL_PASSWORD"])
         smtp.send_message(msg)

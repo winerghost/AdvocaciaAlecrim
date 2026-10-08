@@ -10,12 +10,19 @@ from .extensions import cors, db, limiter, migrate
 
 _DEFAULT_SECRET_KEY = "change-me-in-production"
 
+# Valores "de exemplo" que já apareceram em arquivos versionados (default de
+# config.py e placeholder de backend/.env.example) - públicos, portanto tão
+# inseguros quanto não ter chave.
+_PLACEHOLDER_SECRET_KEYS = frozenset({_DEFAULT_SECRET_KEY, "troque-por-uma-chave-aleatoria-longa"})
+_MIN_SECRET_KEY_LENGTH = 32
+
 
 def create_app(config_class: type[Config] = Config) -> Flask:
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    if app.config.get("SECRET_KEY") == _DEFAULT_SECRET_KEY:
+    secret_key = app.config.get("SECRET_KEY") or ""
+    if secret_key in _PLACEHOLDER_SECRET_KEYS or len(secret_key) < _MIN_SECRET_KEY_LENGTH:
         if os.environ.get("FLASK_ENV") == "production":
             # Em produção (marcada explicitamente via FLASK_ENV=production,
             # ver docker-compose.yml) um SECRET_KEY previsível permite
@@ -25,15 +32,16 @@ def create_app(config_class: type[Config] = Config) -> Flask:
             # quebrada. Fora de produção (dev/testes), só avisa - ver
             # warning abaixo.
             raise RuntimeError(
-                "SECRET_KEY está usando o valor padrão inseguro "
-                f"('{_DEFAULT_SECRET_KEY}'). Defina um valor forte e "
-                "aleatório em backend/.env antes de subir em produção."
+                "SECRET_KEY está usando um valor de exemplo ou tem menos de "
+                f"{_MIN_SECRET_KEY_LENGTH} caracteres. Defina um valor forte e "
+                "aleatório em backend/.env antes de subir em produção, ex.: "
+                '`python -c "import secrets; print(secrets.token_hex(32))"`.'
             )
         logging.getLogger(__name__).warning(
-            "SECRET_KEY está usando o valor padrão inseguro ('%s'). "
-            "Defina um valor forte e aleatório em backend/.env antes de "
-            "expor este serviço em produção.",
-            _DEFAULT_SECRET_KEY,
+            "SECRET_KEY está usando um valor de exemplo ou tem menos de %s "
+            "caracteres. Defina um valor forte e aleatório em backend/.env "
+            "antes de expor este serviço em produção.",
+            _MIN_SECRET_KEY_LENGTH,
         )
 
     field_key = app.config.get("FIELD_ENCRYPTION_KEY")

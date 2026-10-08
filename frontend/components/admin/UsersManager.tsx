@@ -11,12 +11,15 @@ const CREATE_ERRORS: Record<string, string> = {
   invalid_email: "E-mail inválido.",
   weak_password: "A senha precisa ter pelo menos 10 caracteres.",
   email_taken: "Já existe um usuário com esse e-mail.",
+  invalid_current_password: "Sua senha atual está incorreta.",
   too_many_requests: "Muitas tentativas. Aguarde e tente novamente.",
 };
 
 const DELETE_ERRORS: Record<string, string> = {
   cannot_delete_self: "Você não pode excluir o próprio usuário.",
   not_found: "Usuário não encontrado.",
+  invalid_current_password: "Sua senha atual está incorreta.",
+  too_many_requests: "Muitas tentativas. Aguarde e tente novamente.",
 };
 
 function formatDate(value: string | null) {
@@ -33,6 +36,9 @@ export default function UsersManager() {
   const [creating, setCreating] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // Reautenticação exigida pelo Flask pra criar/excluir um admin.
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [deletePassword, setDeletePassword] = useState("");
   const [saving, setSaving] = useState(false);
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
 
@@ -61,6 +67,12 @@ export default function UsersManager() {
     setCreating(false);
     setEmail("");
     setPassword("");
+    setCurrentPassword("");
+  }
+
+  function cancelDelete() {
+    setConfirmingId(null);
+    setDeletePassword("");
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -73,7 +85,7 @@ export default function UsersManager() {
       const res = await fetch("/api/admin/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, current_password: currentPassword }),
       });
 
       if (!res.ok) {
@@ -96,9 +108,14 @@ export default function UsersManager() {
   async function handleDelete(id: number) {
     setError(null);
     setSuccess(null);
-    setConfirmingId(null);
+    const current_password = deletePassword;
+    cancelDelete();
     try {
-      const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ current_password }),
+      });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         setError(DELETE_ERRORS[data?.error] ?? "Não foi possível excluir.");
@@ -156,6 +173,19 @@ export default function UsersManager() {
                 autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                className={INPUT_CLASS}
+              />
+            </div>
+            <div className="max-w-md">
+              <label className="mb-1 block text-xs font-semibold text-[#495057]">
+                Sua senha atual (confirmação)
+              </label>
+              <input
+                required
+                type="password"
+                autoComplete="current-password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
                 className={INPUT_CLASS}
               />
             </div>
@@ -220,16 +250,26 @@ export default function UsersManager() {
                       <div className="flex justify-end gap-2">
                         {confirmingId === item.id ? (
                           <>
+                            <input
+                              type="password"
+                              autoComplete="current-password"
+                              placeholder="Sua senha atual"
+                              aria-label="Sua senha atual"
+                              value={deletePassword}
+                              onChange={(e) => setDeletePassword(e.target.value)}
+                              className="w-40 rounded border border-[#ced4da] px-2 py-1 text-xs text-[#343a40] focus:border-[#80bdff] focus:outline-none"
+                            />
                             <button
                               type="button"
+                              disabled={!deletePassword}
                               onClick={() => handleDelete(item.id)}
-                              className="rounded bg-[#dc3545] px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-[#bb2d3b]"
+                              className="rounded bg-[#dc3545] px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-[#bb2d3b] disabled:opacity-60"
                             >
                               Confirmar
                             </button>
                             <button
                               type="button"
-                              onClick={() => setConfirmingId(null)}
+                              onClick={cancelDelete}
                               className="rounded border border-[#ced4da] px-2.5 py-1 text-xs text-[#495057] transition hover:bg-[#f4f6f9]"
                             >
                               Cancelar
@@ -238,7 +278,10 @@ export default function UsersManager() {
                         ) : (
                           <button
                             type="button"
-                            onClick={() => setConfirmingId(item.id)}
+                            onClick={() => {
+                              setDeletePassword("");
+                              setConfirmingId(item.id);
+                            }}
                             className="rounded border border-[#dc3545] px-2.5 py-1 text-xs font-semibold text-[#dc3545] transition hover:bg-[#dc3545] hover:text-white"
                           >
                             Excluir
