@@ -2,7 +2,13 @@
 
 import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import RichTextEditor from "@/components/admin/RichTextEditor";
+import AiAssist, {
+  type AiAssistController,
+  type AiNextStep,
+  isContentEmpty,
+  useAiAssist,
+} from "@/components/admin/AiAssist";
+import RichTextEditor, { type RichTextEditorHandle } from "@/components/admin/RichTextEditor";
 import type { AdminArticle } from "@/lib/adminTypes";
 import { extractList } from "@/lib/adminTypes";
 import { IMAGE_ACCEPT_ATTR, uploadAdminImage } from "@/lib/adminUpload";
@@ -19,6 +25,7 @@ const BTN_NEUTRAL =
 const BTN_ROW =
   "rounded border px-2.5 py-2.5 text-xs lg:py-1 font-semibold transition disabled:opacity-60";
 
+const TITLE_MAX = 200;
 const EXCERPT_MAX = 500;
 // Mesmo formato que o backend exige para cover_image.
 const MEDIA_PATH = /^\/api\/media\/[a-f0-9]{32}\.(jpg|png|webp|gif)$/;
@@ -207,13 +214,6 @@ function statusOf(published: boolean, date: Date | null): Status {
   return date && date.getTime() > Date.now() ? "scheduled" : "published";
 }
 
-// O editor devolve "<p></p>" quando está vazio. Conta como conteúdo se
-// sobrar texto depois de tirar as tags, ou se houver imagem/linha.
-function isContentEmpty(html: string): boolean {
-  if (/<(img|hr)\b/i.test(html)) return false;
-  return html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").trim() === "";
-}
-
 function toForm(article: AdminArticle): FormState {
   return {
     title: article.title ?? "",
@@ -277,6 +277,7 @@ export default function ArticlesManager() {
   const previewRequestRef = useRef(0);
 
   const coverInputRef = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<RichTextEditorHandle>(null);
 
   const dirty = form !== null && JSON.stringify(form) !== baseline;
   const dirtyRef = useRef(dirty);
@@ -295,6 +296,12 @@ export default function ArticlesManager() {
       window.location.assign("/login");
     }
   }, []);
+
+  // Assistente de IA do título, do conteúdo e do resumo (um pedido por campo,
+  // sempre a partir de um clique - nada é pedido ao abrir o formulário).
+  const titleAi = useAiAssist("title", handleUnauthorized);
+  const contentAi = useAiAssist("content", handleUnauthorized);
+  const excerptAi = useAiAssist("excerpt", handleUnauthorized);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -380,6 +387,9 @@ export default function ArticlesManager() {
     setPendingLeave(null);
     setSessionExpired(false);
     setEditorKey((k) => k + 1);
+    titleAi.reset();
+    contentAi.reset();
+    excerptAi.reset();
     setError(null);
     setSuccess(null);
     setConfirmingId(null);
@@ -397,6 +407,9 @@ export default function ArticlesManager() {
     previewRequestRef.current += 1;
     setPreviewLoading(false);
     setEditorUploading(false);
+    titleAi.reset();
+    contentAi.reset();
+    excerptAi.reset();
   }
 
   function startCreate() {
@@ -484,6 +497,48 @@ export default function ArticlesManager() {
       return next;
     });
   }, []);
+
+  // Sugestões da IA aceitas pelo admin. No conteúdo, o texto entra pelo
+  // próprio editor: o onChange dele (handleContentChange) atualiza o
+  // formulário e limpa o erro do campo, igual a quando se digita.
+  function applyTitleSuggestion(text: string): boolean {
+    // Mesmo caminho da digitação: limpa o erro e só mexe no slug enquanto
+    // ele ainda é o automático (nunca em artigo já salvo).
+    handleTitleChange(text);
+    return true;
+  }
+
+  function applyContentSuggestion(html: string): boolean {
+    return editorRef.current?.setContent(html) ?? false;
+  }
+
+  function applyExcerptSuggestion(text: string): boolean {
+    clearFieldError("excerpt");
+    patch({ excerpt: text });
+    return true;
+  }
+
+  // "Próximo passo" oferecido depois de aplicar uma sugestão: só aparece se
+  // o campo de destino estiver vazio e livre, e só roda com o clique.
+  function aiNextStep(
+    target: AiAssistController,
+    label: string,
+    anchorId: string
+  ): AiNextStep[] {
+    if (!form || isContentEmpty(form.content)) return [];
+    if (form[target.field].trim() !== "") return [];
+    if (target.state.phase === "loading" || target.state.phase === "suggestion") return [];
+    const input = { title: form.title, content: form.content, excerpt: form.excerpt };
+    return [
+      {
+        label,
+        onClick: () => {
+          target.run("draft", input);
+          document.getElementById(anchorId)?.scrollIntoView({ block: "center", behavior: "smooth" });
+        },
+      },
+    ];
+  }
 
   async function handleCoverPicked(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -933,18 +988,42 @@ export default function ArticlesManager() {
               <input
                 id="article-title"
                 value={form.title}
-                maxLength={200}
+                maxLength={TITLE_MAX}
                 onChange={(e) => handleTitleChange(e.target.value)}
                 placeholder="Título do artigo"
                 className={`${INPUT_CLASS} text-base font-semibold`}
               />
               <FieldError messages={fieldErrors.title} />
+              <AiAssist
+                id="article-title-ai"
+                className="mt-3"
+                ai={titleAi}
+                title={form.title}
+                content={form.content}
+                excerpt={form.excerpt}
+                maxLength={TITLE_MAX}
+                onApply={applyTitleSuggestion}
+                nextSteps={aiNextStep(excerptAi, "Gerar o resumo com a IA", "article-excerpt-ai")}
+              />
             </div>
 
             <div>
               <span className={LABEL_CLASS}>Conteúdo</span>
+              <AiAssist
+                className="mb-2"
+                ai={contentAi}
+                title={form.title}
+                content={form.content}
+                excerpt={form.excerpt}
+                onApply={applyContentSuggestion}
+                nextSteps={[
+                  ...aiNextStep(titleAi, "Sugerir um título", "article-title-ai"),
+                  ...aiNextStep(excerptAi, "Gerar o resumo com a IA", "article-excerpt-ai"),
+                ]}
+              />
               <RichTextEditor
                 key={editorKey}
+                ref={editorRef}
                 value={form.content}
                 onChange={handleContentChange}
                 onUploadingChange={setEditorUploading}
@@ -1028,6 +1107,17 @@ export default function ArticlesManager() {
                 {form.excerpt.length}/{EXCERPT_MAX}
               </p>
               <FieldError messages={fieldErrors.excerpt} />
+              <AiAssist
+                id="article-excerpt-ai"
+                className="mt-3"
+                ai={excerptAi}
+                title={form.title}
+                content={form.content}
+                excerpt={form.excerpt}
+                maxLength={EXCERPT_MAX}
+                onApply={applyExcerptSuggestion}
+                nextSteps={aiNextStep(titleAi, "Sugerir um título", "article-title-ai")}
+              />
             </div>
 
             <div className="rounded border border-adm-border bg-white p-4 shadow-sm">

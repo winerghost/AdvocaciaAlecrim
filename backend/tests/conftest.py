@@ -25,6 +25,12 @@ class TestConfig(Config):
     TESTING = True
     # Nunca dispara SMTP de verdade nos testes.
     MAIL_SERVER = None
+    # Nem a OpenAI: sem chave por padrão, mesmo que a máquina de quem roda
+    # a suíte tenha OPENAI_* no ambiente (ver tests/test_article_ai.py).
+    OPENAI_API_KEY = None
+    OPENAI_MODEL = "gpt-6.1-sol"
+    OPENAI_REASONING_EFFORT = "low"
+    OPENAI_TIMEOUT_SECONDS = 50
     # Valor fixo só pra suíte (Config não tem mais default de SECRET_KEY).
     # Passa nas checagens de boot por conta própria, então os testes não
     # dependem do opt-in acima para assinar tokens.

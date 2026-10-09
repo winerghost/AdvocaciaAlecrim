@@ -2,7 +2,14 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
-RUN npm ci
+# Registro do npm trocável só no build, para redes que interceptam o TLS do
+# npmjs (o package-lock.json continua valendo: URLs e hashes são conferidos):
+#   docker compose build --build-arg NPM_CONFIG_REGISTRY=https://registry.yarnpkg.com frontend
+ARG NPM_CONFIG_REGISTRY=https://registry.npmjs.org/
+# O `test` existe porque o npm, com a rede falhando, às vezes termina com
+# código 0 sem instalar nada ("Exit handler never called!") - e o erro só
+# aparecia depois, como "next: not found" no build.
+RUN npm ci && test -x node_modules/.bin/next
 
 # ---- build ----
 FROM node:20-alpine AS builder

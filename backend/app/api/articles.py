@@ -15,10 +15,12 @@ from marshmallow import ValidationError
 from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import NotFound, RequestEntityTooLarge
 
-from ..extensions import db
+from ..extensions import db, limiter
 from ..models import Article
 from ..models.article import utcnow
 from ..schemas.article import CONTENT_MAX, SLUG_MAX, ArticleSchema, slugify
+from ..schemas.article_ai import ArticleAISchema
+from ..services import article_ai
 from ..services.media_cleanup import (
     article_media_filenames,
     purge_orphan_uploads,
@@ -31,6 +33,7 @@ from .admin_content import _apply_partial
 bp = Blueprint("articles", __name__, url_prefix="/api")
 
 article_schema = ArticleSchema()
+article_ai_schema = ArticleAISchema()
 
 _DEFAULT_PER_PAGE = 9
 _MAX_PER_PAGE = 50
@@ -244,6 +247,55 @@ def preview_article():
     # Conteúdo que sanitiza para vazio devolve "" (200): a prévia de um
     # texto vazio é uma prévia vazia. Quem recusa salvar isso é o POST/PUT.
     return {"data": {"content": content}}, 200
+
+
+@bp.post("/admin/articles/ai")
+@require_admin
+@limiter.limit("30 per 10 minutes")
+def article_ai_suggestion():
+    """Sugestão de texto do assistente de IA para "Conteúdo", "Resumo" ou
+    "Título" (este com até três opções em `options`).
+
+    Só devolve a sugestão - nada é gravado; o admin aceita ou descarta no
+    painel e o que for salvo passa pelo POST/PUT de sempre. Cada chamada
+    custa dinheiro na OpenAI, daí o rate limit (só conta requisição
+    autenticada: o `require_admin` vem antes). Os códigos de erro `ai_*`
+    estão em services/article_ai.py.
+    """
+    # Antes de olhar o body: sem chave (ausente, vazia, só espaços) o
+    # recurso está desligado, qualquer que seja o pedido.
+    if not article_ai.configured_api_key():
+        return {"error": "ai_not_configured"}, 503
+
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return {"error": "invalid_json"}, 400
+
+    try:
+        data = article_ai_schema.load(payload)
+    except ValidationError as err:
+        return {"error": "validation_error", "details": err.messages}, 400
+
+    field, action = data["field"], data["action"]
+    try:
+        suggestion = article_ai.suggest(
+            field,
+            action,
+            title=data["title"],
+            content=data["content"],
+            excerpt=data["excerpt"],
+            instructions=data["instructions"],
+        )
+    except article_ai.AIError as err:
+        return {"error": err.code}, err.status
+    except Exception as exc:
+        # Rede de segurança: nada do assistente pode virar um 500. Só o
+        # nome da classe vai para o log (a mensagem pode citar o prompt ou
+        # a resposta da OpenAI). Nada foi escrito no banco nesta rota.
+        current_app.logger.error("IA: erro inesperado (%s)", type(exc).__name__)
+        return {"error": "ai_upstream_error"}, 502
+
+    return {"data": {"field": field, "action": action, **suggestion}}, 200
 
 
 @bp.post("/admin/articles")

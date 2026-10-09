@@ -1,6 +1,15 @@
 "use client";
 
-import { ChangeEvent, ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import {
+  ChangeEvent,
+  ReactNode,
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 import { Extension } from "@tiptap/core";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -281,7 +290,11 @@ function normalizeHref(raw: string): string | null {
 }
 
 type Props = {
-  /** HTML inicial. Para trocar de documento, remonte o componente com outra `key`. */
+  /**
+   * HTML inicial. Para trocar de documento, remonte o componente com outra
+   * `key`; para substituir o texto do documento aberto, use o `setContent`
+   * da ref (RichTextEditorHandle).
+   */
   value: string;
   onChange: (html: string) => void;
   /** Avisa quando há upload de imagem em andamento (pra segurar o "Salvar"). */
@@ -290,12 +303,20 @@ type Props = {
   onUnauthorized?: () => void;
 };
 
-export default function RichTextEditor({
-  value,
-  onChange,
-  onUploadingChange,
-  onUnauthorized,
-}: Props) {
+export type RichTextEditorHandle = {
+  /**
+   * Troca o documento inteiro por `html` (sugestão da IA). É uma transação
+   * comum do editor: dispara o `onChange` como se o usuário tivesse digitado
+   * e entra no histórico, então Desfazer (Ctrl+Z) traz o texto anterior.
+   * Devolve false se o editor ainda não estiver pronto.
+   */
+  setContent: (html: string) => boolean;
+};
+
+export default forwardRef<RichTextEditorHandle, Props>(function RichTextEditor(
+  { value, onChange, onUploadingChange, onUnauthorized },
+  ref
+) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const linkInputRef = useRef<HTMLInputElement>(null);
   const [focused, setFocused] = useState(false);
@@ -359,6 +380,17 @@ export default function RichTextEditor({
     onFocus: () => setFocused(true),
     onBlur: () => setFocused(false),
   });
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      setContent: (html) => {
+        if (!editor || editor.isDestroyed) return false;
+        return editor.commands.setContent(html);
+      },
+    }),
+    [editor]
+  );
 
   // Estado da barra (o que está ativo na seleção atual) e contagem de
   // palavras, recalculados a cada transação do editor.
@@ -776,4 +808,4 @@ export default function RichTextEditor({
       </div>
     </div>
   );
-}
+});
