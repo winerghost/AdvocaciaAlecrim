@@ -327,3 +327,189 @@ def test_delete_nonexistent_lead_returns_404(client, admin_token):
 
     assert resp.status_code == 404
     assert resp.get_json() == {"error": "not_found"}
+
+
+# ------------------------------------- trilha de auditoria dos leads (LGPD) --
+
+LEAD_PII = {
+    "name": "Beltrana Auditada",
+    "phone": "11912345678",
+    "email": "beltrana@cliente.example",
+    "area": "Direito de Família",
+    "message": "Preciso de ajuda com um divórcio litigioso.",
+}
+
+
+def _make_pii_lead():
+    from app.extensions import db
+
+    lead = Lead(consent=True, **LEAD_PII)
+    db.session.add(lead)
+    db.session.commit()
+    return lead.id
+
+
+def _audit_lines(caplog):
+    return [r.getMessage() for r in caplog.records if r.getMessage().startswith("AUDIT ")]
+
+
+def _assert_no_lead_pii(line):
+    for value in LEAD_PII.values():
+        assert value not in line
+
+
+def test_list_leads_is_audited_without_pii(client, admin, admin_token, caplog):
+    _make_pii_lead()
+
+    with caplog.at_level("WARNING"):
+        resp = client.get(
+            "/api/admin/leads",
+            headers=auth_headers(admin_token),
+            environ_base={"REMOTE_ADDR": "203.0.113.7"},
+        )
+
+    assert resp.status_code == 200
+    # A resposta traz os dados; o log, não.
+    assert resp.get_json()["data"][0]["name"] == LEAD_PII["name"]
+    lines = _audit_lines(caplog)
+    assert lines == [f"AUDIT leads_listed by=#{admin.id} ({admin.email}) count=1 ip=203.0.113.7"]
+    _assert_no_lead_pii(lines[0])
+
+
+def test_update_lead_status_is_audited_without_pii(client, admin, admin_token, caplog):
+    lead_id = _make_pii_lead()
+
+    with caplog.at_level("WARNING"):
+        resp = client.put(
+            f"/api/admin/leads/{lead_id}",
+            json={"status": "convertido"},
+            headers=auth_headers(admin_token),
+            environ_base={"REMOTE_ADDR": "203.0.113.7"},
+        )
+
+    assert resp.status_code == 200
+    lines = _audit_lines(caplog)
+    assert lines == [
+        f"AUDIT lead_status_changed by=#{admin.id} ({admin.email}) "
+        f"target=#{lead_id} status=novo->convertido ip=203.0.113.7"
+    ]
+    _assert_no_lead_pii(lines[0])
+
+
+def test_delete_lead_is_audited_without_pii(client, admin, admin_token, caplog):
+    lead_id = _make_pii_lead()
+
+    with caplog.at_level("WARNING"):
+        resp = client.delete(
+            f"/api/admin/leads/{lead_id}",
+            headers=auth_headers(admin_token),
+            environ_base={"REMOTE_ADDR": "203.0.113.7"},
+        )
+
+    assert resp.status_code == 204
+    lines = _audit_lines(caplog)
+    assert lines == [f"AUDIT lead_deleted by=#{admin.id} ({admin.email}) target=#{lead_id} ip=203.0.113.7"]
+    _assert_no_lead_pii(lines[0])
+
+
+def test_failed_lead_operations_leave_no_audit_line(client, admin_token, caplog):
+    """Só o que de fato aconteceu entra na trilha: sem token, lead
+    inexistente e status inválido não geram linha de auditoria."""
+    lead_id = _make_pii_lead()
+
+    with caplog.at_level("WARNING"):
+        assert client.get("/api/admin/leads").status_code == 401
+        assert client.delete("/api/admin/leads/9999", headers=auth_headers(admin_token)).status_code == 404
+        resp = client.put(
+            f"/api/admin/leads/{lead_id}",
+            json={"status": "nao-existe"},
+            headers=auth_headers(admin_token),
+        )
+        assert resp.status_code == 400
+
+    assert _audit_lines(caplog) == []
+
+
+# ----------------------------- validação que só existia no painel (required) --
+
+def test_service_empty_icon_is_rejected(client, admin_token):
+    payload = {"slug": "sem-icone", "title": "Sem ícone", "description": "Descrição.", "icon": "  "}
+
+    resp = client.post("/api/admin/services", json=payload, headers=auth_headers(admin_token))
+
+    assert resp.status_code == 400
+    assert resp.get_json()["error"] == "validation_error"
+    assert "icon" in resp.get_json()["details"]
+    assert Service.query.count() == 0
+
+
+def test_service_icon_cannot_be_emptied_on_update(client, admin_token):
+    created = client.post(
+        "/api/admin/services",
+        json={"slug": "com-icone", "title": "Com ícone", "description": "Descrição.", "icon": "scale"},
+        headers=auth_headers(admin_token),
+    ).get_json()["data"]
+
+    resp = client.put(
+        f"/api/admin/services/{created['id']}", json={"icon": ""}, headers=auth_headers(admin_token)
+    )
+
+    assert resp.status_code == 400
+    assert "icon" in resp.get_json()["details"]
+    assert Service.query.filter_by(id=created["id"]).one().icon == "scale"
+
+
+def test_service_without_icon_still_gets_default(client, admin_token):
+    resp = client.post(
+        "/api/admin/services",
+        json={"slug": "padrao", "title": "Padrão", "description": "Descrição."},
+        headers=auth_headers(admin_token),
+    )
+
+    assert resp.status_code == 201
+    assert resp.get_json()["data"]["icon"] == "briefcase"
+
+
+def test_testimonial_empty_role_is_rejected(client, admin_token):
+    resp = client.post(
+        "/api/admin/testimonials",
+        json={"author": "Maria", "role": "<b></b>", "content": "Ótimo atendimento."},
+        headers=auth_headers(admin_token),
+    )
+
+    assert resp.status_code == 400
+    assert resp.get_json()["error"] == "validation_error"
+    assert "role" in resp.get_json()["details"]
+    assert Testimonial.query.count() == 0
+
+
+def test_testimonial_without_role_still_gets_default(client, admin_token):
+    resp = client.post(
+        "/api/admin/testimonials",
+        json={"author": "Maria", "content": "Ótimo atendimento."},
+        headers=auth_headers(admin_token),
+    )
+
+    assert resp.status_code == 201
+    assert resp.get_json()["data"]["role"] == "Cliente"
+
+
+@pytest.mark.parametrize(
+    "method,path",
+    [
+        ("put", "/api/admin/services/{id}"),
+        ("delete", "/api/admin/services/{id}"),
+        ("put", "/api/admin/testimonials/{id}"),
+        ("delete", "/api/admin/testimonials/{id}"),
+        ("put", "/api/admin/faqs/{id}"),
+        ("delete", "/api/admin/faqs/{id}"),
+        ("put", "/api/admin/leads/{id}"),
+        ("delete", "/api/admin/leads/{id}"),
+    ],
+)
+def test_id_above_db_integer_is_404_not_500(client, admin_token, method, path):
+    for big_id in (2**31, "9" * 30):
+        resp = getattr(client, method)(path.format(id=big_id), json={}, headers=auth_headers(admin_token))
+
+        assert resp.status_code == 404
+        assert resp.get_json() == {"error": "not_found"}

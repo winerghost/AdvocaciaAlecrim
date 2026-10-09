@@ -81,17 +81,6 @@ def sanitize_text(value: str, *, allow_newline: bool = False, collapse_spaces: b
     return value
 
 
-def header_safe(value: str) -> str:
-    """Garante que um valor é seguro para uso em um header de e-mail
-    (Subject/From/To) — remove qualquer CR/LF residual. Chamado de novo no
-    momento de montar o e-mail (defesa em profundidade), mesmo que o valor
-    já tenha passado pela sanitização de entrada.
-    """
-    if not isinstance(value, str):
-        return value
-    return _CRLF_RE.sub(" ", value).strip()
-
-
 def normalize_phone_digits(value: str) -> str:
     """Extrai só os dígitos de um telefone (remove +, espaços, parênteses,
     hífen etc.) para validação/armazenamento consistente.
@@ -106,3 +95,134 @@ def is_valid_br_phone(value: str) -> bool:
     """
     digits = normalize_phone_digits(value)
     return bool(_PHONE_DIGITS_RE.match(digits))
+
+
+# --------------------------------------------------------------------------
+# HTML rico (corpo dos artigos do blog)
+# --------------------------------------------------------------------------
+# `sanitize_text` acima remove TODAS as tags - certo para campos de texto
+# puro, mas inútil para o corpo de um artigo, que vem de um editor rico e é
+# renderizado como HTML no site público. Aqui a defesa contra XSS armazenado
+# é uma allowlist (lib `nh3`, binding do `ammonia`, que faz o parse com um
+# parser HTML5 de verdade em vez de regex): tudo que não está explicitamente
+# liberado abaixo é descartado.
+
+# Nome de arquivo gerado por `POST /api/admin/uploads`: uuid4 hex + extensão
+# derivada do tipo detectado. Mesmo padrão usado para servir `/api/media/`.
+MEDIA_FILENAME_PATTERN = r"[0-9a-f]{32}\.(?:jpg|png|webp|gif)"
+_MEDIA_PATH_RE = re.compile(rf"/api/media/{MEDIA_FILENAME_PATTERN}")
+
+_HTML_ALLOWED_TAGS = {
+    "p", "br", "h2", "h3", "h4", "strong", "b", "em", "i", "u", "s",
+    "blockquote", "ul", "ol", "li", "a", "img", "hr", "code", "pre",
+    "figure", "figcaption", "span",
+}
+
+# `rel` não entra aqui de propósito: o nh3 recusa a combinação "rel liberado
+# + link_rel forçado". O `rel` enviado pelo cliente é descartado e o
+# `link_rel` (ver `sanitize_html`) grava sempre "noopener noreferrer" em
+# todo <a>.
+_ALIGNABLE_TAGS = ("p", "h2", "h3", "h4")
+_HTML_ALLOWED_ATTRIBUTES = {
+    "a": {"href", "target"},
+    "img": {"src", "alt", "title", "width", "height"},
+    **{tag: {"style"} for tag in _ALIGNABLE_TAGS},
+}
+
+_HTML_URL_SCHEMES = {"http", "https", "mailto"}
+
+# Único uso permitido de `style`: alinhamento de texto, no formato emitido
+# pelo editor (`style="text-align: center"`). Qualquer outra declaração é
+# descartada e o valor é reescrito de forma canônica.
+_TEXT_ALIGN_RE = re.compile(
+    r"(?:^|;)\s*text-align\s*:\s*(left|center|right|justify)\s*(?:;|$)", re.IGNORECASE
+)
+# Início aceito de um `href`. Caminho interno é "/" seguido de qualquer coisa
+# que NÃO seja outra barra - normal ou invertida: o navegador trata "\" como
+# "/" em URLs http(s), então "/\host" é o mesmo "//host" (outro site).
+_HREF_RE = re.compile(r"(?:https?://|mailto:|/(?![/\\])|#)", re.IGNORECASE)
+# Caracteres que nunca aparecem num link legítimo e que o navegador ignora
+# ou reinterpreta ao resolver a URL: controles C0 (tab/CR/LF são REMOVIDOS
+# de dentro da URL, então "/<tab>/host" vira "//host"), DEL e a barra
+# invertida ("https:\\host", "\\host", "\/host"). Chegam aqui mesmo depois
+# da limpeza de controles de `sanitize_html` quando escritos como entidade
+# (`&#9;`), que só o parser HTML decodifica.
+_HREF_FORBIDDEN_CHARS_RE = re.compile(r"[\x00-\x1f\x7f\\]")
+_DIMENSION_RE = re.compile(r"[0-9]{1,4}")
+_LINK_TARGETS = {"_blank", "_self"}
+
+
+def is_media_path(value) -> bool:
+    """`True` se `value` é exatamente o caminho de um upload do painel
+    (`/api/media/<uuid hex>.<ext>`).
+    """
+    return isinstance(value, str) and _MEDIA_PATH_RE.fullmatch(value) is not None
+
+
+def _html_attribute_filter(tag: str, attribute: str, value: str) -> str | None:
+    """Chamado pelo nh3 para cada atributo que já passou pela allowlist.
+    Devolver `None` remove o atributo; devolver uma string o substitui.
+    """
+    value = value.strip()
+
+    if attribute == "style":
+        match = _TEXT_ALIGN_RE.search(value)
+        return f"text-align: {match.group(1).lower()}" if match else None
+
+    if tag == "a":
+        if attribute == "href":
+            # Além do filtro de esquema do nh3 (http/https/mailto), links
+            # sem esquema só passam se forem do próprio site ("/pagina",
+            # "#ancora") - nunca "//host", que herdaria o esquema da
+            # página, nem as grafias que o navegador normaliza para isso.
+            if _HREF_FORBIDDEN_CHARS_RE.search(value):
+                return None
+            return value if _HREF_RE.match(value) else None
+        if attribute == "target":
+            return value if value in _LINK_TARGETS else None
+
+    if tag == "img":
+        if attribute == "src":
+            # Só imagens enviadas pelo próprio painel (o editor só insere
+            # imagem por upload). Nada de URL externa - nem https: cada
+            # visitante do artigo faria uma requisição a um servidor de
+            # terceiros (rastreio por pixel, conteúdo fora do nosso
+            # controle) -, de data: ou de caminhos relativos arbitrários.
+            return value if is_media_path(value) else None
+        if attribute in ("width", "height"):
+            return value if _DIMENSION_RE.fullmatch(value) else None
+
+    return value
+
+
+def sanitize_html(value: str) -> str:
+    """Sanitiza HTML de editor rico por allowlist de tags/atributos.
+
+    `<script>`/`<style>` somem junto com o conteúdo, handlers `on*` e
+    esquemas como `javascript:` são removidos, comentários também. O
+    resultado é seguro para ser injetado como HTML no site público.
+
+    É idempotente (sanitizar o que já foi sanitizado devolve o mesmo
+    texto), por isso também é aplicada na LEITURA dos artigos - ver
+    api/articles.py.
+    """
+    if not isinstance(value, str):
+        return value
+
+    # Import local: só os artigos usam HTML rico, e assim o resto do módulo
+    # (usado por todos os schemas) não depende da lib.
+    import nh3
+
+    value = unicodedata.normalize("NFC", value)
+    value = _CONTROL_CHARS_RE.sub("", value)
+
+    cleaned = nh3.clean(
+        value,
+        tags=_HTML_ALLOWED_TAGS,
+        attributes=_HTML_ALLOWED_ATTRIBUTES,
+        attribute_filter=_html_attribute_filter,
+        url_schemes=_HTML_URL_SCHEMES,
+        link_rel="noopener noreferrer",
+        strip_comments=True,
+    )
+    return cleaned.strip()

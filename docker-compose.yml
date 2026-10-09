@@ -26,12 +26,17 @@ services:
       - ./backend/.env
     environment:
       DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-alecrim}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-alecrim}
-      # Ativa o hard-fail de SECRET_KEY inseguro em app/__init__.py - só
-      # nesse deploy via compose (dev local com `python wsgi.py`/pytest
-      # continua só com warning). Se subir sem SECRET_KEY real em
-      # backend/.env, o container falha ao iniciar em vez de rodar com
-      # autenticação admin forjável.
+      # O backend recusa SECRET_KEY e senha de banco fracas/de exemplo em
+      # qualquer ambiente, exceto com FLASK_ENV=development|testing (ver
+      # backend/app/utils/boot_checks.py). Fixar "production" aqui (tem
+      # precedência sobre o env_file) garante que esse opt-in de dev nunca
+      # valha num deploy via compose, mesmo que alguém o coloque em
+      # backend/.env.
       FLASK_ENV: production
+    volumes:
+      # Imagens enviadas pelo painel (artigos) - mesmo caminho do default
+      # de UPLOAD_DIR em backend/app/config.py. Sobrevive a rebuild.
+      - uploads_data:/app/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -60,6 +65,7 @@ services:
 
 volumes:
   db_data:
+  uploads_data:
 
 networks:
   internal:

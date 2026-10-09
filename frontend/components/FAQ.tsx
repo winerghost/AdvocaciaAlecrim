@@ -16,12 +16,12 @@ export default function FAQ({ faqs }: { faqs: Faq[] }) {
   if (faqs.length === 0) return null;
 
   return (
-    <section id="faq" className="bg-white px-4 py-20 sm:px-8 sm:py-28">
+    <section id="faq" className="ba-paper px-4 py-20 sm:px-8 sm:py-28">
       <div className="mx-auto max-w-4xl">
         <Reveal className="mx-auto mb-12 max-w-xl text-center sm:mb-16">
-          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-gold-dark">Dúvidas</p>
-          <h2 className="mb-4 text-3xl font-semibold text-navy sm:text-4xl">Perguntas frequentes</h2>
-          <p className="text-slate-muted">O que os clientes perguntam antes de fechar.</p>
+          <p className="ba-eyebrow mb-5">Dúvidas</p>
+          <h2 className="mb-4 text-ba-cta uppercase text-ba-bg [text-wrap:balance]">Perguntas frequentes</h2>
+          <p className="text-ba-body text-ba-slate">O que os clientes perguntam antes de fechar.</p>
         </Reveal>
 
         <div className="flex flex-col gap-3">
@@ -30,25 +30,25 @@ export default function FAQ({ faqs }: { faqs: Faq[] }) {
             return (
               <Reveal key={faq.id} delay={index * 60}>
                 <div
-                  className={`overflow-hidden rounded-xl border bg-white transition-colors ${
-                    isOpen ? "border-gold/45 shadow-[0_6px_22px_rgba(15,23,42,0.05)]" : "border-navy/[0.09]"
+                  className={`overflow-hidden border bg-white transition-colors duration-300 ${
+                    isOpen ? "border-ba-accent/60" : "border-ba-steel/20"
                   }`}
                 >
                   <button
                     type="button"
                     onClick={() => setOpenId(isOpen ? null : faq.id)}
                     aria-expanded={isOpen}
-                    className="flex w-full items-center gap-4 px-6 py-5 text-left transition hover:text-gold-dark sm:px-7"
+                    className="flex w-full items-center gap-4 px-6 py-5 text-left sm:px-7"
                   >
-                    <span className="flex-1 text-sm font-semibold leading-snug text-navy sm:text-base">
+                    <span className="flex-1 text-sm font-bold leading-snug text-ba-bg sm:text-base">
                       {faq.question}
                     </span>
                     <span
-                      className={`flex h-[30px] w-[30px] flex-none items-center justify-center rounded-full bg-slate-bg transition-transform duration-300 ${
+                      className={`flex h-[30px] w-[30px] flex-none items-center justify-center rounded-full bg-ba-mist transition-transform duration-300 ${
                         isOpen ? "rotate-180" : ""
                       }`}
                     >
-                      <ChevronDown className="text-navy" size={15} />
+                      <ChevronDown className="text-ba-accent-ink" size={15} />
                     </span>
                   </button>
                   <div
@@ -56,7 +56,7 @@ export default function FAQ({ faqs }: { faqs: Faq[] }) {
                     style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
                   >
                     <div className="overflow-hidden">
-                      <p className="px-6 pb-6 text-sm font-light leading-relaxed text-slate-muted sm:px-7">
+                      <p className="px-6 pb-6 text-ba-body-sm text-ba-slate sm:px-7">
                         {faq.answer}
                       </p>
                     </div>
@@ -68,12 +68,12 @@ export default function FAQ({ faqs }: { faqs: Faq[] }) {
         </div>
 
         <div className="mt-10 text-center sm:mt-14">
-          <p className="mb-5 text-sm text-slate-muted">Ficou com outra dúvida?</p>
+          <p className="mb-5 text-sm text-ba-slate">Ficou com outra dúvida?</p>
           <a
             href={WHATSAPP_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2.5 rounded-md border border-gold/50 px-7 py-3.5 text-sm font-semibold text-gold-dark transition hover:-translate-y-0.5 hover:border-gold hover:bg-gold hover:text-navy"
+            className="ba-btn ba-btn-outline"
           >
             Falar com o Dr. Alecrim
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">

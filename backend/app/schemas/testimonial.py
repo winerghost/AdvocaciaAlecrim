@@ -9,7 +9,9 @@ CONTENT_MAX = 4000
 
 class TestimonialSchema(Schema):
     author = fields.Str(required=True, validate=validate.Length(min=2, max=AUTHOR_MAX))
-    role = fields.Str(required=False, load_default="Cliente", validate=validate.Length(max=ROLE_MAX))
+    # Opcional (ausente = "Cliente"), mas não pode vir vazio: o `required`
+    # do <input> no painel era a única coisa que impedia gravar role="".
+    role = fields.Str(required=False, load_default="Cliente", validate=validate.Length(min=1, max=ROLE_MAX))
     content = fields.Str(required=True, validate=validate.Length(min=2, max=CONTENT_MAX))
     rating = fields.Int(required=False, load_default=5, validate=validate.Range(min=1, max=5))
     approved = fields.Bool(required=False, load_default=False)

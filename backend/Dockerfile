@@ -13,8 +13,20 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends libpq-dev gcc \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+COPY requirements.txt constraints.txt ./
+# requirements.txt lista só as dependências diretas; constraints.txt trava
+# a versão de todas (inclusive as transitivas), pra que dois builds do mesmo
+# commit instalem exatamente os mesmos pacotes.
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt -c constraints.txt
+# Um pacote instalado que não esteja em constraints.txt entrou com versão
+# livre (uma transitiva nova, por exemplo): falha o build em vez de deixar
+# passar - a correção é regenerar o constraints.txt (instruções no próprio
+# arquivo). Nomes comparados sem diferenciar maiúsculas nem "-" de "_".
+RUN pip freeze --path /install/lib/python3.12/site-packages | tr 'A-Z_' 'a-z-' > /tmp/instalado.txt \
+    && sed 's/ *;.*//' constraints.txt | tr -d '\r' | tr 'A-Z_' 'a-z-' > /tmp/travado.txt \
+    && if grep -vxFf /tmp/travado.txt /tmp/instalado.txt; then \
+         echo "ERRO: pacotes acima instalados sem versão travada em constraints.txt" >&2; exit 1; \
+       fi
 
 # ---- runtime ----
 FROM python:3.12-slim
@@ -35,7 +47,12 @@ RUN apt-get update \
 COPY --from=builder /install /usr/local
 
 COPY . .
+# /app/uploads é onde o docker-compose.yml monta o volume `uploads_data`
+# (imagens enviadas pelo painel). O diretório precisa existir na imagem já
+# com o dono certo: um volume nomeado novo herda dono/permissão do caminho
+# da imagem, e é o `appuser` (não root) que grava ali.
 RUN chmod +x entrypoint.sh \
+    && mkdir -p /app/uploads \
     && useradd --create-home appuser \
     && chown -R appuser:appuser /app
 USER appuser

@@ -12,6 +12,7 @@ backend/.pytest_cache/
 backend/.venv/
 backend/venv/
 backend/*.db
+backend/uploads/
 
 # Frontend
 frontend/node_modules/
@@ -25,3 +26,6 @@ frontend/tsconfig.tsbuildinfo
 
  .claude/scheduled_tasks.lock 
 frontend/tsconfig.tsbuildinfo
+
+# Relatório de auditoria de segurança (descreve pendências; repo público)
+docs/security-audit/

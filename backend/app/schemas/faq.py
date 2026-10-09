@@ -4,12 +4,15 @@ from ..utils.sanitize import sanitize_text
 
 QUESTION_MAX = 255
 ANSWER_MAX = 4000
+ORDER_MIN = 0
+ORDER_MAX = 9999
 
 
 class FaqSchema(Schema):
     question = fields.Str(required=True, validate=validate.Length(min=2, max=QUESTION_MAX))
     answer = fields.Str(required=True, validate=validate.Length(min=2, max=ANSWER_MAX))
-    order = fields.Int(required=False, load_default=0)
+    # Mesma faixa de ServiceSchema.order (evita overflow do INTEGER no banco).
+    order = fields.Int(required=False, load_default=0, validate=validate.Range(min=ORDER_MIN, max=ORDER_MAX))
 
     @pre_load
     def sanitize_input(self, data, **kwargs):

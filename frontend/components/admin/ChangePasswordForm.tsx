@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { ADMIN_PASSWORD_MIN_LENGTH, WEAK_PASSWORD_MESSAGE } from "@/lib/adminConstants";
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -42,8 +43,10 @@ export default function ChangePasswordForm() {
           body?.error === "invalid_current_password"
             ? "Senha atual incorreta."
             : body?.error === "weak_password"
-              ? "A nova senha é muito fraca. Escolha uma senha mais forte."
-              : "Não foi possível trocar a senha agora."
+              ? WEAK_PASSWORD_MESSAGE
+              : body?.error === "password_too_long"
+                ? "A nova senha pode ter no máximo 128 caracteres."
+                : "Não foi possível trocar a senha agora."
         );
         setStatus("error");
         return;
@@ -59,73 +62,77 @@ export default function ChangePasswordForm() {
 
   return (
     <div className="max-w-md space-y-6">
-      <h1 className="text-lg font-bold text-[#343a40]">Trocar senha</h1>
+      <h1 className="text-lg font-bold text-adm-ink">Trocar senha</h1>
 
-      <div className="rounded border border-[#dee2e6] bg-white shadow-sm">
-        <div className="border-b border-[#dee2e6] px-4 py-3">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-[#343a40]">
+      <div className="rounded border border-adm-border bg-white shadow-sm">
+        <div className="border-b border-adm-border px-4 py-3">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-adm-ink">
             Alterar senha de acesso
           </h2>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4 p-4">
           <div>
             <label
-              className="mb-1 block text-xs font-semibold text-[#495057]"
+              className="mb-1 block text-xs font-semibold text-adm-body"
               htmlFor="current_password"
             >
               Senha atual
             </label>
             <input
               id="current_password"
+              maxLength={128}
               name="current_password"
               type="password"
               required
               autoComplete="current-password"
-              className="w-full rounded border border-[#ced4da] px-3 py-2 text-sm text-[#343a40] focus:border-[#80bdff] focus:outline-none focus:ring focus:ring-[#007bff]/25"
+              className="w-full rounded border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-none focus:ring focus:ring-adm-accent/25"
             />
           </div>
 
           <div>
             <label
-              className="mb-1 block text-xs font-semibold text-[#495057]"
+              className="mb-1 block text-xs font-semibold text-adm-body"
               htmlFor="new_password"
             >
-              Nova senha
+              Nova senha (mínimo {ADMIN_PASSWORD_MIN_LENGTH} caracteres)
             </label>
             <input
               id="new_password"
+              minLength={ADMIN_PASSWORD_MIN_LENGTH}
+              maxLength={128}
               name="new_password"
               type="password"
               required
               autoComplete="new-password"
-              className="w-full rounded border border-[#ced4da] px-3 py-2 text-sm text-[#343a40] focus:border-[#80bdff] focus:outline-none focus:ring focus:ring-[#007bff]/25"
+              className="w-full rounded border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-none focus:ring focus:ring-adm-accent/25"
             />
           </div>
 
           <div>
             <label
-              className="mb-1 block text-xs font-semibold text-[#495057]"
+              className="mb-1 block text-xs font-semibold text-adm-body"
               htmlFor="confirm_password"
             >
               Confirmar nova senha
             </label>
             <input
               id="confirm_password"
+              maxLength={128}
               name="confirm_password"
               type="password"
               required
               autoComplete="new-password"
-              className="w-full rounded border border-[#ced4da] px-3 py-2 text-sm text-[#343a40] focus:border-[#80bdff] focus:outline-none focus:ring focus:ring-[#007bff]/25"
+              className="w-full rounded border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-none focus:ring focus:ring-adm-accent/25"
             />
           </div>
 
           {status === "error" && errorMsg && (
-            <p className="rounded border border-[#f5c2c7] bg-[#f8d7da] px-3 py-2 text-sm text-[#842029]">
+            <p className="rounded border border-adm-danger-line bg-adm-danger-soft px-3 py-2 text-sm text-adm-danger-ink">
               {errorMsg}
             </p>
           )}
           {status === "success" && (
-            <p className="rounded border border-[#c3e6cb] bg-[#d4edda] px-3 py-2 text-sm text-[#155724]">
+            <p className="rounded border border-adm-success-line bg-adm-success-soft px-3 py-2 text-sm text-adm-success-ink">
               Senha alterada com sucesso.
             </p>
           )}
@@ -133,7 +140,7 @@ export default function ChangePasswordForm() {
           <button
             type="submit"
             disabled={status === "loading"}
-            className="rounded bg-[#007bff] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#0069d9] disabled:opacity-60"
+            className="rounded bg-adm-accent px-5 py-2 text-sm font-semibold text-white transition hover:bg-adm-accent-strong disabled:opacity-60"
           >
             {status === "loading" ? "Salvando..." : "Salvar nova senha"}
           </button>

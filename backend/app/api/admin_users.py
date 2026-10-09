@@ -5,11 +5,11 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from ..extensions import db, limiter
 from ..models import AdminUser
 from ..utils.auth import require_admin
+from ..utils.password_policy import MAX_PASSWORD_LENGTH, password_problem
 from ..utils.sanitize import sanitize_text
+from .admin_auth import MAX_EMAIL_LENGTH
 
 bp = Blueprint("admin_users", __name__, url_prefix="/api/admin/users")
-
-MIN_PASSWORD_LENGTH = 10
 
 
 def _serialize(user: AdminUser) -> dict:
@@ -30,8 +30,10 @@ def _current_password_ok(payload) -> bool:
     if not isinstance(payload, dict):
         return False
     current_password = payload.get("current_password")
-    return isinstance(current_password, str) and check_password_hash(
-        g.admin_user.password_hash, current_password
+    return (
+        isinstance(current_password, str)
+        and len(current_password) <= MAX_PASSWORD_LENGTH
+        and check_password_hash(g.admin_user.password_hash, current_password)
     )
 
 
@@ -56,7 +58,7 @@ def create_user():
     raw_email = payload.get("email")
     password = payload.get("password")
 
-    if not isinstance(raw_email, str):
+    if not isinstance(raw_email, str) or len(raw_email) > MAX_EMAIL_LENGTH:
         return {"error": "invalid_email"}, 400
 
     email = sanitize_text(raw_email, allow_newline=False).strip().lower()
@@ -70,8 +72,10 @@ def create_user():
     if len(email) > 255:
         return {"error": "invalid_email"}, 400
 
-    if not isinstance(password, str) or len(password) < MIN_PASSWORD_LENGTH:
-        return {"error": "weak_password"}, 400
+    # Regra única de senha - ver utils/password_policy.py.
+    problem = password_problem(password, email)
+    if problem is not None:
+        return {"error": problem[0]}, 400
 
     if AdminUser.query.filter_by(email=email).first() is not None:
         return {"error": "email_taken"}, 409

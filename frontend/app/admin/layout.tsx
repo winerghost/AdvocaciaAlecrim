@@ -12,7 +12,7 @@ const API_URL =
   process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 // Server Component: valida o cookie contra o Flask (GET /api/admin/me) a
-// cada navegação. O middleware (frontend/middleware.ts) já faz um gate
+// cada navegação. O proxy (frontend/proxy.ts) já faz um gate
 // rápido só checando se o cookie existe - aqui é a validação "de verdade"
 // do token.
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

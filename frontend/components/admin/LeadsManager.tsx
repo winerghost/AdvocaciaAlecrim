@@ -77,34 +77,34 @@ export default function LeadsManager() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-lg font-bold text-[#343a40]">Leads</h1>
+      <h1 className="text-lg font-bold text-adm-ink">Leads</h1>
 
       {error && (
-        <p className="rounded border border-[#f5c2c7] bg-[#f8d7da] px-4 py-3 text-sm text-[#842029]">
+        <p className="rounded border border-adm-danger-line bg-adm-danger-soft px-4 py-3 text-sm text-adm-danger-ink">
           {error}
         </p>
       )}
 
-      <div className="rounded border border-[#dee2e6] bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-[#dee2e6] px-4 py-3">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-[#343a40]">
+      <div className="rounded border border-adm-border bg-white shadow-sm">
+        <div className="flex items-center justify-between gap-3 border-b border-adm-border px-4 py-3">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-adm-ink">
             Leads recebidos
           </h2>
           <button
             type="button"
             onClick={load}
-            className="rounded border border-[#ced4da] px-3 py-1.5 text-xs font-semibold text-[#495057] transition hover:bg-[#f4f6f9]"
+            className="rounded border border-adm-border-strong whitespace-nowrap px-3 py-2.5 text-xs font-semibold lg:py-1.5 text-adm-body transition hover:bg-adm-canvas"
           >
             Atualizar
           </button>
         </div>
 
         {loading ? (
-          <p className="px-4 py-6 text-sm text-[#6c757d]">Carregando...</p>
+          <p className="px-4 py-6 text-sm text-adm-muted">Carregando...</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-[#f4f6f9] text-xs font-bold uppercase tracking-wide text-[#6c757d]">
+              <thead className="bg-adm-canvas text-xs font-bold uppercase tracking-wide text-adm-muted">
                 <tr>
                   <th className="px-4 py-3">Data</th>
                   <th className="px-4 py-3">Nome</th>
@@ -116,22 +116,22 @@ export default function LeadsManager() {
                   <th className="px-4 py-3 text-right">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#dee2e6]">
+              <tbody className="divide-y divide-adm-border">
                 {items.map((item) => (
-                  <tr key={item.id} className="align-top hover:bg-[#f4f6f9]">
-                    <td className="whitespace-nowrap px-4 py-3 text-[#6c757d]">
+                  <tr key={item.id} className="align-top hover:bg-adm-canvas">
+                    <td className="whitespace-nowrap px-4 py-3 text-adm-muted">
                       {formatDate(item.created_at)}
                     </td>
-                    <td className="px-4 py-3 font-medium text-[#343a40]">{item.name}</td>
-                    <td className="px-4 py-3 text-[#6c757d]">{item.phone}</td>
-                    <td className="px-4 py-3 text-[#6c757d]">{item.email || "—"}</td>
-                    <td className="px-4 py-3 text-[#6c757d]">{item.area || "—"}</td>
-                    <td className="max-w-xs px-4 py-3 text-[#6c757d]">{item.message || "—"}</td>
+                    <td className="px-4 py-3 font-medium text-adm-ink">{item.name}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-adm-muted">{item.phone}</td>
+                    <td className="px-4 py-3 text-adm-muted">{item.email || "—"}</td>
+                    <td className="px-4 py-3 text-adm-muted">{item.area || "—"}</td>
+                    <td className="max-w-xs px-4 py-3 text-adm-muted">{item.message || "—"}</td>
                     <td className="px-4 py-3">
                       <select
                         value={item.status}
                         onChange={(e) => handleStatusChange(item.id, e.target.value as LeadStatus)}
-                        className="rounded border border-[#ced4da] bg-white px-2 py-1 text-xs font-medium text-[#343a40]"
+                        className="rounded border border-adm-border-strong bg-white px-2 py-2.5 text-xs font-medium text-adm-ink lg:py-1"
                       >
                         {STATUS_OPTIONS.map((status) => (
                           <option key={status} value={status}>
@@ -145,7 +145,7 @@ export default function LeadsManager() {
                         <button
                           type="button"
                           onClick={() => handleDelete(item.id)}
-                          className="rounded border border-[#dc3545] px-2.5 py-1 text-xs font-semibold text-[#dc3545] transition hover:bg-[#dc3545] hover:text-white"
+                          className="rounded border border-adm-danger px-2.5 py-2.5 text-xs lg:py-1 font-semibold text-adm-danger transition hover:bg-adm-danger hover:text-white"
                         >
                           Excluir
                         </button>
@@ -155,7 +155,7 @@ export default function LeadsManager() {
                 ))}
                 {items.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-6 text-center text-[#6c757d]">
+                    <td colSpan={8} className="px-4 py-6 text-center text-adm-muted">
                       Nenhum lead recebido ainda.
                     </td>
                   </tr>

@@ -1,10 +1,14 @@
 import Image from "next/image";
 import type { Service, Testimonial } from "@/lib/api";
-import { WHATSAPP_URL } from "@/lib/constants";
+import { CONTACT_EMAIL, PHONE_DISPLAY, PHONE_E164, PRIVACY_PATH, WHATSAPP_URL } from "@/lib/constants";
 import LeadForm from "./LeadForm";
 import MobileNav from "./MobileNav";
 import Reveal from "./Reveal";
 import { Check, ServiceIcon } from "./icons";
+
+// Seções da landing, no tema .theme-ba (ligado em app/page.tsx): faixas
+// escuras (ba-bg) alternadas com faixas claras de leitura (.ba-paper e
+// ba-mist), como na página de artigo do blog.
 
 const NAV_LINKS = [
   { href: "#top", label: "Home" },
@@ -12,16 +16,20 @@ const NAV_LINKS = [
   { href: "#especialidades", label: "Especialidades" },
   { href: "#depoimentos", label: "Depoimentos" },
   { href: "#contato", label: "Contato" },
+  { href: "/blog", label: "Blog" },
 ];
+
+// Título de seção. `text-ba-bg` nas faixas claras, `text-ba-text` nas escuras.
+const SECTION_TITLE = "text-ba-cta uppercase [text-wrap:balance]";
 
 export function Nav() {
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-navy">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-8">
+    <header className="sticky top-0 z-50 border-b border-ba-steel/50 bg-ba-bg/90 backdrop-blur-md">
+      <div className="mx-auto flex max-w-ba-container items-center justify-between gap-4 px-4 py-2.5 sm:px-8">
         {/* Ícone recortado de assets/logoAlecrim.png (fundo transparente,
-            tingido em gold pra bater com o resto da marca) + nome tipografado
-            em HTML - fica nítido em qualquer tamanho de tela, ao contrário
-            de manter "Advocacia Alecrim" preso dentro de um PNG. */}
+            em gold - é a cor da marca, a única fora da paleta do tema) + nome
+            tipografado em HTML - fica nítido em qualquer tamanho de tela, ao
+            contrário de manter "Advocacia Alecrim" preso dentro de um PNG. */}
         <a href="#top" className="flex flex-shrink-0 items-center gap-2.5 sm:gap-3" aria-label="Advocacia Alecrim - início">
           <Image
             src="/images/logo-icone.png"
@@ -29,34 +37,33 @@ export function Nav() {
             width={762}
             height={414}
             priority
-            className="h-8 w-auto sm:h-9 md:h-10"
+            className="h-12 w-auto sm:h-14 lg:h-16"
           />
           <span className="flex flex-col leading-none">
-            <span className="text-[9px] font-medium uppercase tracking-[0.22em] text-slate-bg/75 sm:text-[10px] md:text-[11px]">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-ba-text/70 sm:text-xs lg:text-[13px]">
               Advocacia
             </span>
-            <span className="text-base font-semibold uppercase tracking-wide text-gold sm:text-lg md:text-xl">
+            <span className="text-xl font-bold uppercase tracking-wide text-gold sm:text-2xl lg:text-[28px]">
               Alecrim
             </span>
           </span>
         </a>
 
-        {/* Desktop: links inline. Some das telas dão >= 768px (md). Gap
-            reduzido em md (768-1023px) pra caber logo + 5 links + CTA sem
-            estourar a largura - a partir de lg (>=1024px) sobra espaço de
-            sobra e volta pro gap-8 original. */}
-        <nav className="ml-auto hidden items-center gap-4 md:flex lg:gap-8">
+        {/* Desktop: links inline só a partir de lg (>= 1024px). Entre 768 e
+            1023px logo + 6 links + CTA não cabem (a página ganhava rolagem
+            horizontal), então essa faixa usa o menu sanduíche. Gap menor em
+            lg, porque em 1024px a folga é curta; abre em xl (>= 1280px). */}
+        <nav className="ml-auto hidden items-center gap-5 lg:flex xl:gap-8">
           {NAV_LINKS.map((link) => (
-            <a key={link.href} href={link.href} className="text-sm text-slate-bg transition hover:text-gold">
+            <a
+              key={link.href}
+              href={link.href}
+              className="py-2 text-ba-nav uppercase text-ba-text/70 transition-colors duration-300 hover:text-ba-text"
+            >
               {link.label}
             </a>
           ))}
-          <a
-            href={WHATSAPP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-md bg-gold px-5 py-2.5 text-sm font-medium text-navy transition hover:-translate-y-0.5 hover:shadow-lg"
-          >
+          <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="ba-btn ba-btn-primary ba-btn-sm">
             Falar
           </a>
         </nav>
@@ -70,19 +77,14 @@ export function Nav() {
 
 export function Hero() {
   return (
-    <section
-      id="top"
-      className="relative flex min-h-[560px] items-center overflow-hidden bg-navy"
-      style={{
-        backgroundImage:
-          "radial-gradient(circle at 78% 30%, #1c2942 0%, #0f172a 55%, #080d18 100%)",
-      }}
-    >
-      <div className="pointer-events-none absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold/50 to-transparent" />
-      <div className="animate-aurora-1 pointer-events-none absolute -right-[8%] -top-[15%] aspect-square w-[60vw] max-w-[620px] rounded-full bg-[radial-gradient(circle,rgba(212,175,55,0.14)_0%,transparent_68%)]" />
-      <div className="animate-aurora-2 pointer-events-none absolute -left-[10%] -bottom-[20%] aspect-square w-[50vw] max-w-[480px] rounded-full bg-[radial-gradient(circle,rgba(212,175,55,0.07)_0%,transparent_70%)]" />
+    <section id="top" className="relative flex min-h-[560px] items-center overflow-hidden">
+      <div className="ba-backdrop" aria-hidden="true" />
+      <div className="animate-aurora-1 pointer-events-none absolute -right-[8%] -top-[15%] aspect-square w-[60vw] max-w-[620px] rounded-full bg-[radial-gradient(circle,rgb(var(--ba-accent)/0.16)_0%,transparent_68%)]" />
+      <div className="animate-aurora-2 pointer-events-none absolute -bottom-[20%] -left-[10%] aspect-square w-[50vw] max-w-[480px] rounded-full bg-[radial-gradient(circle,rgb(var(--ba-accent)/0.08)_0%,transparent_70%)]" />
 
-      <div className="pointer-events-none absolute bottom-0 right-2 hidden h-full w-[42%] max-w-[560px] items-end justify-end opacity-90 sm:flex">
+      {/* Retrato só a partir de md: entre 640 e 767px ele ficava por baixo do
+          texto e dos botões. */}
+      <div className="pointer-events-none absolute bottom-0 right-2 hidden h-full w-[42%] max-w-[560px] items-end justify-end opacity-90 md:flex">
         <Image
           src="/images/dr-alecrim-hero.png"
           alt="Dr. Alecrim"
@@ -99,27 +101,22 @@ export function Hero() {
         />
       </div>
 
-      <div className="relative z-10 mx-auto w-full max-w-6xl px-4 py-16 sm:px-8 sm:py-24">
-        <div className="max-w-xl">
-          <div
-            className="animate-fade-in-up mb-6 inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/[0.07] px-4 py-2"
-            style={{ animationDelay: "0s" }}
-          >
-            <span className="h-1.5 w-1.5 flex-none rounded-full bg-gold" />
-            <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gold sm:text-xs">
-              Advocacia em Palmas · Tocantins
-            </span>
-          </div>
+      <div className="relative z-10 mx-auto w-full max-w-ba-container px-4 py-16 sm:px-8 sm:py-24">
+        {/* md-lg: coluna de texto mais estreita para não invadir o retrato. */}
+        <div className="max-w-2xl md:max-w-[56%] xl:max-w-2xl">
+          <p className="ba-eyebrow animate-fade-in-up mb-6" style={{ animationDelay: "0s" }}>
+            Advocacia em Palmas · Tocantins
+          </p>
 
           <h1
-            className="animate-fade-in-up mb-5 text-3xl font-semibold leading-[1.12] tracking-tight text-white sm:mb-6 sm:text-5xl sm:leading-[1.06] md:text-6xl"
+            className="animate-fade-in-up mb-5 text-ba-cta uppercase text-ba-text [text-wrap:balance] sm:mb-6"
             style={{ animationDelay: "0.1s" }}
           >
-            Seu direito conduzido com <span className="text-gold">clareza</span>, agilidade e atenção à sua família.
+            Seu direito conduzido com <span className="text-ba-accent">clareza</span>, agilidade e atenção à sua família.
           </h1>
 
           <p
-            className="animate-fade-in-up mb-8 max-w-md text-sm font-light leading-relaxed text-white/70 sm:mb-9 sm:text-lg"
+            className="animate-fade-in-up mb-8 max-w-md text-ba-lead text-ba-text/70 sm:mb-9"
             style={{ animationDelay: "0.2s" }}
           >
             Inventários, aposentadorias, ações trabalhistas e cíveis. Atendimento pessoal do Dr. Alecrim, do primeiro contato à conclusão do processo.
@@ -129,27 +126,19 @@ export function Hero() {
             className="animate-fade-in-up mb-10 flex flex-col gap-3 sm:mb-12 sm:flex-row sm:flex-wrap sm:gap-3.5"
             style={{ animationDelay: "0.3s" }}
           >
-            <a
-              href={WHATSAPP_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2.5 rounded-md bg-gold px-8 py-4 text-sm font-semibold text-navy transition hover:-translate-y-0.5 hover:shadow-xl"
-            >
+            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="ba-btn ba-btn-primary">
               Agendar Consulta
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M5 12h13M13 6l6 6-6 6" />
               </svg>
             </a>
-            <a
-              href="#especialidades"
-              className="inline-flex items-center justify-center rounded-md border border-white/20 px-8 py-4 text-sm font-medium text-white transition hover:-translate-y-0.5 hover:border-gold/50 hover:bg-white/5"
-            >
+            <a href="#especialidades" className="ba-btn ba-btn-secondary">
               Ver Especialidades
             </a>
           </div>
 
           <div
-            className="animate-fade-in-up flex flex-col gap-3 border-t border-white/10 pt-6 sm:flex-row sm:flex-wrap sm:gap-6 sm:pt-7"
+            className="animate-fade-in-up flex flex-col gap-3 border-t border-ba-steel/55 pt-6 sm:flex-row sm:flex-wrap sm:gap-6 sm:pt-7"
             style={{ animationDelay: "0.4s" }}
           >
             {[
@@ -158,8 +147,8 @@ export function Hero() {
               "Resposta no mesmo dia",
             ].map((item) => (
               <div key={item} className="flex items-center gap-2.5">
-                <Check className="flex-none text-gold" size={17} />
-                <span className="text-sm text-white/60">{item}</span>
+                <Check className="flex-none text-ba-accent" size={17} />
+                <span className="text-sm text-ba-text/70">{item}</span>
               </div>
             ))}
           </div>
@@ -178,12 +167,12 @@ const TRUST_STATS = [
 
 export function TrustStrip() {
   return (
-    <div className="bg-navy px-4 py-14 sm:px-8">
-      <Reveal className="mx-auto grid max-w-6xl grid-cols-2 gap-8 sm:grid-cols-4">
+    <div className="border-t border-ba-steel/40 px-4 py-14 sm:px-8">
+      <Reveal className="mx-auto grid max-w-ba-container grid-cols-2 gap-8 sm:grid-cols-4">
         {TRUST_STATS.map((stat) => (
-          <div key={stat.label} className="text-center opacity-75">
-            <div className="text-2xl font-bold text-gold sm:text-3xl">{stat.value}</div>
-            <div className="mt-2 text-xs text-slate-bg sm:text-sm">{stat.label}</div>
+          <div key={stat.label} className="text-center">
+            <div className="text-2xl font-extrabold tracking-[-0.02em] text-ba-accent sm:text-3xl">{stat.value}</div>
+            <div className="mt-2 text-xs text-ba-text/70 sm:text-sm">{stat.label}</div>
           </div>
         ))}
       </Reveal>
@@ -193,22 +182,22 @@ export function TrustStrip() {
 
 export function About() {
   return (
-    <section id="sobre" className="bg-white px-4 py-20 sm:px-8 sm:py-28">
-      <Reveal className="mx-auto grid max-w-6xl gap-12 sm:grid-cols-2 sm:items-center">
+    <section id="sobre" className="ba-paper px-4 py-20 sm:px-8 sm:py-28">
+      <Reveal className="mx-auto grid max-w-ba-container gap-12 sm:grid-cols-2 sm:items-center">
         <div>
-          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-gold-dark">Sobre</p>
-          <h2 className="mb-6 text-3xl font-semibold text-navy sm:text-4xl">Dr. Alecrim</h2>
-          <p className="mb-5 leading-relaxed text-slate-muted">
+          <p className="ba-eyebrow mb-5">Sobre</p>
+          <h2 className={`${SECTION_TITLE} mb-6 text-ba-bg`}>Dr. Alecrim</h2>
+          <p className="mb-5 text-ba-body text-ba-slate">
             Advogado atuante em Palmas e em todo o Tocantins, com foco em Direito das Sucessões, Previdenciário, Trabalhista e Cível. Cada caso é conduzido pessoalmente, sem intermediários.
           </p>
-          <p className="mb-8 leading-relaxed text-slate-muted">
+          <p className="mb-8 text-ba-body text-ba-slate">
             A prática é orientada por um princípio simples: o cliente precisa entender o próprio processo. Linguagem clara, prazos reais e retorno rápido em cada etapa.
           </p>
           <div className="flex flex-wrap gap-3">
             {["Sucessões", "Previdenciário", "Trabalhista", "Cível"].map((tag) => (
               <span
                 key={tag}
-                className="rounded-full border border-navy/10 px-4 py-2 text-xs font-medium text-navy"
+                className="rounded-ba-pill px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-ba-bg shadow-[inset_0_0_0_1px_rgb(var(--ba-steel)/0.3)]"
               >
                 {tag}
               </span>
@@ -216,21 +205,21 @@ export function About() {
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <div className="rounded-xl bg-slate-bg p-6">
-            <div className="mb-2 text-2xl font-bold text-navy">1:1</div>
-            <div className="text-sm text-slate-muted">Atendimento direto com o advogado</div>
+          <div className="bg-ba-mist p-6">
+            <div className="mb-2 text-2xl font-extrabold tracking-[-0.02em] text-ba-bg">1:1</div>
+            <div className="text-sm text-ba-slate">Atendimento direto com o advogado</div>
           </div>
-          <div className="rounded-xl bg-navy p-6">
-            <div className="mb-2 text-2xl font-bold text-gold">TO</div>
-            <div className="text-sm text-white/70">Atuação em todo o Tocantins</div>
+          <div className="bg-ba-bg p-6">
+            <div className="mb-2 text-2xl font-extrabold tracking-[-0.02em] text-ba-accent">TO</div>
+            <div className="text-sm text-ba-text/70">Atuação em todo o Tocantins</div>
           </div>
-          <div className="rounded-xl bg-navy p-6">
-            <div className="mb-2 text-2xl font-bold text-gold">24h</div>
-            <div className="text-sm text-white/70">Retorno de primeiro contato</div>
+          <div className="bg-ba-bg p-6">
+            <div className="mb-2 text-2xl font-extrabold tracking-[-0.02em] text-ba-accent">24h</div>
+            <div className="text-sm text-ba-text/70">Retorno de primeiro contato</div>
           </div>
-          <div className="rounded-xl bg-slate-bg p-6">
-            <div className="mb-2 text-2xl font-bold text-navy">4</div>
-            <div className="text-sm text-slate-muted">Áreas de atuação especializadas</div>
+          <div className="bg-ba-mist p-6">
+            <div className="mb-2 text-2xl font-extrabold tracking-[-0.02em] text-ba-bg">4</div>
+            <div className="text-sm text-ba-slate">Áreas de atuação especializadas</div>
           </div>
         </div>
       </Reveal>
@@ -240,20 +229,20 @@ export function About() {
 
 export function Services({ services }: { services: Service[] }) {
   return (
-    <section id="especialidades" className="bg-white px-4 py-20 sm:px-8 sm:py-28">
-      <div className="mx-auto max-w-6xl">
+    <section id="especialidades" className="ba-paper border-t border-ba-steel/20 px-4 py-20 sm:px-8 sm:py-28">
+      <div className="mx-auto max-w-ba-container">
         <Reveal>
-          <h2 className="mb-12 text-center text-3xl font-semibold text-navy sm:text-4xl">Especialidades</h2>
+          <h2 className={`${SECTION_TITLE} mb-12 text-center text-ba-bg`}>Especialidades</h2>
         </Reveal>
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {services.map((service, index) => (
             <Reveal key={service.id} delay={index * 80}>
-              <div className="h-full rounded-lg border border-navy/10 p-8 transition hover:-translate-y-1 hover:border-gold hover:shadow-[0_12px_32px_rgba(212,175,55,0.1)]">
-                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-lg bg-slate-bg">
-                  <ServiceIcon slug={service.slug} className="text-gold" size={28} />
+              <div className="h-full p-8 shadow-[inset_0_0_0_1px_rgb(var(--ba-steel)/0.2)] transition-[box-shadow,transform] duration-300 hover:-translate-y-1 hover:shadow-ba-ring-accent">
+                <div className="mb-5 flex h-14 w-14 items-center justify-center bg-ba-mist">
+                  <ServiceIcon slug={service.slug} className="text-ba-accent" size={28} />
                 </div>
-                <h3 className="mb-3 text-lg font-semibold text-navy">{service.title}</h3>
-                <p className="text-sm leading-relaxed text-slate-muted">{service.description}</p>
+                <h3 className="mb-3 text-ba-item text-ba-bg">{service.title}</h3>
+                <p className="text-ba-body-sm text-ba-slate">{service.description}</p>
               </div>
             </Reveal>
           ))}
@@ -265,27 +254,25 @@ export function Services({ services }: { services: Service[] }) {
 
 export function Testimonials({ testimonials }: { testimonials: Testimonial[] }) {
   return (
-    <section id="depoimentos" className="bg-slate-bg px-4 py-20 sm:px-8 sm:py-28">
-      <div className="mx-auto max-w-6xl">
+    <section id="depoimentos" className="bg-ba-mist px-4 py-20 sm:px-8 sm:py-28">
+      <div className="mx-auto max-w-ba-container">
         <Reveal>
-          <h2 className="mb-12 text-center text-3xl font-semibold text-navy sm:text-4xl">
-            O que nossos clientes dizem
-          </h2>
+          <h2 className={`${SECTION_TITLE} mb-12 text-center text-ba-bg`}>O que nossos clientes dizem</h2>
         </Reveal>
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {testimonials.map((t, index) => (
             <Reveal key={t.id} delay={index * 100}>
-              <div className="h-full rounded-lg border-l-4 border-gold bg-white p-8">
+              <div className="h-full border-l-4 border-ba-accent bg-white p-8">
                 <div className="mb-4 flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gold text-lg font-bold text-navy">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-ba-accent text-lg font-bold text-white">
                     {t.author.charAt(0)}
                   </div>
                   <div>
-                    <div className="text-sm font-semibold text-navy">{t.author}</div>
-                    <div className="text-xs text-slate-muted">{t.role}</div>
+                    <div className="text-sm font-bold text-ba-bg">{t.author}</div>
+                    <div className="text-xs text-ba-slate/80">{t.role}</div>
                   </div>
                 </div>
-                <p className="text-sm leading-relaxed text-slate-muted">&ldquo;{t.content}&rdquo;</p>
+                <p className="text-ba-body-sm text-ba-slate">&ldquo;{t.content}&rdquo;</p>
               </div>
             </Reveal>
           ))}
@@ -295,41 +282,46 @@ export function Testimonials({ testimonials }: { testimonials: Testimonial[] }) 
   );
 }
 
+const CONTACT_LABEL = "mb-2 text-xs font-bold uppercase tracking-ba-eyebrow text-ba-accent";
+// -my-2.5/py-2.5: área de toque de ~40px sem mexer no espaçamento visual.
+const CONTACT_VALUE = "-my-2.5 inline-block py-2.5 text-ba-text transition-colors duration-300 hover:text-ba-accent";
+
 export function Contact() {
   return (
-    <section id="contato" className="bg-navy px-4 py-20 sm:px-8 sm:py-28">
-      <div className="mx-auto max-w-6xl">
+    <section id="contato" className="relative overflow-hidden px-4 py-20 sm:px-8 sm:py-28">
+      <div
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(100%_80%_at_50%_100%,rgb(var(--ba-accent)/0.18)_0%,rgb(var(--ba-bg)/0)_65%)]"
+        aria-hidden="true"
+      />
+      <div className="relative mx-auto max-w-ba-container">
         <Reveal>
-          <h2 className="mb-14 text-center text-3xl font-semibold text-white sm:text-4xl">Entre em Contato</h2>
+          <h2 className={`${SECTION_TITLE} mb-14 text-center text-ba-text`}>Entre em Contato</h2>
         </Reveal>
         <Reveal className="grid gap-12 sm:grid-cols-2">
           <div className="space-y-6 text-center sm:text-left">
             <div>
-              <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gold">Telefone</h3>
-              <a href="tel:+5563999941821" className="block text-slate-bg hover:text-gold">
-                (63) 99994-1821
-              </a>
-              <a href="tel:+5562993620731" className="block text-slate-bg hover:text-gold">
-                (62) 99362-0731
+              <h3 className={CONTACT_LABEL}>Telefone</h3>
+              <a href={`tel:${PHONE_E164}`} className={CONTACT_VALUE}>
+                {PHONE_DISPLAY}
               </a>
             </div>
             <div>
-              <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gold">E-mail</h3>
-              <a href="mailto:alecrimrio@gmail.com" className="text-slate-bg hover:text-gold">
-                alecrimrio@gmail.com
+              <h3 className={CONTACT_LABEL}>E-mail</h3>
+              <a href={`mailto:${CONTACT_EMAIL}`} className={CONTACT_VALUE}>
+                {CONTACT_EMAIL}
               </a>
             </div>
             <div>
-              <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gold">Localização</h3>
-              <p className="text-slate-bg">Palmas, Tocantins — atendimento em todo o estado</p>
+              <h3 className={CONTACT_LABEL}>Localização</h3>
+              <p className="text-ba-text">Palmas, Tocantins — atendimento em todo o estado</p>
             </div>
             <div>
-              <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gold">Instagram</h3>
+              <h3 className={CONTACT_LABEL}>Instagram</h3>
               <a
                 href="https://www.instagram.com/advocaciaalecrim_/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-slate-bg hover:text-gold"
+                className={CONTACT_VALUE}
               >
                 @advocaciaalecrim_
               </a>
@@ -345,8 +337,16 @@ export function Contact() {
 
 export function Footer() {
   return (
-    <footer className="bg-black px-4 py-10 text-center text-xs text-white/60 sm:px-8">
+    <footer className="border-t border-ba-steel/50 px-4 pb-24 pt-10 text-center text-xs text-ba-text/55 sm:px-8 sm:pb-10">
       <p>© {new Date().getFullYear()} Dr. Alecrim Advocacia. Todos os direitos reservados.</p>
+      <p className="mt-3 flex flex-wrap justify-center gap-x-6">
+        <a href="/blog" className="inline-block py-3 underline-offset-4 transition-colors duration-300 hover:text-ba-accent hover:underline">
+          Blog
+        </a>
+        <a href={PRIVACY_PATH} className="inline-block py-3 underline-offset-4 transition-colors duration-300 hover:text-ba-accent hover:underline">
+          Aviso de Privacidade
+        </a>
+      </p>
     </footer>
   );
 }

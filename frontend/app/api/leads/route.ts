@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { forwardedForHeader } from "@/lib/clientIp";
 
 const API_URL =
   process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -21,14 +22,13 @@ export async function POST(request: Request) {
   // Repassa o IP real do visitante (setado pelo Nginx do host, ver
   // DEPLOY-HOSTINGER.md) - sem isso, o rate limit de "5 per minute" do
   // Flask vê sempre o IP interno do container do Next e vira um limite
-  // global compartilhado por todo mundo em vez de por remetente.
-  const forwardedFor = request.headers.get("x-forwarded-for");
-
+  // global compartilhado por todo mundo em vez de por remetente. Vai um
+  // único IP, o que o Nginx acrescentou (ver lib/clientIp.ts).
   const res = await fetch(`${API_URL}/api/leads`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(forwardedFor ? { "X-Forwarded-For": forwardedFor } : {}),
+      ...forwardedForHeader(request),
     },
     body: JSON.stringify(body),
   });

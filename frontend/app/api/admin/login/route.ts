@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { ADMIN_COOKIE_NAME } from "@/lib/adminProxy";
+import { forwardedForHeader } from "@/lib/clientIp";
 
 const API_URL =
   process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -20,13 +21,13 @@ export async function POST(request: Request) {
   // e vira um limite global compartilhado por todo mundo em vez de por
   // atacante. O Flask confia nesse header via ProxyFix (app/__init__.py),
   // que só considera 1 hop - o do Next, único caminho pra chegar até ele.
-  const forwardedFor = request.headers.get("x-forwarded-for");
-
+  // Vai um único IP, o que o Nginx acrescentou, e nunca o header recebido do
+  // cliente (ver lib/clientIp.ts).
   const res = await fetch(`${API_URL}/api/admin/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(forwardedFor ? { "X-Forwarded-For": forwardedFor } : {}),
+      ...forwardedForHeader(request),
     },
     body: JSON.stringify(body),
   });

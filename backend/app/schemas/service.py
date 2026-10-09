@@ -6,6 +6,8 @@ SLUG_MAX = 80
 TITLE_MAX = 120
 ICON_MAX = 40
 DESCRIPTION_MAX = 4000
+ORDER_MIN = 0
+ORDER_MAX = 9999
 
 # Usado como identificador na URL pública (ex.: /servicos/<slug>) - só
 # letras minúsculas, números e hífen, sem espaço/acento/HTML.
@@ -21,9 +23,13 @@ class ServiceSchema(Schema):
         ],
     )
     title = fields.Str(required=True, validate=validate.Length(min=2, max=TITLE_MAX))
-    icon = fields.Str(required=False, load_default="briefcase", validate=validate.Length(max=ICON_MAX))
+    # Opcional (ausente = "briefcase"), mas não pode vir vazio: o `required`
+    # do <input> no painel era a única coisa que impedia gravar icon="".
+    icon = fields.Str(required=False, load_default="briefcase", validate=validate.Length(min=1, max=ICON_MAX))
     description = fields.Str(required=True, validate=validate.Length(min=2, max=DESCRIPTION_MAX))
-    order = fields.Int(required=False, load_default=0)
+    # Faixa explícita: sem ela um inteiro fora do range do INTEGER do Postgres
+    # (ex.: 99999999999) passava na validação e estourava em 500 no commit.
+    order = fields.Int(required=False, load_default=0, validate=validate.Range(min=ORDER_MIN, max=ORDER_MAX))
 
     @pre_load
     def sanitize_input(self, data, **kwargs):

@@ -1,5 +1,4 @@
 import logging
-import os
 
 from cryptography.fernet import Fernet
 from flask import Flask
@@ -7,50 +6,80 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from .config import Config
 from .extensions import cors, db, limiter, migrate
-
-_DEFAULT_SECRET_KEY = "change-me-in-production"
-
-# Valores "de exemplo" que já apareceram em arquivos versionados (default de
-# config.py e placeholder de backend/.env.example) - públicos, portanto tão
-# inseguros quanto não ter chave.
-_PLACEHOLDER_SECRET_KEYS = frozenset({_DEFAULT_SECRET_KEY, "troque-por-uma-chave-aleatoria-longa"})
-_MIN_SECRET_KEY_LENGTH = 32
+from .utils.boot_checks import (
+    MIN_SECRET_KEY_LENGTH,
+    database_url_has_placeholder_password,
+    insecure_config_allowed,
+    secret_key_problem,
+)
+from .utils.request_limits import RouteLimitedRequest, reject_out_of_range_ids
 
 
 def create_app(config_class: type[Config] = Config) -> Flask:
     app = Flask(__name__)
+    # Teto de tamanho do body por rota (upload e artigos precisam de mais
+    # que os 256 KB do resto da API) - ver app/utils/request_limits.py.
+    app.request_class = RouteLimitedRequest
+    # Todo `<int:...>` de rota passa a ter o teto do INTEGER do banco.
+    app.before_request(reject_out_of_range_ids)
     app.config.from_object(config_class)
 
-    secret_key = app.config.get("SECRET_KEY") or ""
-    if secret_key in _PLACEHOLDER_SECRET_KEYS or len(secret_key) < _MIN_SECRET_KEY_LENGTH:
-        if os.environ.get("FLASK_ENV") == "production":
-            # Em produção (marcada explicitamente via FLASK_ENV=production,
-            # ver docker-compose.yml) um SECRET_KEY previsível permite
-            # forjar um token de admin válido (assinatura de
-            # itsdangerous.URLSafeTimedSerializer) - crashar o boot aqui é
-            # preferível a subir com a autenticação admin efetivamente
-            # quebrada. Fora de produção (dev/testes), só avisa - ver
-            # warning abaixo.
+    # Segredos de exemplo/fracos derrubam o boot SEMPRE, a não ser com o
+    # opt-in explícito de dev/teste (FLASK_ENV=development|testing - ver
+    # utils/boot_checks.py). Antes era o contrário: só falhava com
+    # FLASK_ENV=production, então qualquer forma de subir o backend fora do
+    # docker-compose rodava com chave pública e apenas um warning.
+    insecure_allowed = insecure_config_allowed()
+
+    # Um SECRET_KEY previsível permite forjar um token de admin válido
+    # (assinatura de itsdangerous.URLSafeTimedSerializer) - crashar o boot
+    # aqui é preferível a subir com a autenticação admin efetivamente
+    # quebrada.
+    secret_key = app.config.get("SECRET_KEY")
+    key_problem = secret_key_problem(secret_key)
+    if key_problem is not None:
+        # Chave ausente falha até com o opt-in: sem ela não há como
+        # assinar token nenhum (o login quebraria com erro 500).
+        if not insecure_allowed or not secret_key:
             raise RuntimeError(
-                "SECRET_KEY está usando um valor de exemplo ou tem menos de "
-                f"{_MIN_SECRET_KEY_LENGTH} caracteres. Defina um valor forte e "
-                "aleatório em backend/.env antes de subir em produção, ex.: "
-                '`python -c "import secrets; print(secrets.token_hex(32))"`.'
+                f"SECRET_KEY {key_problem}. Defina um valor forte e aleatório "
+                f"(mínimo de {MIN_SECRET_KEY_LENGTH} caracteres) em "
+                "backend/.env, ex.: "
+                '`python -c "import secrets; print(secrets.token_hex(32))"`. '
+                "Só em desenvolvimento/testes, FLASK_ENV=development (ou "
+                "testing) transforma este erro em aviso."
             )
         logging.getLogger(__name__).warning(
-            "SECRET_KEY está usando um valor de exemplo ou tem menos de %s "
-            "caracteres. Defina um valor forte e aleatório em backend/.env "
-            "antes de expor este serviço em produção.",
-            _MIN_SECRET_KEY_LENGTH,
+            "SECRET_KEY %s. Tolerado só porque FLASK_ENV indica "
+            "desenvolvimento/teste - nunca exponha este serviço assim.",
+            key_problem,
+        )
+
+    # O docker-compose só exige POSTGRES_PASSWORD não vazia; quem valida o
+    # VALOR é a aplicação. A mensagem nunca inclui a senha nem a URL.
+    if database_url_has_placeholder_password(app.config.get("SQLALCHEMY_DATABASE_URI")):
+        if not insecure_allowed:
+            raise RuntimeError(
+                "A senha do banco em DATABASE_URL é um valor de exemplo dos "
+                ".env.example (público). Troque POSTGRES_PASSWORD no .env da "
+                "raiz (ou a DATABASE_URL, se rodar fora do docker-compose) "
+                "por uma senha forte e aleatória. Atenção: se o volume do "
+                "Postgres já foi criado com a senha antiga, altere-a também "
+                "dentro do banco (ALTER USER ... PASSWORD ...). Só em "
+                "desenvolvimento/testes, FLASK_ENV=development (ou testing) "
+                "transforma este erro em aviso."
+            )
+        logging.getLogger(__name__).warning(
+            "A senha do banco em DATABASE_URL é um valor de exemplo. "
+            "Tolerado só porque FLASK_ENV indica desenvolvimento/teste."
         )
 
     field_key = app.config.get("FIELD_ENCRYPTION_KEY")
     if not field_key:
-        # Sem default possível aqui (diferente de SECRET_KEY): um valor
-        # "de exemplo" só adiaria o mesmo problema pra quando alguém
-        # esquecer de trocar, e essa é uma feature nova (nenhum deploy
-        # existente depende de um comportamento tolerante) - falha sempre,
-        # não só em produção.
+        # Sem default possível aqui: um valor "de exemplo" só adiaria o
+        # mesmo problema pra quando alguém esquecer de trocar. Falha
+        # sempre, em qualquer ambiente (nem o opt-in de dev/teste acima
+        # dispensa - sem chave não há como gravar um Lead).
         raise RuntimeError(
             "FIELD_ENCRYPTION_KEY não está definida. Ela criptografa os "
             "dados pessoais de Lead (nome/telefone/e-mail/mensagem) em "
@@ -90,6 +119,7 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     from .api.admin_auth import bp as admin_auth_bp
     from .api.admin_content import bp as admin_content_bp
     from .api.admin_users import bp as admin_users_bp
+    from .api.articles import bp as articles_bp
     from .api.content import bp as content_bp
     from .api.health import bp as health_bp
     from .api.leads import bp as leads_bp
@@ -100,6 +130,7 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     app.register_blueprint(admin_auth_bp)
     app.register_blueprint(admin_content_bp)
     app.register_blueprint(admin_users_bp)
+    app.register_blueprint(articles_bp)
 
     @app.errorhandler(404)
     def not_found(_error):

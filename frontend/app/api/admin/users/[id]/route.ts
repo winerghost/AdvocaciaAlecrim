@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isValidId, proxyAdmin, readJsonBody } from "@/lib/adminProxy";
+import { forwardedForHeader } from "@/lib/clientIp";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -17,13 +18,11 @@ export async function DELETE(request: Request, { params }: RouteContext) {
   }
 
   // Mesmo motivo do login: o rate limit do Flask precisa do IP real.
-  const forwardedFor = request.headers.get("x-forwarded-for");
-
   return proxyAdmin(`/api/admin/users/${id}`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
-      ...(forwardedFor ? { "X-Forwarded-For": forwardedFor } : {}),
+      ...forwardedForHeader(request),
     },
     body: JSON.stringify(parsed.body),
   });

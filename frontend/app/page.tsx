@@ -29,7 +29,8 @@ export default async function Home() {
   ]);
 
   return (
-    <main>
+    // .theme-ba liga os tokens do design system (ver globals.css).
+    <main className="theme-ba">
       <ScrollProgress />
       <Nav />
       <Hero />

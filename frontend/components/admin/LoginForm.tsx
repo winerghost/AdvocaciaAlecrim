@@ -48,7 +48,7 @@ export default function LoginForm() {
           E-mail
         </label>
         <div className="relative">
-          <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[#adb5bd]">
+          <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-adm-faint">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -66,12 +66,13 @@ export default function LoginForm() {
           </span>
           <input
             id="email"
+            maxLength={255}
             name="email"
             type="email"
             required
             autoComplete="username"
             placeholder="E-mail"
-            className="w-full rounded border border-[#ced4da] bg-white py-2.5 pl-9 pr-3 text-sm text-[#343a40] placeholder:text-[#adb5bd] focus:border-[#80bdff] focus:outline-none focus:ring focus:ring-[#007bff]/25"
+            className="w-full rounded border border-adm-border-strong bg-white py-2.5 pl-9 pr-3 text-sm text-adm-ink placeholder:text-adm-faint focus:border-adm-focus focus:outline-none focus:ring focus:ring-adm-accent/25"
           />
         </div>
       </div>
@@ -81,7 +82,7 @@ export default function LoginForm() {
           Senha
         </label>
         <div className="relative">
-          <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[#adb5bd]">
+          <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-adm-faint">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -99,18 +100,19 @@ export default function LoginForm() {
           </span>
           <input
             id="password"
+            maxLength={128}
             name="password"
             type="password"
             required
             autoComplete="current-password"
             placeholder="Senha"
-            className="w-full rounded border border-[#ced4da] bg-white py-2.5 pl-9 pr-3 text-sm text-[#343a40] placeholder:text-[#adb5bd] focus:border-[#80bdff] focus:outline-none focus:ring focus:ring-[#007bff]/25"
+            className="w-full rounded border border-adm-border-strong bg-white py-2.5 pl-9 pr-3 text-sm text-adm-ink placeholder:text-adm-faint focus:border-adm-focus focus:outline-none focus:ring focus:ring-adm-accent/25"
           />
         </div>
       </div>
 
       {status === "error" && (
-        <p className="rounded border border-[#f5c2c7] bg-[#f8d7da] px-3 py-2 text-sm text-[#842029]">
+        <p className="rounded border border-adm-danger-line bg-adm-danger-soft px-3 py-2 text-sm text-adm-danger-ink">
           E-mail ou senha inválidos.
         </p>
       )}
@@ -118,7 +120,7 @@ export default function LoginForm() {
       <button
         type="submit"
         disabled={status === "loading"}
-        className="w-full rounded bg-[#007bff] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0069d9] disabled:opacity-60"
+        className="w-full rounded bg-adm-accent px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-adm-accent-strong disabled:opacity-60"
       >
         {status === "loading" ? "Entrando..." : "Entrar"}
       </button>

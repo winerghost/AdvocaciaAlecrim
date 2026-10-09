@@ -1,14 +1,21 @@
 #!/bin/sh
 set -e
 
-echo "Aplicando schema do banco (create_all)..."
+echo "Aplicando schema do banco (create_all + colunas novas)..."
+# create_all cria tabela que falta, mas nunca altera uma que já existe:
+# coluna nova em tabela antiga entra por apply_schema_upgrades (idempotente,
+# ver app/utils/schema_upgrades.py). Roda aqui, antes do seed e do gunicorn,
+# para o app nunca atender request com o schema pela metade.
 python - <<'PY'
 from app import create_app
 from app.extensions import db
+from app.utils.schema_upgrades import apply_schema_upgrades
 
 app = create_app()
 with app.app_context():
     db.create_all()
+    for change in apply_schema_upgrades():
+        print(f"Schema: coluna {change} adicionada.")
 PY
 
 echo "Populando conteúdo inicial (idempotente, só insere se estiver vazio)..."

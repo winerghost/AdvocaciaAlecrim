@@ -1,4 +1,4 @@
-from flask import Blueprint, request
+from flask import Blueprint, current_app, g, request
 from marshmallow import ValidationError
 
 from ..extensions import db
@@ -218,10 +218,27 @@ def delete_faq(faq_id):
 
 # ----------------------------------------------------------------- leads --
 
+def _audit_lead(action: str, detail: str) -> None:
+    """Trilha de auditoria do acesso a dados pessoais de leads (LGPD): quem
+    listou, mudou o status ou excluiu, e de onde. Mesmo formato e mesmo
+    motivo do `warning` de admin_users.py (stdout do container -> `docker
+    compose logs backend`; o logger do Flask descarta `info` fora do debug).
+
+    NUNCA passar conteúdo do lead (nome, telefone, e-mail, mensagem) em
+    `detail` - só id, contagem e status. O log não é cifrado nem expurgado
+    junto com o lead, então dado pessoal aqui sobreviveria à exclusão.
+    """
+    current_app.logger.warning(
+        "AUDIT %s by=#%s (%s) %s ip=%s",
+        action, g.admin_user.id, g.admin_user.email, detail, request.remote_addr,
+    )
+
+
 @bp.get("/leads")
 @require_admin
 def list_leads():
     leads = Lead.query.order_by(Lead.created_at.desc()).all()
+    _audit_lead("leads_listed", f"count={len(leads)}")
     return {"data": [lead.to_dict() for lead in leads]}, 200
 
 
@@ -243,8 +260,10 @@ def update_lead_status(lead_id):
     except ValidationError as err:
         return {"error": "validation_error", "details": err.messages}, 400
 
+    previous_status = lead.status
     lead.status = data["status"]
     db.session.commit()
+    _audit_lead("lead_status_changed", f"target=#{lead.id} status={previous_status}->{lead.status}")
     return {"data": lead.to_dict()}, 200
 
 
@@ -259,4 +278,5 @@ def delete_lead(lead_id):
 
     db.session.delete(lead)
     db.session.commit()
+    _audit_lead("lead_deleted", f"target=#{lead_id}")
     return "", 204

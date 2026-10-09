@@ -1,0 +1,64 @@
+# Lockfile do backend: versão exata de TODA dependência de runtime, diretas
+# e transitivas (Werkzeug, Jinja2, SQLAlchemy, limits...). Sem isto só as
+# diretas de requirements.txt ficavam fixas e as transitivas mudavam
+# sozinhas a cada `docker compose build`.
+#
+# NÃO edite na mão. A lista editável é requirements.txt (só as diretas);
+# este arquivo é consumido como "constraints" do pip:
+#
+#   pip install -r requirements.txt -c constraints.txt
+#
+# (é assim que o Dockerfile instala, e é assim que o venv local deve ser
+# criado). O Dockerfile ainda falha o build se algum pacote instalado não
+# estiver listado aqui.
+#
+# Para atualizar: mude a versão em requirements.txt (ou a linha da
+# transitiva aqui, quando o pip-audit apontar uma), instale no venv, rode a
+# suíte e regenere a partir do venv que passou nos testes:
+#
+#   pip freeze --exclude pytest --exclude iniconfig --exclude pluggy
+#
+# pytest/iniconfig/pluggy ficam de fora porque são só da suíte (não entram
+# na imagem). O `colorama` só é dependência do click no Windows - mantenha o
+# marcador `sys_platform` da linha dele ao regenerar.
+#
+# Gerado em Python 3.11/Windows; a imagem é Python 3.12/Linux. Nenhuma
+# dependência atual tem transitiva exclusiva de Linux ou de 3.12 (conferido
+# pelos marcadores de cada pacote), então a lista vale para os dois.
+alembic==1.19.1
+blinker==1.9.0
+cffi==2.1.1
+click==8.4.2
+colorama==0.4.6 ; sys_platform == "win32"
+cryptography==50.0.1
+Deprecated==1.3.1
+dnspython==2.8.0
+email_validator==2.2.0
+Flask==3.1.3
+flask-cors==6.0.5
+Flask-Limiter==3.8.0
+Flask-Migrate==4.0.7
+Flask-SQLAlchemy==3.1.1
+greenlet==3.5.5
+gunicorn==22.0.0
+idna==3.19
+itsdangerous==2.2.0
+Jinja2==3.1.6
+limits==5.8.0
+Mako==1.4.1
+markdown-it-py==4.2.0
+MarkupSafe==3.0.3
+marshmallow==3.26.2
+mdurl==0.1.2
+nh3==0.3.7
+ordered-set==4.1.0
+packaging==26.3
+psycopg2-binary==2.9.9
+pycparser==3.0
+Pygments==2.21.0
+python-dotenv==1.2.2
+rich==13.9.4
+SQLAlchemy==2.0.52
+typing_extensions==4.16.0
+Werkzeug==3.1.9
+wrapt==2.3.0

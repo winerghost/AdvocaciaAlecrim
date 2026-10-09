@@ -21,12 +21,19 @@ NAME_MAX = 120
 PHONE_MAX = 20
 AREA_MAX = 80
 MESSAGE_MAX = 2000
+# Tamanho máximo de um endereço de e-mail (RFC 5321).
+EMAIL_MAX = 254
 
 
 class LeadSchema(Schema):
     name = fields.Str(required=True, validate=validate.Length(min=2, max=NAME_MAX))
     phone = fields.Str(required=True, validate=validate.Length(min=8, max=PHONE_MAX))
-    email = fields.Email(required=False, allow_none=True, load_default=None)
+    email = fields.Email(
+        required=False,
+        allow_none=True,
+        load_default=None,
+        validate=validate.Length(max=EMAIL_MAX),
+    )
     area = fields.Str(
         required=False,
         allow_none=True,

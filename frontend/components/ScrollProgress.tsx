@@ -37,7 +37,7 @@ export default function ScrollProgress() {
     <div
       role="progressbar"
       aria-hidden="true"
-      className="fixed left-0 top-0 z-[100] h-[3px] bg-gradient-to-r from-gold to-gold-dark"
+      className="fixed left-0 top-0 z-[100] h-[3px] bg-ba-accent"
       style={{ width: `${progress}%`, transition: "width 0.15s ease-out" }}
     />
   );

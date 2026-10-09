@@ -1,12 +1,20 @@
-import pytest
-from cryptography.fernet import Fernet
-from werkzeug.security import generate_password_hash
+import os
 
-from app import create_app
-from app.config import Config
-from app.extensions import db, limiter
-from app.models import AdminUser
-from app.utils.auth import issue_token
+# Opt-in explícito de dev/teste das checagens de segredo do boot (ver
+# app/utils/boot_checks.py): sem ele, `create_app` recusa SECRET_KEY e senha
+# de banco fracas. Precisa vir ANTES de importar `app`, e é atribuição direta
+# (não `setdefault`) para a suíte não depender do ambiente de quem a roda.
+os.environ["FLASK_ENV"] = "testing"
+
+import pytest  # noqa: E402
+from cryptography.fernet import Fernet  # noqa: E402
+from werkzeug.security import generate_password_hash  # noqa: E402
+
+from app import create_app  # noqa: E402
+from app.config import Config  # noqa: E402
+from app.extensions import db, limiter  # noqa: E402
+from app.models import AdminUser  # noqa: E402
+from app.utils.auth import issue_token  # noqa: E402
 
 ADMIN_EMAIL = "admin@example.com"
 ADMIN_PASSWORD = "SenhaForteDoAdmin123"
@@ -17,6 +25,10 @@ class TestConfig(Config):
     TESTING = True
     # Nunca dispara SMTP de verdade nos testes.
     MAIL_SERVER = None
+    # Valor fixo só pra suíte (Config não tem mais default de SECRET_KEY).
+    # Passa nas checagens de boot por conta própria, então os testes não
+    # dependem do opt-in acima para assinar tokens.
+    SECRET_KEY = "chave-de-teste-nao-usar-fora-da-suite-0123456789"
     # Chave fixa só pra suíte de testes (não vem de env var - `Config`
     # exigiria isso via FIELD_ENCRYPTION_KEY, mas aqui sobrescrevemos
     # direto, igual já é feito com SQLALCHEMY_DATABASE_URI acima).

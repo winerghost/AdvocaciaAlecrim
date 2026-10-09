@@ -47,4 +47,7 @@ def create_lead():
     except Exception:  # não falha a requisição por causa do e-mail
         current_app.logger.exception("Falha ao enviar notificação de novo lead #%s", lead.id)
 
-    return {"data": {"id": lead.id, "received": True}}, 201
+    # Sem o `id`: é a chave primária sequencial, e devolvê-la numa rota
+    # pública contaria a qualquer visitante quantos contatos o escritório
+    # já recebeu (e em que ritmo).
+    return {"data": {"received": True}}, 201

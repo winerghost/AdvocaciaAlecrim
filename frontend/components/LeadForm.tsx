@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { PRIVACY_PATH } from "@/lib/constants";
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -54,9 +55,9 @@ export default function LeadForm() {
 
   if (status === "success") {
     return (
-      <div className="rounded-lg border border-gold/40 bg-white/5 p-6 text-center text-slate-bg">
+      <div className="bg-ba-steel/[0.22] p-6 text-center text-ba-text shadow-ba-ring-accent">
         <p className="font-semibold">Mensagem enviada!</p>
-        <p className="mt-1 text-sm text-slate-bg/80">
+        <p className="mt-1 text-sm text-ba-text/70">
           Retornamos o contato o quanto antes. Se preferir, fale agora pelo WhatsApp.
         </p>
       </div>
@@ -71,51 +72,67 @@ export default function LeadForm() {
       <div className="grid gap-4 sm:grid-cols-2">
         <input
           name="name"
+          maxLength={120}
           required
           placeholder="Nome completo"
-          className="rounded-md border border-white/15 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/50 focus:border-gold focus:outline-none"
+          className="rounded-[4px] border border-ba-steel/70 bg-ba-steel/[0.16] px-4 py-3 text-base text-ba-text sm:text-sm placeholder:text-ba-text/50 transition-colors duration-300 focus:border-ba-accent focus:outline-none"
         />
         <input
           name="phone"
+          maxLength={20}
           required
           placeholder="Telefone / WhatsApp"
-          className="rounded-md border border-white/15 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/50 focus:border-gold focus:outline-none"
+          className="rounded-[4px] border border-ba-steel/70 bg-ba-steel/[0.16] px-4 py-3 text-base text-ba-text sm:text-sm placeholder:text-ba-text/50 transition-colors duration-300 focus:border-ba-accent focus:outline-none"
         />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <input
           name="email"
+          maxLength={254}
           type="email"
           placeholder="E-mail (opcional)"
-          className="rounded-md border border-white/15 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/50 focus:border-gold focus:outline-none"
+          className="rounded-[4px] border border-ba-steel/70 bg-ba-steel/[0.16] px-4 py-3 text-base text-ba-text sm:text-sm placeholder:text-ba-text/50 transition-colors duration-300 focus:border-ba-accent focus:outline-none"
         />
         <select
           name="area"
           defaultValue=""
-          className="rounded-md border border-white/15 bg-white/5 px-4 py-3 text-sm text-white focus:border-gold focus:outline-none"
+          className="rounded-[4px] border border-ba-steel/70 bg-ba-steel/[0.16] px-4 py-3 text-base text-ba-text sm:text-sm transition-colors duration-300 focus:border-ba-accent focus:outline-none"
         >
-          <option value="" disabled className="text-navy">
+          <option value="" disabled className="text-ba-bg">
             Área de interesse
           </option>
-          <option className="text-navy" value="Inventário Judicial">Inventário Judicial</option>
-          <option className="text-navy" value="Aposentadoria">Aposentadoria</option>
-          <option className="text-navy" value="Ação Trabalhista">Ação Trabalhista</option>
-          <option className="text-navy" value="Ação Cível">Ação Cível</option>
-          <option className="text-navy" value="Outro">Outro</option>
+          <option className="text-ba-bg" value="Inventário Judicial">Inventário Judicial</option>
+          <option className="text-ba-bg" value="Aposentadoria">Aposentadoria</option>
+          <option className="text-ba-bg" value="Ação Trabalhista">Ação Trabalhista</option>
+          <option className="text-ba-bg" value="Ação Cível">Ação Cível</option>
+          <option className="text-ba-bg" value="Outro">Outro</option>
         </select>
       </div>
 
       <textarea
         name="message"
+        maxLength={2000}
         rows={4}
         placeholder="Conte brevemente o seu caso"
-        className="w-full rounded-md border border-white/15 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/50 focus:border-gold focus:outline-none"
+        className="w-full rounded-[4px] border border-ba-steel/70 bg-ba-steel/[0.16] px-4 py-3 text-base text-ba-text sm:text-sm placeholder:text-ba-text/50 transition-colors duration-300 focus:border-ba-accent focus:outline-none"
       />
 
-      <label className="flex items-start gap-2 text-xs text-white/70">
-        <input type="checkbox" name="consent" required className="mt-0.5" />
-        Autorizo o uso dos meus dados para retorno de contato, conforme a LGPD.
+      <label className="flex items-start gap-2 text-xs text-ba-text/70">
+        <input type="checkbox" name="consent" required className="mt-0.5 accent-ba-accent" />
+        <span>
+          Autorizo o uso dos meus dados para retorno de contato, conforme a LGPD. Leia o{" "}
+          {/* Nova aba: não perde o que já foi digitado no formulário. */}
+          <a
+            href={PRIVACY_PATH}
+            target="_blank"
+            rel="noopener"
+            className="text-ba-text underline underline-offset-2 transition-colors duration-300 hover:text-ba-accent"
+          >
+            Aviso de Privacidade
+          </a>
+          .
+        </span>
       </label>
 
       {status === "error" && errorMsg && <p className="text-sm text-red-400">{errorMsg}</p>}
@@ -123,7 +140,7 @@ export default function LeadForm() {
       <button
         type="submit"
         disabled={status === "loading"}
-        className="w-full rounded-md bg-gold px-6 py-3 text-sm font-semibold text-navy transition hover:bg-gold-dark disabled:opacity-60 sm:w-auto"
+        className="ba-btn ba-btn-primary w-full disabled:opacity-60 sm:w-auto"
       >
         {status === "loading" ? "Enviando..." : "Enviar mensagem"}
       </button>

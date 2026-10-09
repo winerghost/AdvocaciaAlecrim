@@ -69,3 +69,517 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* =====================================================================
+   Corpo de artigo (.article-content)
+   Tipografia para o HTML gerado pelo editor. É usada em DOIS lugares, os
+   dois em fundo CLARO: a faixa branca de leitura da página pública do
+   blog e o editor/pré-visualização do painel admin. As cores vêm das
+   variáveis --article-* (valores fixos aqui, e não tokens --ba-*, porque
+   o painel admin fica fora do escopo .theme-ba).
+   Fica fora de @layer de propósito - as classes vêm do banco, o Tailwind
+   não as enxerga e não pode eliminá-las no purge.
+   ===================================================================== */
+.article-content {
+  --article-fg: #33415c;
+  --article-heading: #000417;
+  --article-muted: #64748b;
+  --article-accent: #007ef3;
+  --article-link: #0062c4;
+  --article-border: rgba(41, 67, 99, 0.2);
+  --article-surface: rgba(41, 67, 99, 0.12);
+  --article-pre-bg: #0d1526;
+  --article-pre-fg: #ecf0f3;
+
+  color: var(--article-fg);
+  font-size: 1.125rem;
+  line-height: 1.8;
+  overflow-wrap: break-word;
+}
+
+@media (max-width: 640px) {
+  .article-content {
+    font-size: 1.0625rem;
+  }
+}
+
+.article-content > :first-child {
+  margin-top: 0;
+}
+
+.article-content > :last-child {
+  margin-bottom: 0;
+}
+
+.article-content p {
+  margin: 0 0 1.45em;
+  text-wrap: pretty;
+}
+
+.article-content h2,
+.article-content h3,
+.article-content h4 {
+  color: var(--article-heading);
+  font-weight: 700;
+  text-wrap: balance;
+}
+
+.article-content h2 {
+  margin: 3.25rem 0 1.375rem;
+  font-size: clamp(1.625rem, 3vw, 2.375rem);
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+}
+
+.article-content h3 {
+  margin: 2.375rem 0 0.875rem;
+  font-size: 1.3125rem;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+}
+
+.article-content h4 {
+  margin: 1.875rem 0 0.75rem;
+  font-size: 1.0625rem;
+  line-height: 1.3;
+}
+
+.article-content strong,
+.article-content b {
+  color: var(--article-heading);
+  font-weight: 700;
+}
+
+.article-content em,
+.article-content i {
+  font-style: italic;
+}
+
+.article-content u {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.article-content s,
+.article-content del {
+  color: var(--article-muted);
+  text-decoration: line-through;
+}
+
+/* Sublinhado fino desenhado com box-shadow (não desloca o texto). */
+.article-content a {
+  color: var(--article-link);
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: inset 0 -1px 0 rgba(0, 126, 243, 0.55);
+  transition: color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.article-content a:hover {
+  color: var(--article-heading);
+  box-shadow: inset 0 -1px 0 var(--article-heading);
+}
+
+/* O preflight do Tailwind zera marcadores e recuos de lista. */
+.article-content ul,
+.article-content ol {
+  margin: 0 0 1.45em;
+}
+
+/* Lista com marcador em traço na cor de acento, no lugar da bolinha. */
+.article-content ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.article-content ul > li {
+  position: relative;
+  padding-left: 1.75rem;
+}
+
+.article-content ul > li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.78em;
+  width: 0.875rem;
+  height: 3px;
+  background: var(--article-accent);
+}
+
+.article-content ol {
+  list-style: decimal;
+  padding-left: 1.4em;
+}
+
+.article-content ol > li::marker {
+  color: var(--article-accent);
+  font-weight: 700;
+}
+
+.article-content li {
+  margin: 0.75rem 0;
+  line-height: 1.72;
+}
+
+.article-content li > p {
+  margin: 0;
+}
+
+.article-content li > ul,
+.article-content li > ol {
+  margin: 0.4em 0 0;
+}
+
+.article-content blockquote {
+  margin: 2rem 0;
+  border-left: 4px solid var(--article-accent);
+  padding: 0.25rem 0 0.25rem 1.75rem;
+  color: var(--article-heading);
+  font-size: clamp(1.25rem, 1.1rem + 0.8vw, 1.5rem);
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.article-content blockquote p {
+  margin: 0 0 0.75rem;
+}
+
+.article-content blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+.article-content hr {
+  margin: 2.5rem 0;
+  border: 0;
+  border-top: 1px solid var(--article-border);
+}
+
+/* Imagens responsivas: nunca estouram a coluna nem distorcem. */
+.article-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 2em auto;
+}
+
+/* O sanitizador do backend pode devolver um <img> sem src (origem não
+   permitida): some com ele em vez de deixar um ícone de imagem quebrada
+   e as margens ocupando espaço. */
+.article-content img:not([src]),
+.article-content img[src=""] {
+  display: none;
+}
+
+.article-content figure {
+  margin: 2em 0;
+}
+
+.article-content figure img {
+  margin: 0 auto;
+}
+
+.article-content figcaption {
+  margin-top: 0.75rem;
+  color: var(--article-muted);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.article-content code {
+  border-radius: 4px;
+  background: var(--article-surface);
+  padding: 0.12em 0.4em;
+  color: var(--article-pre-bg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.92em;
+}
+
+.article-content pre {
+  margin: 0 0 1.45em;
+  overflow-x: auto;
+  border-radius: 6px;
+  background: var(--article-pre-bg);
+  padding: 1.25rem 1.375rem;
+  color: var(--article-pre-fg);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.article-content pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+}
+
+/* Alinhamento: o backend remove todo atributo class e entrega o alinhamento
+   só como style="text-align: ..." inline em p/h2/h3/h4. O inline funciona
+   sozinho porque NADA neste bloco define text-align com !important - não
+   adicione. As classes abaixo ficam como fallback (ex.: dentro do editor). */
+.article-content .text-left {
+  text-align: left;
+}
+
+.article-content .text-center {
+  text-align: center;
+}
+
+.article-content .text-right {
+  text-align: right;
+}
+
+.article-content .text-justify {
+  text-align: justify;
+}
+
+/* =====================================================================
+   Painel admin e login (tokens adm-*)
+   Tema claro, com o mesmo azul de acento e a mesma fonte do site. Ficam em
+   :root (e não num escopo) porque components/admin/rich-text-editor.css
+   também os usa. Cores em canais RGB, como os --ba-*, para aceitar alpha:
+   rgb(var(--adm-accent) / 0.25) e, no Tailwind, `ring-adm-accent/25`.
+   ===================================================================== */
+:root {
+  --adm-accent: 0 126 243; /* #007EF3 - mesmo azul de acento do site (--ba-accent) */
+  --adm-accent-strong: 0 98 196; /* #0062C4 - hover de botões e links */
+  --adm-focus: 128 190 249; /* #80BEF9 - borda de campo em foco */
+  --adm-ink: 13 21 38; /* #0D1526 - títulos e fundo da barra lateral */
+  --adm-ink-soft: 30 41 59; /* #1E293B - item ativo da barra lateral */
+  --adm-on-dark: 203 213 225; /* #CBD5E1 - texto sobre a barra lateral */
+  --adm-body: 51 65 92; /* #33415C - texto corrido */
+  --adm-muted: 100 116 139; /* #64748B - texto secundário */
+  --adm-faint: 148 163 184; /* #94A3B8 - texto terciário, placeholders */
+  --adm-border: 219 227 236; /* #DBE3EC - bordas e divisórias */
+  --adm-border-strong: 197 207 219; /* #C5CFDB - borda de campos de formulário */
+  --adm-canvas: 242 246 250; /* #F2F6FA - fundo da página */
+  --adm-surface: 248 250 252; /* #F8FAFC - cabeçalho de tabela, barras de ferramentas */
+  --adm-surface-2: 232 238 245; /* #E8EEF5 - superfície rebaixada */
+  --adm-danger: 220 53 69; /* #DC3545 */
+  --adm-danger-strong: 187 45 59; /* #BB2D3B */
+  --adm-danger-ink: 132 32 41; /* #842029 */
+  --adm-danger-soft: 248 215 218; /* #F8D7DA */
+  --adm-danger-line: 245 194 199; /* #F5C2C7 */
+  --adm-success: 40 167 69; /* #28A745 */
+  --adm-success-strong: 33 136 56; /* #218838 */
+  --adm-success-ink: 21 87 36; /* #155724 */
+  --adm-success-soft: 212 237 218; /* #D4EDDA */
+  --adm-success-line: 195 230 203; /* #C3E6CB */
+  --adm-warning: 255 193 7; /* #FFC107 */
+  --adm-warning-strong: 180 83 9; /* #B45309 */
+  --adm-warning-ink: 102 77 3; /* #664D03 */
+  --adm-warning-soft: 255 243 205; /* #FFF3CD */
+  --adm-warning-line: 255 236 181; /* #FFECB5 */
+  --adm-info-ink: 8 66 152; /* #084298 */
+  --adm-info-soft: 207 226 255; /* #CFE2FF */
+  --adm-info-line: 182 212 254; /* #B6D4FE */
+}
+
+/* Escopo do painel: só liga a fonte (--font-figtree vem de app/layout.tsx). */
+.theme-adm {
+  font-family: var(--font-figtree), Helvetica, Arial, sans-serif;
+}
+
+/* =====================================================================
+   Design system do site (.theme-ba) - landing e blog
+   Tokens ficam NESTE escopo, não em :root, para o painel admin (que tem
+   visual próprio) não mudar de aparência. Cores em canais RGB separados por espaço para
+   aceitar alpha: rgb(var(--ba-accent) / 0.5) e, no Tailwind,
+   `bg-ba-accent/50` (ver tailwind.config.ts).
+   Para trocar a cor de acento do site inteiro, mude só --ba-accent.
+   ===================================================================== */
+.theme-ba {
+  /* Cores */
+  --ba-bg: 0 4 23; /* #000417 */
+  --ba-accent: 0 126 243; /* #007EF3 */
+  --ba-steel: 41 67 99; /* #294363 - bordas/superfícies, sempre com alpha */
+  --ba-text: 236 240 243; /* #ECF0F3 */
+  /* Faixas claras (área de leitura do artigo, caixa do autor) */
+  --ba-accent-ink: 0 98 196; /* #0062C4 - acento sobre fundo claro */
+  --ba-slate: 51 65 92; /* #33415C - texto corrido sobre fundo claro */
+  --ba-mist: 242 246 250; /* #F2F6FA - superfície clara secundária */
+
+  /* Tipografia (--font-figtree vem do next/font em app/layout.tsx) */
+  --ba-font: var(--font-figtree), Helvetica, Arial, sans-serif;
+  --ba-h1-size: clamp(2.5rem, 1.2rem + 5.6vw, 4.625rem);
+  --ba-h2-size: clamp(2rem, 1.15rem + 3.6vw, 3.5rem);
+  --ba-h3-size: 1.5rem;
+  --ba-item-size: 1.3125rem;
+  --ba-lead-size: clamp(1.0625rem, 1rem + 0.35vw, 1.1875rem);
+  --ba-body-size: 1.0625rem;
+  --ba-body-sm-size: 0.9375rem;
+
+  /* Layout e formas */
+  --ba-container: 1240px;
+  --ba-prose: 740px;
+  --ba-article: 924px; /* coluna de leitura do artigo, já com as margens */
+  --ba-radius-pill: 999px;
+  --ba-radius-card: 0px;
+
+  /* Sombras */
+  --ba-shadow-card: 0 26px 60px -30px rgba(0, 0, 0, 0.9);
+  --ba-shadow-cta: 0 18px 44px -20px rgb(var(--ba-accent) / 0.9);
+
+  /* Movimento */
+  --ba-transition: 0.3s ease;
+
+  background-color: rgb(var(--ba-bg));
+  color: rgb(var(--ba-text));
+  font-family: var(--ba-font);
+}
+
+.theme-ba ::selection {
+  background: rgb(var(--ba-accent) / 0.45);
+  color: #fff;
+}
+
+/* Faixa clara dentro do tema escuro (área de leitura do artigo). */
+.theme-ba .ba-paper {
+  background-color: #fff;
+  color: rgb(var(--ba-slate));
+}
+
+.theme-ba .ba-paper ::selection {
+  background: rgb(var(--ba-accent) / 0.25);
+  color: rgb(var(--ba-bg));
+}
+
+/* Foco visível para navegação por teclado. */
+.theme-ba :focus-visible {
+  outline: 2px solid rgb(var(--ba-accent));
+  outline-offset: 3px;
+}
+
+@layer components {
+  /* Fundo decorativo: brilho radial no topo + grid de linhas de 1px que
+     some em direção às bordas (o grid fica no ::after para a máscara não
+     recortar o brilho). Usar num elemento absolute dentro de um pai relative. */
+  .ba-backdrop {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    background-image: radial-gradient(
+      110% 70% at 50% 0%,
+      rgb(var(--ba-accent) / 0.2) 0%,
+      rgb(var(--ba-steel) / 0.08) 38%,
+      rgb(var(--ba-bg) / 0) 68%
+    );
+  }
+
+  .ba-backdrop::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0.45;
+    background-image: linear-gradient(90deg, rgb(var(--ba-steel) / 0.28) 1px, transparent 0),
+      linear-gradient(180deg, rgb(var(--ba-steel) / 0.28) 1px, transparent 0);
+    background-size: 96px 96px;
+    -webkit-mask-image: radial-gradient(75% 65% at 50% 20%, #000 0%, transparent 80%);
+    mask-image: radial-gradient(75% 65% at 50% 20%, #000 0%, transparent 80%);
+  }
+
+  /* Só o grid, para preencher superfícies pequenas (placeholder de capa). */
+  .ba-grid {
+    background-image: linear-gradient(rgb(var(--ba-steel) / 0.26) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(var(--ba-steel) / 0.26) 1px, transparent 1px);
+    background-size: 32px 32px;
+    background-position: center;
+  }
+
+  /* Eyebrow: rótulo em caixa alta, na cor de acento, precedido de uma barra. */
+  .ba-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.875rem;
+    color: rgb(var(--ba-accent) / 0.9);
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+  }
+
+  .ba-eyebrow::before {
+    content: "";
+    flex: none;
+    width: 2.75rem;
+    height: 6px;
+    background: rgb(var(--ba-accent));
+  }
+
+  /* Variante discreta para rótulos repetidos (ex.: data em cada card). */
+  .ba-eyebrow-sm {
+    gap: 0.75rem;
+    color: rgb(var(--ba-text) / 0.66);
+    letter-spacing: 0.2em;
+  }
+
+  .ba-eyebrow-sm::before {
+    width: 1.75rem;
+    height: 2px;
+  }
+
+  /* Botões em pílula. */
+  .ba-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.625rem;
+    border-radius: var(--ba-radius-pill);
+    padding: 1.125rem 2.5rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.12em;
+    text-align: center;
+    text-transform: uppercase;
+    transition: background-color var(--ba-transition), color var(--ba-transition),
+      box-shadow var(--ba-transition);
+  }
+
+  .ba-btn-primary {
+    background-color: rgb(var(--ba-accent));
+    color: #fff;
+    box-shadow: var(--ba-shadow-cta);
+  }
+
+  .ba-btn-primary:hover {
+    background-color: rgb(var(--ba-text));
+    color: rgb(var(--ba-bg));
+  }
+
+  .ba-btn-secondary {
+    background-color: transparent;
+    color: rgb(var(--ba-text));
+    box-shadow: inset 0 0 0 1px rgb(var(--ba-text) / 0.4);
+  }
+
+  .ba-btn-secondary:hover {
+    color: rgb(var(--ba-accent));
+    box-shadow: inset 0 0 0 1px rgb(var(--ba-accent));
+  }
+
+  /* Contorno para fundos claros (faixas .ba-paper). */
+  .ba-btn-outline {
+    background-color: transparent;
+    color: rgb(var(--ba-accent-ink));
+    box-shadow: inset 0 0 0 1px rgb(var(--ba-accent) / 0.55);
+  }
+
+  .ba-btn-outline:hover {
+    background-color: rgb(var(--ba-accent));
+    color: #fff;
+    box-shadow: inset 0 0 0 1px rgb(var(--ba-accent));
+  }
+
+  .ba-btn-sm {
+    padding: 0.8125rem 1.5rem;
+    font-size: 0.75rem;
+  }
+}

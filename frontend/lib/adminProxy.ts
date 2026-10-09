@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { ADMIN_COOKIE_NAME } from "@/lib/adminConstants";
+import { forwardedForHeader } from "@/lib/clientIp";
 
 const API_URL =
   process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -19,6 +20,10 @@ export async function getAdminToken(): Promise<string | null> {
  * token do Flask nunca chega no JS do navegador - só existe aqui, no
  * servidor Next, e dentro do cookie httpOnly.
  *
+ * Também repassa o IP do visitante (ver lib/clientIp.ts) em toda chamada:
+ * o Flask grava esse IP na trilha de auditoria (leads, usuários) e o usa
+ * nos rate limits - sem isso, veria sempre o IP do container do Next.
+ *
  * Se não houver cookie, responde 401 direto sem nem chamar o Flask.
  */
 export async function proxyAdmin(path: string, init?: RequestInit): Promise<NextResponse> {
@@ -30,6 +35,7 @@ export async function proxyAdmin(path: string, init?: RequestInit): Promise<Next
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
     headers: {
+      ...forwardedForHeader(await headers()),
       ...(init?.headers || {}),
       Authorization: `Bearer ${token}`,
     },

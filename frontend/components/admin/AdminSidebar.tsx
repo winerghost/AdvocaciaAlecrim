@@ -36,6 +36,18 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
+    href: "/admin/articles",
+    label: "Artigos",
+    icon: (
+      <svg {...ICON_PROPS}>
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" />
+        <line x1="8" y1="13" x2="16" y2="13" />
+        <line x1="8" y1="17" x2="16" y2="17" />
+      </svg>
+    ),
+  },
+  {
     href: "/admin/testimonials",
     label: "Depoimentos",
     icon: (
@@ -108,7 +120,7 @@ export default function AdminSidebar({
   }
 
   const navList = (
-    <nav className="flex-1 space-y-1 px-2 py-4">
+    <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-4">
       {NAV_ITEMS.map((item) => (
         <Link
           key={item.href}
@@ -116,8 +128,8 @@ export default function AdminSidebar({
           onClick={() => setOpen(false)}
           className={`flex items-center gap-3 rounded px-3 py-2.5 text-sm font-medium transition ${
             isActive(item.href)
-              ? "bg-[#1e282c] text-white"
-              : "text-[#c2c7d0] hover:bg-white/5 hover:text-white"
+              ? "bg-adm-ink-soft text-white"
+              : "text-adm-on-dark hover:bg-white/5 hover:text-white"
           }`}
         >
           {item.icon}
@@ -128,9 +140,9 @@ export default function AdminSidebar({
   );
 
   return (
-    <div className="min-h-screen bg-[#f4f6f9] md:flex">
+    <div className="theme-adm min-h-screen bg-adm-canvas md:flex">
       {/* Sidebar fixa (telas md+) */}
-      <aside className="hidden md:flex md:w-60 md:flex-shrink-0 md:flex-col md:bg-[#343a40]">
+      <aside className="hidden md:flex md:w-60 md:flex-shrink-0 md:flex-col md:bg-adm-ink">
         <div className="border-b border-white/10 px-4 py-5">
           <span className="text-sm font-bold leading-tight text-white">
             Painel · Advocacia Alecrim
@@ -147,14 +159,14 @@ export default function AdminSidebar({
             onClick={() => setOpen(false)}
             aria-hidden="true"
           />
-          <div className="absolute inset-y-0 left-0 flex w-64 flex-col bg-[#343a40] shadow-lg">
+          <div className="absolute inset-y-0 left-0 flex w-64 flex-col bg-adm-ink shadow-lg">
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
               <span className="text-sm font-bold text-white">Painel · Advocacia Alecrim</span>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Fechar menu"
-                className="text-[#c2c7d0] hover:text-white"
+                className="-m-2.5 p-2.5 text-adm-on-dark hover:text-white"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -178,13 +190,13 @@ export default function AdminSidebar({
       )}
 
       {/* Coluna de conteúdo */}
-      <div className="flex min-h-screen flex-1 flex-col">
-        <header className="flex items-center justify-between border-b border-[#dee2e6] bg-white px-4 py-3 shadow-sm sm:px-6">
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+        <header className="flex items-center justify-between border-b border-adm-border bg-white px-4 py-3 shadow-sm sm:px-6">
           <button
             type="button"
             onClick={() => setOpen(true)}
             aria-label="Abrir menu"
-            className="text-[#495057] hover:text-[#007bff] md:hidden"
+            className="-m-2.5 p-2.5 text-adm-body hover:text-adm-accent md:hidden"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -203,10 +215,10 @@ export default function AdminSidebar({
             </svg>
           </button>
 
-          <div className="hidden text-sm text-[#6c757d] md:block">
+          <div className="hidden text-sm text-adm-muted md:block">
             {email && (
               <>
-                Logado como <span className="font-medium text-[#343a40]">{email}</span>
+                Logado como <span className="font-medium text-adm-ink">{email}</span>
               </>
             )}
           </div>

@@ -4,11 +4,15 @@ const nextConfig = {
   // a imagem Docker final ficar pequena e não depender de node_modules completo.
   output: "standalone",
   reactStrictMode: true,
+  // Não anuncia "X-Powered-By: Next.js" (informação gratuita para quem
+  // procura alvos por versão de framework).
+  poweredByHeader: false,
   async headers() {
-    // Headers de segurança que não têm risco de quebrar o app (não mexem
-    // em CSP/HSTS - isso fica no Nginx do host, ver DEPLOY-HOSTINGER.md,
-    // porque depende de HTTPS já estar funcionando e precisa ser calibrado
-    // junto com o que a página realmente carrega).
+    // Headers de segurança fixos, iguais em toda resposta. A
+    // Content-Security-Policy NÃO fica aqui: ela leva um nonce novo a cada
+    // requisição e por isso é montada em proxy.ts. O HSTS continua no Nginx
+    // do host (ver DEPLOY-HOSTINGER.md), porque depende de o HTTPS já estar
+    // funcionando.
     return [
       {
         source: "/:path*",

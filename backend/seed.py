@@ -6,15 +6,26 @@ Uso:
     docker compose exec backend python seed.py
 
 É idempotente: só insere se a tabela correspondente estiver vazia.
+
+O admin inicial só é criado se ADMIN_EMAIL/ADMIN_PASSWORD passarem em
+`admin_credentials_problems` (senha forte, nada de valores de exemplo dos
+.env.example). Se não passarem, o script termina com erro (código != 0) sem
+gravar nada - e, como o entrypoint.sh roda com `set -e`, o container não
+sobe com uma credencial pública no painel.
 """
 
 import os
 
+from email_validator import EmailNotValidError, validate_email
 from werkzeug.security import generate_password_hash
 
 from app import create_app
+from app.api.admin_auth import MAX_EMAIL_LENGTH
 from app.extensions import db
 from app.models import AdminUser, Faq, Service, Testimonial
+from app.utils.boot_checks import PLACEHOLDER_ADMIN_EMAILS, is_known_placeholder
+from app.utils.password_policy import password_problem
+from app.utils.schema_upgrades import apply_schema_upgrades
 
 SERVICES = [
     dict(
@@ -139,10 +150,57 @@ FAQS = [
 ]
 
 
-def run() -> None:
-    app = create_app()
+def admin_credentials_problems(email: str, password: str) -> list[str]:
+    """O que impede usar esse par como admin inicial (lista vazia = ok).
+
+    Mesmas regras de `POST /api/admin/users` (política de senha de
+    app/utils/password_policy.py, sintaxe do e-mail), mais a recusa dos
+    valores de exemplo versionados em
+    backend/.env.example - públicos, portanto equivalentes a deixar o painel
+    aberto. As mensagens nunca repetem a senha.
+    """
+    problems = []
+
+    normalized_email = email.strip().lower()
+    if normalized_email in PLACEHOLDER_ADMIN_EMAILS:
+        problems.append(
+            "ADMIN_EMAIL é o e-mail de exemplo do .env.example - use o "
+            "e-mail real de quem vai administrar o painel."
+        )
+    else:
+        try:
+            if len(normalized_email) > MAX_EMAIL_LENGTH:
+                raise EmailNotValidError("muito longo")
+            # Só a sintaxe, sem DNS - igual ao cadastro pelo painel.
+            validate_email(normalized_email, check_deliverability=False)
+        except EmailNotValidError:
+            problems.append("ADMIN_EMAIL não é um endereço de e-mail válido.")
+
+    if is_known_placeholder(password):
+        problems.append(
+            "ADMIN_PASSWORD é a senha de exemplo do .env.example - defina "
+            "uma senha própria, forte e que não seja usada em outro lugar."
+        )
+    else:
+        # Inclui o teto de tamanho: o login recusa senhas acima dele sem nem
+        # conferir o hash - o admin seria criado e nunca conseguiria entrar.
+        problem = password_problem(password, normalized_email)
+        if problem is not None:
+            problems.append(f"ADMIN_PASSWORD {problem[1]}.")
+
+    return problems
+
+
+def run(app=None) -> None:
+    # `app` é injetável só pra testes (mesmo padrão de purge_leads.py) - em
+    # uso real (CLI/entrypoint) sempre cria um app de verdade.
+    app = app or create_app()
     with app.app_context():
         db.create_all()
+        # No boot do container o entrypoint.sh já fez isso; repete aqui (é
+        # idempotente) para o seed rodado à mão num banco antigo não
+        # quebrar ao consultar uma coluna que ainda não existe.
+        apply_schema_upgrades()
 
         if not Service.query.first():
             db.session.bulk_save_objects([Service(**s) for s in SERVICES])
@@ -166,10 +224,25 @@ def run() -> None:
         # ÚNICA vez que ADMIN_PASSWORD é lida - depois da troca de senha
         # pelo painel, a env var vira só referência histórica, nunca mais é
         # consultada (o hash já está no banco).
+        # Por isso mesmo: depois do primeiro login, troque a senha pelo
+        # painel e REMOVA ADMIN_PASSWORD de backend/.env.
         if not AdminUser.query.first():
             admin_email = os.environ.get("ADMIN_EMAIL")
             admin_password = os.environ.get("ADMIN_PASSWORD")
             if admin_email and admin_password:
+                problems = admin_credentials_problems(admin_email, admin_password)
+                if problems:
+                    # Nada do seed é gravado (o commit fica lá embaixo) e o
+                    # processo sai com código 1: com o `set -e` do
+                    # entrypoint.sh o container não sobe. É de propósito -
+                    # melhor não subir do que publicar /login com uma
+                    # credencial fraca ou conhecida.
+                    db.session.rollback()
+                    raise SystemExit(
+                        "Seed: admin inicial NÃO criado - corrija em "
+                        "backend/.env e suba de novo:\n"
+                        + "\n".join(f"  - {problem}" for problem in problems)
+                    )
                 admin = AdminUser(
                     email=admin_email.strip().lower(),
                     password_hash=generate_password_hash(admin_password),

@@ -43,14 +43,38 @@ def _password_fingerprint(admin: AdminUser) -> str:
 
 
 def issue_token(admin: AdminUser) -> str:
-    return _serializer().dumps({"admin_id": admin.id, "pv": _password_fingerprint(admin)})
+    return _serializer().dumps(
+        {
+            "admin_id": admin.id,
+            "pv": _password_fingerprint(admin),
+            "tv": admin.token_version,
+        }
+    )
+
+
+def revoke_tokens(admin: AdminUser) -> None:
+    """Invalida TODOS os tokens já emitidos para `admin` (logout).
+
+    O token é stateless - não existe sessão no servidor para apagar. O que
+    dá para fazer é mudar algo que todo token carrega: a versão (`tv`).
+    Vale para todas as sessões do admin, em qualquer navegador; o próximo
+    login emite um token com a versão nova.
+
+    O incremento é feito no banco (`token_version + 1`), não em Python,
+    para dois logouts simultâneos não se atropelarem. Faz commit.
+    """
+    AdminUser.query.filter_by(id=admin.id).update(
+        {AdminUser.token_version: AdminUser.token_version + 1},
+        synchronize_session=False,
+    )
+    db.session.commit()
 
 
 def verify_token(token: str | None) -> AdminUser | None:
     """Retorna o `AdminUser` do token, ou `None` para qualquer falha
     (assinatura inválida, token expirado, payload malformado, admin_id que
-    não existe mais no banco, ou senha trocada depois que o token foi
-    emitido). Nunca lança exceção para o chamador.
+    não existe mais no banco, senha trocada ou logout feito depois que o
+    token foi emitido). Nunca lança exceção para o chamador.
     """
     if not token:
         return None
@@ -74,6 +98,13 @@ def verify_token(token: str | None) -> AdminUser | None:
         return None
 
     if data.get("pv") != _password_fingerprint(admin):
+        return None
+
+    # Token sem `tv` (emitido antes dessa checagem existir) é recusado de
+    # propósito, não tratado como versão 0: assim nenhum token antigo
+    # escapa do logout - o custo é um login a mais depois do deploy.
+    token_version = data.get("tv")
+    if type(token_version) is not int or token_version != admin.token_version:
         return None
 
     return admin

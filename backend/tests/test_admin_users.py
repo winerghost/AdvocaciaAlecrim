@@ -1,3 +1,4 @@
+import pytest
 from werkzeug.security import check_password_hash
 
 from app.extensions import db
@@ -176,3 +177,75 @@ def test_delete_user_requires_current_password(client, admin, admin_token):
         assert resp.status_code == 400
         assert resp.get_json() == {"error": "invalid_current_password"}
     assert db.session.get(AdminUser, other.id) is not None
+
+
+def test_create_user_blank_password_returns_400(client, admin, admin_token):
+    resp = client.post(
+        "/api/admin/users",
+        json={"email": NEW_EMAIL, "password": " " * 12, "current_password": ADMIN_PASSWORD},
+        headers=auth(admin_token),
+    )
+
+    assert resp.status_code == 400
+    assert resp.get_json() == {"error": "weak_password"}
+    assert AdminUser.query.filter_by(email=NEW_EMAIL).first() is None
+
+
+def test_delete_user_id_above_db_integer_is_404_not_500(client, admin, admin_token):
+    for big_id in (2**31, "9" * 30):
+        resp = client.delete(
+            f"/api/admin/users/{big_id}",
+            json={"current_password": ADMIN_PASSWORD},
+            headers=auth(admin_token),
+        )
+
+        assert resp.status_code == 404
+        assert resp.get_json() == {"error": "not_found"}
+
+
+@pytest.mark.parametrize(
+    "password",
+    [
+        "Xk9#mPq2vLz",  # 11 caracteres - o mínimo agora é 12
+        "aaaaaaaaaaaa",
+        "123456789012",
+        "Advocacia2026",
+        "alecrim@2026",
+        NEW_EMAIL,
+        "Novo-Xk9#mPq2v",  # contém a parte local do e-mail da conta nova
+        None,
+    ],
+)
+def test_create_user_rejects_passwords_outside_the_policy(client, admin, admin_token, password):
+    resp = client.post(
+        "/api/admin/users",
+        json={"email": NEW_EMAIL, "password": password, "current_password": ADMIN_PASSWORD},
+        headers=auth(admin_token),
+    )
+
+    assert resp.status_code == 400
+    assert resp.get_json() == {"error": "weak_password"}
+    assert AdminUser.query.filter_by(email=NEW_EMAIL).first() is None
+
+
+def test_create_user_too_long_password_keeps_its_own_error_code(client, admin, admin_token):
+    resp = client.post(
+        "/api/admin/users",
+        json={"email": NEW_EMAIL, "password": "x1Y2z3" * 30, "current_password": ADMIN_PASSWORD},
+        headers=auth(admin_token),
+    )
+
+    assert resp.status_code == 400
+    assert resp.get_json() == {"error": "password_too_long"}
+
+
+def test_create_user_password_is_checked_against_the_new_account_email(client, admin, admin_token):
+    # A parte local comparada é a da conta NOVA, não a de quem está logado
+    # ("admin"): esta senha só é fraca para um e-mail que comece com "admin".
+    resp = client.post(
+        "/api/admin/users",
+        json={"email": NEW_EMAIL, "password": "Admin-Xk9#mPq2", "current_password": ADMIN_PASSWORD},
+        headers=auth(admin_token),
+    )
+
+    assert resp.status_code == 201

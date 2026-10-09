@@ -32,6 +32,23 @@ export type AdminFaq = {
   order: number;
 };
 
+// Artigo do blog. A listagem (GET /api/admin/articles) vem SEM `content`;
+// só o GET por id traz o HTML completo - por isso o campo é opcional.
+// Datas em ISO 8601 UTC (ou null); `cover_image` é null ou um caminho
+// /api/media/<arquivo> servido por app/api/media/[name]/route.ts.
+export type AdminArticle = {
+  id: number;
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  content?: string;
+  cover_image: string | null;
+  published: boolean;
+  published_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
 // Mesmo padrão de AREA_CHOICES em backend/app/schemas/lead.py: essa lista é
 // só UX (rótulo do <select> no painel) - quem de fato decide quais valores
 // são aceitos é o backend (LeadStatusSchema, validate.OneOf(LEAD_STATUSES)
