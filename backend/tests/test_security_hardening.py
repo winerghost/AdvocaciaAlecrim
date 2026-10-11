@@ -430,3 +430,48 @@ def test_schema_upgrade_tolerates_a_database_without_the_table(app):
     db.drop_all()
 
     assert apply_schema_upgrades() == []
+
+
+def test_schema_upgrade_migrates_a_pre_encryption_leads_table(app):
+    from sqlalchemy import text
+
+    from app.extensions import db
+    from app.models import Lead
+    from app.utils.crypto import cipher
+    from app.utils.schema_upgrades import apply_schema_upgrades
+
+    already = cipher().encrypt(b"Maria").decode()
+    db.session.remove()
+    with db.engine.begin() as connection:
+        connection.execute(text("DROP TABLE leads"))
+        connection.execute(
+            text(
+                "CREATE TABLE leads ("
+                "id INTEGER PRIMARY KEY, name VARCHAR(120) NOT NULL, "
+                "phone VARCHAR(40) NOT NULL, email VARCHAR(255), "
+                "area VARCHAR(80), message TEXT, consent BOOLEAN NOT NULL, "
+                "created_at DATETIME)"
+            )
+        )
+        connection.execute(
+            text(
+                "INSERT INTO leads (id, name, phone, email, consent) VALUES "
+                "(1, 'Joao', '11999990000', NULL, 1), "
+                "(2, :name, '11888880000', 'm@x.co', 1)"
+            ),
+            {"name": already},
+        )
+
+    changes = apply_schema_upgrades()
+
+    assert "leads.status" in changes
+    assert "leads: 2 linha(s) criptografada(s)" in changes
+    with db.engine.begin() as connection:
+        raw = connection.execute(text("SELECT name, phone FROM leads ORDER BY id")).all()
+    assert raw[0][0].startswith("gAAAAA") and raw[0][1].startswith("gAAAAA")
+    assert raw[1][0] == already  # já cifrado: não cifra de novo
+    first, second = Lead.query.order_by(Lead.id).all()
+    assert (first.name, first.phone, first.email, first.status) == ("Joao", "11999990000", None, "novo")
+    assert (second.name, second.email) == ("Maria", "m@x.co")
+
+    assert apply_schema_upgrades() == []

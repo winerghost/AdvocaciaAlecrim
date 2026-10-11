@@ -6,6 +6,19 @@ import { proxyAdmin } from "@/lib/adminProxy";
 // do arquivo) continua sendo o Flask.
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 
+// Galeria de imagens já enviadas. Só repassa page/per_page, e só se forem
+// dígitos: nada mais da query string chega ao Flask.
+export async function GET(request: Request) {
+  const source = new URL(request.url).searchParams;
+  const query = new URLSearchParams();
+  for (const name of ["page", "per_page"]) {
+    const value = source.get(name);
+    if (value && /^\d{1,6}$/.test(value)) query.set(name, value);
+  }
+  const suffix = query.size > 0 ? `?${query}` : "";
+  return proxyAdmin(`/api/admin/uploads${suffix}`);
+}
+
 export async function POST(request: Request) {
   const incoming = await request.formData().catch(() => null);
   const file = incoming?.get("file");

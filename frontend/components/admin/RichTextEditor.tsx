@@ -15,6 +15,7 @@ import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import { Placeholder } from "@tiptap/extensions";
+import MediaPickerModal from "@/components/admin/MediaPickerModal";
 import { IMAGE_ACCEPT_ATTR, uploadAdminImage } from "@/lib/adminUpload";
 import "./rich-text-editor.css";
 
@@ -232,6 +233,13 @@ const ICONS = {
       <polyline points="21 15 16 10 5 21" />
     </svg>
   ),
+  gallery: (
+    <svg {...ICON_PROPS}>
+      <rect x="7" y="7" width="14" height="14" rx="2" ry="2" />
+      <path d="M17 3H5a2 2 0 0 0-2 2v12" />
+      <polyline points="21 17 17 13 7 21" />
+    </svg>
+  ),
   clear: (
     <svg {...ICON_PROPS}>
       <path d="M4 7V4h16v3" />
@@ -323,6 +331,7 @@ export default forwardRef<RichTextEditorHandle, Props>(function RichTextEditor(
   const [pendingUploads, setPendingUploads] = useState(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [linkOpen, setLinkOpen] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [linkValue, setLinkValue] = useState("");
   const [linkError, setLinkError] = useState<string | null>(null);
 
@@ -454,6 +463,16 @@ export default forwardRef<RichTextEditorHandle, Props>(function RichTextEditor(
       } else {
         chain.insertContent(node).run();
       }
+    },
+    [editor]
+  );
+
+  // Imagem já enviada, escolhida na galeria: só insere a URL no cursor.
+  const insertExistingImage = useCallback(
+    (url: string) => {
+      setPickerOpen(false);
+      if (!editor || editor.isDestroyed) return;
+      editor.chain().focus().insertContent({ type: "image", attrs: { src: url, alt: "" } }).run();
     },
     [editor]
   );
@@ -717,6 +736,13 @@ export default forwardRef<RichTextEditorHandle, Props>(function RichTextEditor(
               {ICONS.image}
             </ToolbarButton>
             <ToolbarButton
+              label="Inserir imagem já enviada"
+              disabled={!ready}
+              onClick={() => setPickerOpen(true)}
+            >
+              {ICONS.gallery}
+            </ToolbarButton>
+            <ToolbarButton
               label="Limpar formatação"
               disabled={!ready}
               onClick={clearFormatting}
@@ -734,6 +760,13 @@ export default forwardRef<RichTextEditorHandle, Props>(function RichTextEditor(
             onChange={handleFilePicked}
           />
         </div>
+
+        <MediaPickerModal
+          open={pickerOpen}
+          onClose={() => setPickerOpen(false)}
+          onUnauthorized={() => onUnauthorizedRef.current?.()}
+          onSelect={insertExistingImage}
+        />
 
         {linkOpen && (
           <div className="rte-linkbar">

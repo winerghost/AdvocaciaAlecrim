@@ -41,6 +41,26 @@ def article_media_filenames(cover_image, content) -> set[str]:
     return names
 
 
+def media_usage() -> dict[str, list[dict]]:
+    """Para cada arquivo citado por algum artigo (publicado ou rascunho), os
+    artigos que o usam: `{arquivo: [{"id", "title", "as": "cover"|"content"}]}`.
+    Um artigo que usa a imagem na capa e no corpo aparece duas vezes.
+    Precisa de app context.
+    """
+    usage: dict[str, list[dict]] = {}
+    rows = db.session.query(
+        Article.id, Article.title, Article.cover_image, Article.content
+    ).yield_per(50)
+    for article_id, title, cover_image, content in rows:
+        for role, names in (
+            ("cover", article_media_filenames(cover_image, None)),
+            ("content", article_media_filenames(None, content)),
+        ):
+            for name in sorted(names):
+                usage.setdefault(name, []).append({"id": article_id, "title": title, "as": role})
+    return usage
+
+
 def referenced_media_filenames() -> set[str]:
     """Nomes de arquivo citados por QUALQUER artigo do banco, publicado ou
     rascunho. Precisa de app context.
@@ -50,6 +70,31 @@ def referenced_media_filenames() -> set[str]:
     for cover_image, content in rows:
         names |= article_media_filenames(cover_image, content)
     return names
+
+
+def list_upload_files(upload_dir: str) -> list[dict]:
+    """Arquivos de upload de `upload_dir` (nome no padrão estrito, arquivo
+    comum - sem diretório nem link simbólico), do mais novo para o mais
+    antigo: `[{"filename", "size", "mtime"}]` (mtime em epoch, segundos).
+    Diretório inexistente = lista vazia.
+    """
+    if not os.path.isdir(upload_dir):
+        return []
+
+    files = []
+    for name in os.listdir(upload_dir):
+        if _MEDIA_FILENAME_RE.fullmatch(name) is None:
+            continue
+        path = os.path.join(upload_dir, name)
+        try:
+            if os.path.islink(path) or not os.path.isfile(path):
+                continue
+            stat = os.stat(path)
+        except OSError:
+            continue  # sumiu no meio do caminho
+        files.append({"filename": name, "size": stat.st_size, "mtime": stat.st_mtime})
+    files.sort(key=lambda f: (-f["mtime"], f["filename"]))
+    return files
 
 
 def _delete_files(filenames, upload_dir: str) -> list[str]:

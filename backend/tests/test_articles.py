@@ -59,6 +59,7 @@ def upload(client, token, data, filename="foto.png", content_type="image/png"):
         ("put", "/api/admin/articles/1"),
         ("delete", "/api/admin/articles/1"),
         ("post", "/api/admin/uploads"),
+        ("get", "/api/admin/uploads"),
     ],
 )
 def test_admin_article_routes_require_auth(client, method, path):
@@ -208,7 +209,7 @@ def test_article_content_over_limit_is_rejected(client, admin_token):
 
 def test_cover_image_only_accepts_media_path(client, admin_token):
     headers = auth_headers(admin_token)
-    valid = "/api/media/" + "a" * 32 + ".png"
+    valid = f"/api/media/{_upload_name(client, admin_token)}"
 
     created = make_article(client, admin_token, cover_image=valid)
     assert created["cover_image"] == valid
@@ -1359,3 +1360,128 @@ def test_article_id_at_db_integer_limit_still_reaches_the_view(client, admin_tok
     # Sem token: se a rota casou, quem responde é o require_admin (401).
     assert client.get(f"/api/admin/articles/{2**31 - 1}").status_code == 401
     assert client.get(f"/api/admin/articles/{2**31}").status_code == 404
+
+
+# ------------------------------------------ galeria: GET /api/admin/uploads --
+
+UPLOADS_URL = "/api/admin/uploads"
+
+
+def _list_uploads(client, token, **params):
+    resp = client.get(UPLOADS_URL, query_string=params, headers=auth_headers(token))
+    assert resp.status_code == 200, resp.get_json()
+    return resp.get_json()
+
+
+def test_list_uploads_empty_when_directory_does_not_exist(client, admin_token, upload_dir):
+    body = _list_uploads(client, admin_token)
+
+    assert body["data"] == []
+    assert body["meta"] == {"page": 1, "per_page": 24, "total": 0, "pages": 0}
+
+
+def test_list_uploads_newest_first_with_url_and_size(client, admin_token, upload_dir):
+    old = _upload_name(client, admin_token)
+    new = _upload_name(client, admin_token, JPEG_BYTES)
+    _age(upload_dir / old, 5)
+
+    items = _list_uploads(client, admin_token)["data"]
+
+    assert [i["filename"] for i in items] == [new, old]
+    assert items[0]["url"] == f"/api/media/{new}"
+    assert MEDIA_URL_RE.match(items[0]["url"])
+    assert items[0]["size"] == len(JPEG_BYTES)
+    assert "created_at" in items[0]
+    # nunca devolve caminho do servidor
+    assert str(upload_dir) not in str(items)
+
+
+def test_list_uploads_reports_where_each_image_is_used(client, admin_token, upload_dir):
+    cover = _upload_name(client, admin_token)
+    inline = _upload_name(client, admin_token, JPEG_BYTES)
+    both = _upload_name(client, admin_token, GIF_BYTES)
+    unused = _upload_name(client, admin_token, WEBP_BYTES)
+    article = make_article(
+        client, admin_token, cover_image=f"/api/media/{cover}", content=_img(inline) + _img(both)
+    )
+    # rascunho que usa a mesma imagem na capa: também conta
+    draft = make_article(client, admin_token, title="Rascunho", cover_image=f"/api/media/{both}", published=False)
+
+    by_name = {i["filename"]: i for i in _list_uploads(client, admin_token)["data"]}
+
+    assert by_name[cover]["in_use"] is True
+    assert by_name[cover]["used_in"] == [{"id": article["id"], "title": article["title"], "as": "cover"}]
+    assert by_name[inline]["used_in"][0]["as"] == "content"
+    assert {u["id"] for u in by_name[both]["used_in"]} == {article["id"], draft["id"]}
+    assert by_name[unused]["in_use"] is False
+    assert by_name[unused]["used_in"] == []
+    # só a não usada informa até quando a limpeza automática a poupa
+    assert "purge_after" in by_name[unused]
+    assert "purge_after" not in by_name[cover]
+
+
+def test_list_uploads_ignores_strangers(client, admin_token, upload_dir):
+    name = _upload_name(client, admin_token)
+    (upload_dir / "notas.txt").write_text("x")
+    (upload_dir / ("a" * 32 + ".svg")).write_text("<svg/>")
+    (upload_dir / ("b" * 32 + ".png")).mkdir()
+
+    items = _list_uploads(client, admin_token)["data"]
+
+    assert [i["filename"] for i in items] == [name]
+
+
+def test_list_uploads_pagination(client, admin_token, upload_dir):
+    names = [_upload_name(client, admin_token) for _ in range(3)]
+    for index, name in enumerate(names):
+        _age(upload_dir / name, index)  # names[0] é o mais novo
+
+    first = _list_uploads(client, admin_token, per_page=2)
+    second = _list_uploads(client, admin_token, per_page=2, page=2)
+
+    assert [i["filename"] for i in first["data"]] == names[:2]
+    assert [i["filename"] for i in second["data"]] == names[2:]
+    assert first["meta"] == {"page": 1, "per_page": 2, "total": 3, "pages": 2}
+    assert _list_uploads(client, admin_token, per_page=10_000)["meta"]["per_page"] == 100
+    assert _list_uploads(client, admin_token, page=10**30)["data"] == []
+    assert _list_uploads(client, admin_token, per_page="abc")["meta"]["per_page"] == 24
+
+
+def test_purged_file_disappears_from_list(client, admin_token, upload_dir):
+    name = _upload_name(client, admin_token)
+    _age(upload_dir / name, 48)
+    article = make_article(client, admin_token)
+
+    client.put(f"/api/admin/articles/{article['id']}", json={"title": "Novo"}, headers=auth_headers(admin_token))
+
+    assert _list_uploads(client, admin_token)["data"] == []
+
+
+def test_cover_pointing_to_missing_file_is_rejected(client, admin_token):
+    missing = "/api/media/" + "a" * 32 + ".png"
+
+    resp = client.post(
+        "/api/admin/articles",
+        json={"title": "Capa quebrada", "content": "<p>Texto.</p>", "cover_image": missing},
+        headers=auth_headers(admin_token),
+    )
+
+    assert resp.status_code == 400
+    assert resp.get_json()["details"] == {"cover_image": ["image_not_found"]}
+    assert Article.query.count() == 0
+
+
+def test_update_rejects_missing_cover_but_keeps_unchanged_one(client, admin_token, upload_dir):
+    cover = _upload_name(client, admin_token)
+    article = make_article(client, admin_token, cover_image=f"/api/media/{cover}")
+    url = f"/api/admin/articles/{article['id']}"
+    headers = auth_headers(admin_token)
+
+    bad = client.put(url, json={"cover_image": "/api/media/" + "c" * 32 + ".jpg"}, headers=headers)
+    assert bad.status_code == 400
+    assert bad.get_json()["details"] == {"cover_image": ["image_not_found"]}
+
+    # o arquivo da capa atual some do disco: reenviar a MESMA capa continua válido
+    (upload_dir / cover).unlink()
+    same = client.put(url, json={"cover_image": f"/api/media/{cover}", "title": "Novo"}, headers=headers)
+    assert same.status_code == 200

@@ -1578,7 +1578,9 @@ def test_call_that_never_answers_ends_in_ai_timeout_at_the_deadline(
     assert started.is_set()
     assert resp.status_code == 504
     assert resp.get_json() == {"error": "ai_timeout"}
-    assert short_deadline <= elapsed < 5
+    # folga de 50 ms: o relógio do Windows tem resolução grosseira e o prazo
+    # pode estourar um pouco antes do `short_deadline` medido aqui.
+    assert short_deadline - 0.05 <= elapsed < 5
     assert "IA: tempo esgotado esperando a OpenAI" in [r.getMessage() for r in caplog.records]
 
 

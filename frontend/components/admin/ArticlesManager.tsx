@@ -8,6 +8,7 @@ import AiAssist, {
   isContentEmpty,
   useAiAssist,
 } from "@/components/admin/AiAssist";
+import MediaPickerModal from "@/components/admin/MediaPickerModal";
 import RichTextEditor, { type RichTextEditorHandle } from "@/components/admin/RichTextEditor";
 import type { AdminArticle } from "@/lib/adminTypes";
 import { extractList } from "@/lib/adminTypes";
@@ -112,6 +113,7 @@ const FIELD_MESSAGE_RULES: Array<[RegExp, string]> = [
   [/already exists|slug_already_exists/i, "Já está em uso por outro artigo."],
   [/string does not match expected pattern|invalid slug/i, "Use só letras minúsculas, números e hífens."],
   [/unknown field/i, "Campo não reconhecido."],
+  [/image_not_found/i, "Essa imagem não existe mais. Escolha ou envie outra."],
 ];
 
 function translateFieldMessage(message: string): string {
@@ -264,6 +266,7 @@ export default function ArticlesManager() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [saving, setSaving] = useState<SaveAction | null>(null);
   const [coverUploading, setCoverUploading] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [editorUploading, setEditorUploading] = useState(false);
   // Trocar a key remonta o editor com o conteúdo novo.
   const [editorKey, setEditorKey] = useState(0);
@@ -573,7 +576,7 @@ export default function ArticlesManager() {
     if (isContentEmpty(form.content)) localErrors.content = ["Escreva o conteúdo do artigo."];
     if (cover && !MEDIA_PATH.test(cover)) {
       localErrors.cover_image = [
-        "Use o caminho de uma imagem já enviada (ex.: /api/media/arquivo.jpg) ou envie um arquivo.",
+        'Use "Escolher imagem já enviada", envie um arquivo ou informe um caminho válido (ex.: /api/media/arquivo.jpg).',
       ];
     }
     if (form.published_at && !fromLocalInput(form.published_at)) {
@@ -1145,6 +1148,14 @@ export default function ArticlesManager() {
                 >
                   {coverUploading ? "Enviando..." : coverValid ? "Trocar imagem" : "Enviar imagem"}
                 </button>
+                <button
+                  type="button"
+                  disabled={coverUploading}
+                  onClick={() => setPickerOpen(true)}
+                  className="rounded border border-adm-border-strong whitespace-nowrap px-3 py-2.5 text-xs font-semibold lg:py-1.5 text-adm-body transition hover:bg-adm-canvas disabled:opacity-60"
+                >
+                  Escolher imagem já enviada
+                </button>
                 {coverValue && (
                   <button
                     type="button"
@@ -1167,24 +1178,48 @@ export default function ArticlesManager() {
                 />
               </div>
 
-              <label htmlFor="article-cover" className={`${LABEL_CLASS} mt-3`}>
-                Ou cole o caminho de uma imagem já enviada
-              </label>
-              <input
-                id="article-cover"
-                value={form.cover_image}
-                onChange={(e) => {
-                  clearFieldError("cover_image");
-                  patch({ cover_image: e.target.value });
-                }}
-                placeholder="/api/media/arquivo.jpg"
-                spellCheck={false}
-                autoComplete="off"
-                className={INPUT_CLASS}
-              />
-              <p className="mt-1 text-xs text-adm-muted">JPEG, PNG, WebP ou GIF, até 5 MB.</p>
+              <p className="mt-2 text-xs text-adm-muted">JPEG, PNG, WebP ou GIF, até 5 MB.</p>
               <FieldError messages={fieldErrors.cover_image} />
+
+              {/* Colar o caminho à mão fica como opção avançada: o usuário
+                  comum usa "Enviar" ou "Escolher imagem já enviada". Abre
+                  sozinho se o valor digitado estiver com erro. */}
+              <details
+                className="mt-3"
+                open={Boolean(fieldErrors.cover_image?.length) && !coverValid}
+              >
+                <summary className="cursor-pointer text-xs font-semibold text-adm-muted">
+                  Avançado: informar o caminho manualmente
+                </summary>
+                <label htmlFor="article-cover" className={`${LABEL_CLASS} mt-2`}>
+                  Caminho de uma imagem já enviada
+                </label>
+                <input
+                  id="article-cover"
+                  value={form.cover_image}
+                  onChange={(e) => {
+                    clearFieldError("cover_image");
+                    patch({ cover_image: e.target.value });
+                  }}
+                  placeholder="/api/media/arquivo.jpg"
+                  spellCheck={false}
+                  autoComplete="off"
+                  className={INPUT_CLASS}
+                />
+              </details>
             </div>
+
+            <MediaPickerModal
+              open={pickerOpen}
+              selectedUrl={coverValid ? coverValue : undefined}
+              onClose={() => setPickerOpen(false)}
+              onUnauthorized={handleUnauthorized}
+              onSelect={(url) => {
+                clearFieldError("cover_image");
+                patch({ cover_image: url });
+                setPickerOpen(false);
+              }}
+            />
           </div>
         </div>
 

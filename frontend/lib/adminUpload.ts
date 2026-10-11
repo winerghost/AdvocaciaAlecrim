@@ -56,3 +56,55 @@ export async function uploadAdminImage(file: File): Promise<UploadResult> {
     return { ok: false, message: "Falha de conexão ao enviar a imagem.", unauthorized: false };
   }
 }
+
+// ---- Galeria: imagens já enviadas ----
+
+export type UploadedImage = {
+  url: string;
+  filename: string;
+  size: number;
+  created_at: string;
+  in_use: boolean;
+  used_in: Array<{ id: number; title: string; as: "cover" | "content" }>;
+  /** Só nas imagens sem uso: quando a limpeza automática pode apagá-la. */
+  purge_after?: string;
+};
+
+export type UploadListResult =
+  | { ok: true; items: UploadedImage[]; page: number; pages: number; total: number }
+  | { ok: false; message: string; unauthorized: boolean };
+
+const MEDIA_URL = /^\/api\/media\/[a-f0-9]{32}\.(jpg|png|webp|gif)$/;
+
+export async function listAdminUploads(page = 1): Promise<UploadListResult> {
+  try {
+    const res = await fetch(`/api/admin/uploads?page=${page}`, { cache: "no-store" });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      const unauthorized = res.status === 401;
+      return {
+        ok: false,
+        message: unauthorized ? UPLOAD_ERRORS.unauthorized : "Não foi possível carregar as imagens.",
+        unauthorized,
+      };
+    }
+
+    const rows: unknown[] = Array.isArray(data?.data) ? data.data : [];
+    // Descarta qualquer item fora do formato esperado: a URL vai para um
+    // <img src> e para o campo de capa.
+    const items = rows.filter(
+      (row): row is UploadedImage =>
+        !!row && typeof row === "object" && MEDIA_URL.test(String((row as UploadedImage).url))
+    );
+    return {
+      ok: true,
+      items,
+      page: Number(data?.meta?.page) || page,
+      pages: Number(data?.meta?.pages) || 1,
+      total: Number(data?.meta?.total) || items.length,
+    };
+  } catch {
+    return { ok: false, message: "Falha de conexão ao carregar as imagens.", unauthorized: false };
+  }
+}

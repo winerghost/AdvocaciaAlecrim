@@ -9,6 +9,7 @@ import math
 import os
 import re
 import uuid
+from datetime import datetime, timezone
 
 from flask import Blueprint, current_app, request, send_from_directory
 from marshmallow import ValidationError
@@ -23,6 +24,8 @@ from ..schemas.article_ai import ArticleAISchema
 from ..services import article_ai
 from ..services.media_cleanup import (
     article_media_filenames,
+    list_upload_files,
+    media_usage,
     purge_orphan_uploads,
     remove_media_if_unreferenced,
 )
@@ -179,6 +182,25 @@ def _upload_dir() -> str:
     return os.path.abspath(current_app.config["UPLOAD_DIR"])
 
 
+def _cover_file_missing(cover_image) -> bool:
+    """A capa aponta para um upload que não existe (mais) no disco? O schema
+    só confere o FORMATO do caminho; sem isto dava para salvar uma capa
+    quebrada, por exemplo escolhendo na galeria uma imagem que a limpeza
+    apagou entre a escolha e o salvamento.
+    """
+    if not isinstance(cover_image, str):
+        return False
+    match = re.fullmatch(rf"/api/media/({MEDIA_FILENAME_PATTERN})", cover_image)
+    if match is None:
+        return False
+    path = os.path.join(_upload_dir(), match.group(1))
+    return os.path.islink(path) or not os.path.isfile(path)
+
+
+def _cover_not_found_response():
+    return {"error": "validation_error", "details": {"cover_image": ["image_not_found"]}}, 400
+
+
 def _detect_image_extension(data: bytes) -> str | None:
     """Tipo da imagem pelos magic bytes do CONTEÚDO - nunca pela extensão
     nem pelo Content-Type, que são o cliente quem escolhe. SVG fica de fora
@@ -310,6 +332,9 @@ def create_article():
     except ValidationError as err:
         return {"error": "validation_error", "details": err.messages}, 400
 
+    if _cover_file_missing(data.get("cover_image")):
+        return _cover_not_found_response()
+
     if "slug" in data:
         # Slug escolhido à mão: colisão é erro (mesma regra dos serviços),
         # não trocamos em silêncio um valor que o admin digitou.
@@ -343,6 +368,12 @@ def update_article(article_id):
         data = article_schema.load(payload, partial=True)
     except ValidationError as err:
         return {"error": "validation_error", "details": err.messages}, 400
+
+    # Só confere o arquivo quando a capa MUDA: reenviar a capa que o artigo
+    # já tem não pode falhar por causa de um arquivo que sumiu do disco.
+    new_cover = data.get("cover_image")
+    if new_cover != article.cover_image and _cover_file_missing(new_cover):
+        return _cover_not_found_response()
 
     _apply_partial(
         article,
@@ -429,6 +460,57 @@ def upload_image():
         handle.write(data)
 
     return {"data": {"url": f"/api/media/{filename}", "filename": filename}}, 201
+
+
+_UPLOADS_DEFAULT_PER_PAGE = 24
+_UPLOADS_MAX_PER_PAGE = 100
+
+
+@bp.get("/admin/uploads")
+@require_admin
+@limiter.limit("60 per minute")
+def list_uploads():
+    """Galeria do painel: imagens já enviadas, da mais nova para a mais
+    antiga. Cada item diz em quais artigos ela está (`used_in`) e, se não
+    está em nenhum, quando a limpeza automática pode apagá-la. Só nomes no
+    padrão dos uploads; nunca devolve caminho do servidor.
+    """
+    page = _positive_int_arg("page", 1, _MAX_PAGE)
+    per_page = _positive_int_arg("per_page", _UPLOADS_DEFAULT_PER_PAGE, _UPLOADS_MAX_PER_PAGE)
+
+    files = list_upload_files(_upload_dir())
+    total = len(files)
+    chunk = files[(page - 1) * per_page : page * per_page]
+
+    usage = media_usage() if chunk else {}
+    grace_seconds = current_app.config["UPLOAD_ORPHAN_MIN_AGE_HOURS"] * 3600
+
+    items = []
+    for f in chunk:
+        used_in = usage.get(f["filename"], [])
+        item = {
+            "url": f"/api/media/{f['filename']}",
+            "filename": f["filename"],
+            "size": f["size"],
+            "created_at": datetime.fromtimestamp(f["mtime"], tz=timezone.utc).isoformat(),
+            "in_use": bool(used_in),
+            "used_in": used_in,
+        }
+        if not used_in:
+            item["purge_after"] = datetime.fromtimestamp(
+                f["mtime"] + grace_seconds, tz=timezone.utc
+            ).isoformat()
+        items.append(item)
+
+    return {
+        "data": items,
+        "meta": {
+            "page": page,
+            "per_page": per_page,
+            "total": total,
+            "pages": math.ceil(total / per_page),
+        },
+    }, 200
 
 
 # ------------------------------------------------------------------ público --
