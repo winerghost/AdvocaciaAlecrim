@@ -115,13 +115,13 @@ export default function FaqsManager() {
       <h1 className="text-lg font-bold text-adm-ink">Perguntas frequentes</h1>
 
       {error && (
-        <p className="rounded border border-adm-danger-line bg-adm-danger-soft px-4 py-3 text-sm text-adm-danger-ink">
+        <p className="rounded-sm border border-adm-danger-line bg-adm-danger-soft px-4 py-3 text-sm text-adm-danger-ink">
           {error}
         </p>
       )}
 
       {editingId !== null && (
-        <div className="rounded border border-adm-border bg-white shadow-sm">
+        <div className="rounded-sm border border-adm-border bg-white shadow-xs">
           <div className="border-b border-adm-border px-4 py-3">
             <h2 className="text-sm font-bold uppercase tracking-wide text-adm-ink">
               {editingId ? "Editar pergunta" : "Nova pergunta"}
@@ -129,49 +129,49 @@ export default function FaqsManager() {
           </div>
           <form onSubmit={handleSubmit} className="grid gap-4 p-4">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-adm-body">Pergunta</label>
-              <input
+              <label htmlFor="faq-field-1" className="mb-1 block text-xs font-semibold text-adm-body">Pergunta</label>
+              <input id="faq-field-1"
                 required
                 value={form.question}
                 maxLength={255}
                 onChange={(e) => setForm((f) => ({ ...f, question: e.target.value }))}
-                className="w-full rounded border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-none focus:ring focus:ring-adm-accent/25"
+                className="w-full rounded-sm border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-hidden focus:ring-3 focus:ring-adm-accent/25"
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-adm-body">Resposta</label>
-              <textarea
+              <label htmlFor="faq-field-2" className="mb-1 block text-xs font-semibold text-adm-body">Resposta</label>
+              <textarea id="faq-field-2"
                 required
                 rows={4}
                 value={form.answer}
                 maxLength={4000}
                 onChange={(e) => setForm((f) => ({ ...f, answer: e.target.value }))}
-                className="w-full rounded border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-none focus:ring focus:ring-adm-accent/25"
+                className="w-full rounded-sm border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-hidden focus:ring-3 focus:ring-adm-accent/25"
               />
             </div>
             <div className="max-w-[160px]">
-              <label className="mb-1 block text-xs font-semibold text-adm-body">Ordem</label>
-              <input
+              <label htmlFor="faq-field-3" className="mb-1 block text-xs font-semibold text-adm-body">Ordem</label>
+              <input id="faq-field-3"
                 type="number"
                 value={form.order}
                 min={0}
                 max={9999}
                 onChange={(e) => setForm((f) => ({ ...f, order: e.target.value }))}
-                className="w-full rounded border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-none focus:ring focus:ring-adm-accent/25"
+                className="w-full rounded-sm border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-hidden focus:ring-3 focus:ring-adm-accent/25"
               />
             </div>
             <div className="flex items-end gap-3">
               <button
                 type="submit"
                 disabled={saving}
-                className="rounded bg-adm-accent px-5 py-2 text-sm font-semibold text-white transition hover:bg-adm-accent-strong disabled:opacity-60"
+                className="rounded-sm bg-adm-accent px-5 py-2 text-sm font-semibold text-white transition hover:bg-adm-accent-strong disabled:opacity-60"
               >
                 {saving ? "Salvando..." : "Salvar"}
               </button>
               <button
                 type="button"
                 onClick={cancelEdit}
-                className="rounded border border-adm-border-strong px-5 py-2 text-sm text-adm-body transition hover:bg-adm-canvas"
+                className="rounded-sm border border-adm-border-strong px-5 py-2 text-sm text-adm-body transition hover:bg-adm-canvas"
               >
                 Cancelar
               </button>
@@ -180,7 +180,7 @@ export default function FaqsManager() {
         </div>
       )}
 
-      <div className="rounded border border-adm-border bg-white shadow-sm">
+      <div className="rounded-sm border border-adm-border bg-white shadow-xs">
         <div className="flex items-center justify-between gap-3 border-b border-adm-border px-4 py-3">
           <h2 className="text-sm font-bold uppercase tracking-wide text-adm-ink">
             Perguntas cadastradas
@@ -189,7 +189,7 @@ export default function FaqsManager() {
             <button
               type="button"
               onClick={startCreate}
-              className="rounded bg-adm-accent whitespace-nowrap px-3 py-2.5 text-xs font-semibold lg:py-1.5 text-white transition hover:bg-adm-accent-strong"
+              className="rounded-sm bg-adm-accent whitespace-nowrap px-3 py-2.5 text-xs font-semibold lg:py-1.5 text-white transition hover:bg-adm-accent-strong"
             >
               + Nova pergunta
             </button>
@@ -218,14 +218,14 @@ export default function FaqsManager() {
                         <button
                           type="button"
                           onClick={() => startEdit(item)}
-                          className="rounded border border-adm-accent px-2.5 py-2.5 text-xs lg:py-1 font-semibold text-adm-accent transition hover:bg-adm-accent hover:text-white"
+                          className="rounded-sm border border-adm-accent px-2.5 py-2.5 text-xs lg:py-1 font-semibold text-adm-accent transition hover:bg-adm-accent hover:text-white"
                         >
                           Editar
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDelete(item.id)}
-                          className="rounded border border-adm-danger px-2.5 py-2.5 text-xs lg:py-1 font-semibold text-adm-danger transition hover:bg-adm-danger hover:text-white"
+                          className="rounded-sm border border-adm-danger px-2.5 py-2.5 text-xs lg:py-1 font-semibold text-adm-danger transition hover:bg-adm-danger hover:text-white"
                         >
                           Excluir
                         </button>

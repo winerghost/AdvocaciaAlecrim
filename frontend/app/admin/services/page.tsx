@@ -13,7 +13,7 @@ export default function AdminServicesPage() {
       <div className="mb-4 flex justify-end">
         <Link
           href="/admin/articles"
-          className="inline-flex items-center gap-2 rounded border border-adm-accent px-3 py-1.5 text-xs font-semibold text-adm-accent transition hover:bg-adm-accent hover:text-white"
+          className="inline-flex items-center gap-2 rounded-sm border border-adm-accent px-3 py-1.5 text-xs font-semibold text-adm-accent transition hover:bg-adm-accent hover:text-white"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"

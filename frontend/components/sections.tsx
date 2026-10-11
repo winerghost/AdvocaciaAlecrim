@@ -20,7 +20,7 @@ const NAV_LINKS = [
 ];
 
 // Título de seção. `text-ba-bg` nas faixas claras, `text-ba-text` nas escuras.
-const SECTION_TITLE = "text-ba-cta uppercase [text-wrap:balance]";
+const SECTION_TITLE = "text-ba-cta uppercase text-balance";
 
 export function Nav() {
   return (
@@ -30,7 +30,7 @@ export function Nav() {
             em gold - é a cor da marca, a única fora da paleta do tema) + nome
             tipografado em HTML - fica nítido em qualquer tamanho de tela, ao
             contrário de manter "Advocacia Alecrim" preso dentro de um PNG. */}
-        <a href="#top" className="flex flex-shrink-0 items-center gap-2.5 sm:gap-3" aria-label="Advocacia Alecrim - início">
+        <a href="#top" className="flex shrink-0 items-center gap-2.5 sm:gap-3" aria-label="Advocacia Alecrim - início">
           <Image
             src="/images/logo-icone.png"
             alt=""
@@ -79,8 +79,8 @@ export function Hero() {
   return (
     <section id="top" className="relative flex min-h-[560px] items-center overflow-hidden">
       <div className="ba-backdrop" aria-hidden="true" />
-      <div className="animate-aurora-1 pointer-events-none absolute -right-[8%] -top-[15%] aspect-square w-[60vw] max-w-[620px] rounded-full bg-[radial-gradient(circle,rgb(var(--ba-accent)/0.16)_0%,transparent_68%)]" />
-      <div className="animate-aurora-2 pointer-events-none absolute -bottom-[20%] -left-[10%] aspect-square w-[50vw] max-w-[480px] rounded-full bg-[radial-gradient(circle,rgb(var(--ba-accent)/0.08)_0%,transparent_70%)]" />
+      <div className="animate-aurora-1 pointer-events-none absolute right-[-8%] top-[-15%] aspect-square w-[60vw] max-w-[620px] rounded-full bg-[radial-gradient(circle,rgb(var(--ba-accent)/0.16)_0%,transparent_68%)]" />
+      <div className="animate-aurora-2 pointer-events-none absolute bottom-[-20%] left-[-10%] aspect-square w-[50vw] max-w-[480px] rounded-full bg-[radial-gradient(circle,rgb(var(--ba-accent)/0.08)_0%,transparent_70%)]" />
 
       {/* Retrato só a partir de md: entre 640 e 767px ele ficava por baixo do
           texto e dos botões. */}
@@ -109,7 +109,7 @@ export function Hero() {
           </p>
 
           <h1
-            className="animate-fade-in-up mb-5 text-ba-cta uppercase text-ba-text [text-wrap:balance] sm:mb-6"
+            className="animate-fade-in-up mb-5 text-ba-cta uppercase text-ba-text text-balance sm:mb-6"
             style={{ animationDelay: "0.1s" }}
           >
             Seu direito conduzido com <span className="text-ba-accent">clareza</span>, agilidade e atenção à sua família.

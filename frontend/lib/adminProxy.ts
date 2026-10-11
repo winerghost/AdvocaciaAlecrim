@@ -32,15 +32,23 @@ export async function proxyAdmin(path: string, init?: RequestInit): Promise<Next
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const res = await fetch(`${API_URL}${path}`, {
+  // Sem resposta do Flask em 30 s (ou o prazo que o chamador der em
+  // `init.signal`), desiste em vez de deixar a requisição pendurada.
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, {
     ...init,
+    signal: init?.signal ?? AbortSignal.timeout(30_000),
     headers: {
       ...forwardedForHeader(await headers()),
       ...(init?.headers || {}),
       Authorization: `Bearer ${token}`,
     },
     cache: "no-store",
-  });
+    });
+  } catch {
+    return NextResponse.json({ error: "upstream_unavailable" }, { status: 502 });
+  }
 
   // 204 (DELETE bem-sucedido) não pode ter corpo - a spec HTTP proíbe, e
   // NextResponse.json(...) com status 204 lança um erro interno do Next

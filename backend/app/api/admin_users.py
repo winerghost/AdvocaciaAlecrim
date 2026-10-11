@@ -1,5 +1,6 @@
 from email_validator import EmailNotValidError, validate_email
 from flask import Blueprint, current_app, g, request
+from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..extensions import db, limiter
@@ -82,7 +83,13 @@ def create_user():
 
     user = AdminUser(email=email, password_hash=generate_password_hash(password))
     db.session.add(user)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except IntegrityError:
+        # Corrida: dois cadastros do mesmo e-mail passaram juntos pela
+        # checagem acima e o UNIQUE do banco barrou o segundo.
+        db.session.rollback()
+        return {"error": "email_taken"}, 409
 
     # Trilha de auditoria (stdout do container -> `docker compose logs
     # backend`). `warning` de propósito: o logger do Flask descarta `info`

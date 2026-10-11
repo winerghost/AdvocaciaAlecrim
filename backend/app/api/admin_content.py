@@ -1,5 +1,6 @@
 from flask import Blueprint, current_app, g, request
 from marshmallow import ValidationError
+from sqlalchemy.exc import IntegrityError
 
 from ..extensions import db
 from ..models import Faq, Lead, Service, Testimonial
@@ -28,6 +29,19 @@ def _apply_partial(instance, loaded: dict, raw_payload: dict, field_names: tuple
             setattr(instance, field_name, loaded[field_name])
 
 
+def _commit_or_slug_conflict() -> bool:
+    """Commit que sobrevive à corrida "dois requests com o mesmo slug": a
+    checagem prévia passa nos dois e o UNIQUE do banco barra o segundo, que
+    antes virava 500. `False` = conflito (a sessão já foi revertida).
+    """
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return False
+    return True
+
+
 # ---------------------------------------------------------------- services --
 
 @bp.get("/services")
@@ -54,7 +68,8 @@ def create_service():
 
     service = Service(**data)
     db.session.add(service)
-    db.session.commit()
+    if not _commit_or_slug_conflict():
+        return {"error": "slug_already_exists"}, 400
     return {"data": service.to_dict()}, 201
 
 
@@ -80,7 +95,8 @@ def update_service(service_id):
             return {"error": "slug_already_exists"}, 400
 
     _apply_partial(service, data, payload, ("slug", "title", "icon", "description", "order"))
-    db.session.commit()
+    if not _commit_or_slug_conflict():
+        return {"error": "slug_already_exists"}, 400
     return {"data": service.to_dict()}, 200
 
 

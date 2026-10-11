@@ -2,13 +2,18 @@
 .env
 backend/.env
 frontend/.env
+
+# Documentação interna (o repositório é público)
 *.md
-.claude
+docs/security-audit/
+
+# Ferramentas / editor
+.claude/
+
 # Backend
-backend/__pycache__/
-backend/**/__pycache__/
-backend/*.pyc
-backend/.pytest_cache/
+__pycache__/
+*.pyc
+.pytest_cache/
 backend/.venv/
 backend/venv/
 backend/*.db
@@ -23,9 +28,3 @@ frontend/tsconfig.tsbuildinfo
 # Diversos
 *.log
 .DS_Store
-
- .claude/scheduled_tasks.lock 
-frontend/tsconfig.tsbuildinfo
-
-# Relatório de auditoria de segurança (descreve pendências; repo público)
-docs/security-audit/

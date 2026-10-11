@@ -54,8 +54,14 @@ def apply_schema_upgrades() -> list[str]:
             continue
         if column in {c["name"] for c in inspector.get_columns(table)}:
             continue
+        # No PostgreSQL o IF NOT EXISTS cobre dois processos subindo juntos
+        # (ex.: entrypoint.sh e um `seed.py` manual): sem ele o segundo
+        # falhava com "column already exists" e derrubava o boot.
+        if_not_exists = "IF NOT EXISTS " if db.engine.dialect.name == "postgresql" else ""
         with db.engine.begin() as connection:
-            connection.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}"))
+            connection.execute(
+                text(f"ALTER TABLE {table} ADD COLUMN {if_not_exists}{column} {ddl}")
+            )
         applied.append(f"{table}.{column}")
 
     # Ordem importa: primeiro cabe o ciphertext, depois ele é gravado.

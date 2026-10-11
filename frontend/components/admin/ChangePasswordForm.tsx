@@ -64,7 +64,7 @@ export default function ChangePasswordForm() {
     <div className="max-w-md space-y-6">
       <h1 className="text-lg font-bold text-adm-ink">Trocar senha</h1>
 
-      <div className="rounded border border-adm-border bg-white shadow-sm">
+      <div className="rounded-sm border border-adm-border bg-white shadow-xs">
         <div className="border-b border-adm-border px-4 py-3">
           <h2 className="text-sm font-bold uppercase tracking-wide text-adm-ink">
             Alterar senha de acesso
@@ -85,7 +85,7 @@ export default function ChangePasswordForm() {
               type="password"
               required
               autoComplete="current-password"
-              className="w-full rounded border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-none focus:ring focus:ring-adm-accent/25"
+              className="w-full rounded-sm border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-hidden focus:ring-3 focus:ring-adm-accent/25"
             />
           </div>
 
@@ -104,7 +104,7 @@ export default function ChangePasswordForm() {
               type="password"
               required
               autoComplete="new-password"
-              className="w-full rounded border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-none focus:ring focus:ring-adm-accent/25"
+              className="w-full rounded-sm border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-hidden focus:ring-3 focus:ring-adm-accent/25"
             />
           </div>
 
@@ -122,17 +122,17 @@ export default function ChangePasswordForm() {
               type="password"
               required
               autoComplete="new-password"
-              className="w-full rounded border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-none focus:ring focus:ring-adm-accent/25"
+              className="w-full rounded-sm border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-hidden focus:ring-3 focus:ring-adm-accent/25"
             />
           </div>
 
           {status === "error" && errorMsg && (
-            <p className="rounded border border-adm-danger-line bg-adm-danger-soft px-3 py-2 text-sm text-adm-danger-ink">
+            <p className="rounded-sm border border-adm-danger-line bg-adm-danger-soft px-3 py-2 text-sm text-adm-danger-ink">
               {errorMsg}
             </p>
           )}
           {status === "success" && (
-            <p className="rounded border border-adm-success-line bg-adm-success-soft px-3 py-2 text-sm text-adm-success-ink">
+            <p className="rounded-sm border border-adm-success-line bg-adm-success-soft px-3 py-2 text-sm text-adm-success-ink">
               Senha alterada com sucesso.
             </p>
           )}
@@ -140,7 +140,7 @@ export default function ChangePasswordForm() {
           <button
             type="submit"
             disabled={status === "loading"}
-            className="rounded bg-adm-accent px-5 py-2 text-sm font-semibold text-white transition hover:bg-adm-accent-strong disabled:opacity-60"
+            className="rounded-sm bg-adm-accent px-5 py-2 text-sm font-semibold text-white transition hover:bg-adm-accent-strong disabled:opacity-60"
           >
             {status === "loading" ? "Salvando..." : "Salvar nova senha"}
           </button>

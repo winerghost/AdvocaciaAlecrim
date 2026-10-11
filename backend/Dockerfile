@@ -2,7 +2,7 @@
 # gcc/libpq-dev só existem pra compilar as dependências Python (algumas
 # ainda trazem sdist sem wheel pronto pra essa combinação de plataforma) -
 # não precisam sobreviver na imagem final que roda em produção.
-FROM python:3.12-slim AS builder
+FROM python:3.12-slim-trixie AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
@@ -29,7 +29,7 @@ RUN pip freeze --path /install/lib/python3.12/site-packages | tr 'A-Z_' 'a-z-' >
        fi
 
 # ---- runtime ----
-FROM python:3.12-slim
+FROM python:3.12-slim-trixie
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
@@ -46,20 +46,26 @@ RUN apt-get update \
 
 COPY --from=builder /install /usr/local
 
-COPY . .
+# Usuário sem privilégios, com UID fixo 1000 (o mesmo que o useradd sem
+# argumentos já atribuía: o volume `uploads_data` existente na VPS tem os
+# arquivos com esse dono, e mudar o UID quebraria a gravação nele). Criado
+# ANTES do COPY para o --chown valer sem um `chown -R` depois, que
+# duplicaria o código inteiro numa camada nova.
+RUN useradd --create-home --uid 1000 appuser
+
+COPY --chown=appuser:appuser . .
 # /app/uploads é onde o docker-compose.yml monta o volume `uploads_data`
 # (imagens enviadas pelo painel). O diretório precisa existir na imagem já
 # com o dono certo: um volume nomeado novo herda dono/permissão do caminho
 # da imagem, e é o `appuser` (não root) que grava ali.
 RUN chmod +x entrypoint.sh \
     && mkdir -p /app/uploads \
-    && useradd --create-home appuser \
-    && chown -R appuser:appuser /app
+    && chown appuser:appuser /app /app/uploads
 USER appuser
 
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=4)" || exit 1
 
 ENTRYPOINT ["./entrypoint.sh"]

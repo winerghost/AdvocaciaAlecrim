@@ -138,13 +138,13 @@ export default function TestimonialsManager() {
       <h1 className="text-lg font-bold text-adm-ink">Depoimentos</h1>
 
       {error && (
-        <p className="rounded border border-adm-danger-line bg-adm-danger-soft px-4 py-3 text-sm text-adm-danger-ink">
+        <p className="rounded-sm border border-adm-danger-line bg-adm-danger-soft px-4 py-3 text-sm text-adm-danger-ink">
           {error}
         </p>
       )}
 
       {editingId !== null && (
-        <div className="rounded border border-adm-border bg-white shadow-sm">
+        <div className="rounded-sm border border-adm-border bg-white shadow-xs">
           <div className="border-b border-adm-border px-4 py-3">
             <h2 className="text-sm font-bold uppercase tracking-wide text-adm-ink">
               {editingId ? "Editar depoimento" : "Novo depoimento"}
@@ -152,51 +152,51 @@ export default function TestimonialsManager() {
           </div>
           <form onSubmit={handleSubmit} className="grid gap-4 p-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-adm-body">Autor</label>
-              <input
+              <label htmlFor="tst-field-1" className="mb-1 block text-xs font-semibold text-adm-body">Autor</label>
+              <input id="tst-field-1"
                 required
                 value={form.author}
                 maxLength={120}
                 onChange={(e) => setForm((f) => ({ ...f, author: e.target.value }))}
-                className="w-full rounded border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-none focus:ring focus:ring-adm-accent/25"
+                className="w-full rounded-sm border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-hidden focus:ring-3 focus:ring-adm-accent/25"
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-adm-body">
+              <label htmlFor="tst-field-2" className="mb-1 block text-xs font-semibold text-adm-body">
                 Cargo/Função
               </label>
-              <input
+              <input id="tst-field-2"
                 required
                 value={form.role}
                 maxLength={120}
                 onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
-                className="w-full rounded border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-none focus:ring focus:ring-adm-accent/25"
+                className="w-full rounded-sm border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-hidden focus:ring-3 focus:ring-adm-accent/25"
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="mb-1 block text-xs font-semibold text-adm-body">
+              <label htmlFor="tst-field-3" className="mb-1 block text-xs font-semibold text-adm-body">
                 Depoimento
               </label>
-              <textarea
+              <textarea id="tst-field-3"
                 required
                 rows={3}
                 value={form.content}
                 maxLength={4000}
                 onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
-                className="w-full rounded border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-none focus:ring focus:ring-adm-accent/25"
+                className="w-full rounded-sm border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-hidden focus:ring-3 focus:ring-adm-accent/25"
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-adm-body">
+              <label htmlFor="tst-field-4" className="mb-1 block text-xs font-semibold text-adm-body">
                 Nota (1-5)
               </label>
-              <input
+              <input id="tst-field-4"
                 type="number"
                 min={1}
                 max={5}
                 value={form.rating}
                 onChange={(e) => setForm((f) => ({ ...f, rating: e.target.value }))}
-                className="w-full rounded border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-none focus:ring focus:ring-adm-accent/25"
+                className="w-full rounded-sm border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-hidden focus:ring-3 focus:ring-adm-accent/25"
               />
             </div>
             <div className="flex items-end">
@@ -205,7 +205,7 @@ export default function TestimonialsManager() {
                   type="checkbox"
                   checked={form.approved}
                   onChange={(e) => setForm((f) => ({ ...f, approved: e.target.checked }))}
-                  className="h-4 w-4 rounded border-adm-border-strong text-adm-accent focus:ring-adm-accent/25"
+                  className="h-4 w-4 rounded-sm border-adm-border-strong text-adm-accent focus:ring-adm-accent/25"
                 />
                 Aprovado (aparece no site)
               </label>
@@ -214,14 +214,14 @@ export default function TestimonialsManager() {
               <button
                 type="submit"
                 disabled={saving}
-                className="rounded bg-adm-accent px-5 py-2 text-sm font-semibold text-white transition hover:bg-adm-accent-strong disabled:opacity-60"
+                className="rounded-sm bg-adm-accent px-5 py-2 text-sm font-semibold text-white transition hover:bg-adm-accent-strong disabled:opacity-60"
               >
                 {saving ? "Salvando..." : "Salvar"}
               </button>
               <button
                 type="button"
                 onClick={cancelEdit}
-                className="rounded border border-adm-border-strong px-5 py-2 text-sm text-adm-body transition hover:bg-adm-canvas"
+                className="rounded-sm border border-adm-border-strong px-5 py-2 text-sm text-adm-body transition hover:bg-adm-canvas"
               >
                 Cancelar
               </button>
@@ -230,7 +230,7 @@ export default function TestimonialsManager() {
         </div>
       )}
 
-      <div className="rounded border border-adm-border bg-white shadow-sm">
+      <div className="rounded-sm border border-adm-border bg-white shadow-xs">
         <div className="flex items-center justify-between gap-3 border-b border-adm-border px-4 py-3">
           <h2 className="text-sm font-bold uppercase tracking-wide text-adm-ink">
             Depoimentos cadastrados
@@ -239,7 +239,7 @@ export default function TestimonialsManager() {
             <button
               type="button"
               onClick={startCreate}
-              className="rounded bg-adm-accent whitespace-nowrap px-3 py-2.5 text-xs font-semibold lg:py-1.5 text-white transition hover:bg-adm-accent-strong"
+              className="rounded-sm bg-adm-accent whitespace-nowrap px-3 py-2.5 text-xs font-semibold lg:py-1.5 text-white transition hover:bg-adm-accent-strong"
             >
               + Novo depoimento
             </button>
@@ -282,14 +282,14 @@ export default function TestimonialsManager() {
                         <button
                           type="button"
                           onClick={() => startEdit(item)}
-                          className="rounded border border-adm-accent px-2.5 py-2.5 text-xs lg:py-1 font-semibold text-adm-accent transition hover:bg-adm-accent hover:text-white"
+                          className="rounded-sm border border-adm-accent px-2.5 py-2.5 text-xs lg:py-1 font-semibold text-adm-accent transition hover:bg-adm-accent hover:text-white"
                         >
                           Editar
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDelete(item.id)}
-                          className="rounded border border-adm-danger px-2.5 py-2.5 text-xs lg:py-1 font-semibold text-adm-danger transition hover:bg-adm-danger hover:text-white"
+                          className="rounded-sm border border-adm-danger px-2.5 py-2.5 text-xs lg:py-1 font-semibold text-adm-danger transition hover:bg-adm-danger hover:text-white"
                         >
                           Excluir
                         </button>

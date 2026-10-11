@@ -8,3 +8,9 @@ tests/
 .git
 *.db
 uploads/
+.env.*
+!.env.example
+*.md
+.claude
+Dockerfile
+.dockerignore

@@ -16,7 +16,7 @@ const NAV_LINKS = [
 
 function Brand() {
   return (
-    <Link href="/" className="flex flex-shrink-0 items-center gap-2.5 sm:gap-3" aria-label="Advocacia Alecrim - página inicial">
+    <Link href="/" className="flex shrink-0 items-center gap-2.5 sm:gap-3" aria-label="Advocacia Alecrim - página inicial">
       {/* Arquivo local de /public - o mesmo ícone gold usado na landing. */}
       <Image
         src="/images/logo-icone.png"

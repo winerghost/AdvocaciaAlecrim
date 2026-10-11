@@ -69,7 +69,7 @@ export default function PrivacyPage() {
     <div className="theme-ba flex min-h-screen flex-col">
       <a
         href="#conteudo"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-ba-pill focus:bg-ba-accent focus:px-5 focus:py-3 focus:text-sm focus:font-bold focus:text-white"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-60 focus:rounded-ba-pill focus:bg-ba-accent focus:px-5 focus:py-3 focus:text-sm focus:font-bold focus:text-white"
       >
         Pular para o conteúdo
       </a>

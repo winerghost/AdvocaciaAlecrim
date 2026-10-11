@@ -1,7 +1,9 @@
+import json
 import logging
 
 from cryptography.fernet import Fernet
-from flask import Flask
+from flask import Flask, request
+from werkzeug.exceptions import HTTPException
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from .config import Config
@@ -140,6 +142,26 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     def server_error(_error):
         return {"error": "internal_server_error"}, 500
 
+    # Os demais erros HTTP que o Flask/Werkzeug/Flask-Limiter geram sozinhos
+    # (400 de body inválido, 405, 413, 429...) respondiam uma página HTML. A
+    # API só fala JSON: mesmo formato `{"error": ...}` do resto, mantendo o
+    # status e os headers do erro original (Retry-After do 429, Allow do
+    # 405). Handlers por código (404/500 acima) têm precedência.
+    _HTTP_ERROR_CODES = {
+        400: "bad_request",
+        405: "method_not_allowed",
+        413: "payload_too_large",
+        415: "unsupported_media_type",
+        429: "rate_limited",
+    }
+
+    @app.errorhandler(HTTPException)
+    def http_error(error: HTTPException):
+        response = error.get_response()
+        response.set_data(json.dumps({"error": _HTTP_ERROR_CODES.get(error.code, "http_error")}))
+        response.content_type = "application/json"
+        return response
+
     @app.after_request
     def set_security_headers(response):
         # A API só responde JSON, nunca HTML, mas esses headers são baratos
@@ -149,6 +171,16 @@ def create_app(config_class: type[Config] = Config) -> Flask:
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("X-Frame-Options", "DENY")
         response.headers.setdefault("Referrer-Policy", "no-referrer")
+        if response.mimetype == "application/json":
+            # Resposta JSON nunca é página: sem nenhum recurso nem moldura.
+            # (Imagens de /api/media ficam de fora - o tipo delas não é JSON.)
+            response.headers.setdefault(
+                "Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'"
+            )
+        if request.path.startswith("/api/admin"):
+            # Token de login, leads decifrados, lista de administradores:
+            # nada disso pode ficar em cache de proxy/CDN/navegador.
+            response.headers.setdefault("Cache-Control", "no-store")
         return response
 
     return app

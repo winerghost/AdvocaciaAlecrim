@@ -21,7 +21,10 @@ export async function GET(_request: Request, { params }: RouteContext) {
 
   let res: Response;
   try {
-    res = await fetch(`${API_URL}/api/media/${name}`, { cache: "no-store" });
+    res = await fetch(`${API_URL}/api/media/${name}`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(15_000),
+    });
   } catch {
     return NextResponse.json({ error: "upstream_unavailable" }, { status: 502 });
   }

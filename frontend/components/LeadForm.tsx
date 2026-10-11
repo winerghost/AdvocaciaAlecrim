@@ -55,7 +55,7 @@ export default function LeadForm() {
 
   if (status === "success") {
     return (
-      <div className="bg-ba-steel/[0.22] p-6 text-center text-ba-text shadow-ba-ring-accent">
+      <div className="bg-ba-steel/22 p-6 text-center text-ba-text shadow-ba-ring-accent">
         <p className="font-semibold">Mensagem enviada!</p>
         <p className="mt-1 text-sm text-ba-text/70">
           Retornamos o contato o quanto antes. Se preferir, fale agora pelo WhatsApp.
@@ -75,14 +75,14 @@ export default function LeadForm() {
           maxLength={120}
           required
           placeholder="Nome completo"
-          className="rounded-[4px] border border-ba-steel/70 bg-ba-steel/[0.16] px-4 py-3 text-base text-ba-text sm:text-sm placeholder:text-ba-text/50 transition-colors duration-300 focus:border-ba-accent focus:outline-none"
+          className="rounded-[4px] border border-ba-steel/70 bg-ba-steel/16 px-4 py-3 text-base text-ba-text sm:text-sm placeholder:text-ba-text/50 transition-colors duration-300 focus:border-ba-accent focus:outline-hidden"
         />
         <input
           name="phone"
           maxLength={20}
           required
           placeholder="Telefone / WhatsApp"
-          className="rounded-[4px] border border-ba-steel/70 bg-ba-steel/[0.16] px-4 py-3 text-base text-ba-text sm:text-sm placeholder:text-ba-text/50 transition-colors duration-300 focus:border-ba-accent focus:outline-none"
+          className="rounded-[4px] border border-ba-steel/70 bg-ba-steel/16 px-4 py-3 text-base text-ba-text sm:text-sm placeholder:text-ba-text/50 transition-colors duration-300 focus:border-ba-accent focus:outline-hidden"
         />
       </div>
 
@@ -92,12 +92,12 @@ export default function LeadForm() {
           maxLength={254}
           type="email"
           placeholder="E-mail (opcional)"
-          className="rounded-[4px] border border-ba-steel/70 bg-ba-steel/[0.16] px-4 py-3 text-base text-ba-text sm:text-sm placeholder:text-ba-text/50 transition-colors duration-300 focus:border-ba-accent focus:outline-none"
+          className="rounded-[4px] border border-ba-steel/70 bg-ba-steel/16 px-4 py-3 text-base text-ba-text sm:text-sm placeholder:text-ba-text/50 transition-colors duration-300 focus:border-ba-accent focus:outline-hidden"
         />
         <select
           name="area"
           defaultValue=""
-          className="rounded-[4px] border border-ba-steel/70 bg-ba-steel/[0.16] px-4 py-3 text-base text-ba-text sm:text-sm transition-colors duration-300 focus:border-ba-accent focus:outline-none"
+          className="rounded-[4px] border border-ba-steel/70 bg-ba-steel/16 px-4 py-3 text-base text-ba-text sm:text-sm transition-colors duration-300 focus:border-ba-accent focus:outline-hidden"
         >
           <option value="" disabled className="text-ba-bg">
             Área de interesse
@@ -115,7 +115,7 @@ export default function LeadForm() {
         maxLength={2000}
         rows={4}
         placeholder="Conte brevemente o seu caso"
-        className="w-full rounded-[4px] border border-ba-steel/70 bg-ba-steel/[0.16] px-4 py-3 text-base text-ba-text sm:text-sm placeholder:text-ba-text/50 transition-colors duration-300 focus:border-ba-accent focus:outline-none"
+        className="w-full rounded-[4px] border border-ba-steel/70 bg-ba-steel/16 px-4 py-3 text-base text-ba-text sm:text-sm placeholder:text-ba-text/50 transition-colors duration-300 focus:border-ba-accent focus:outline-hidden"
       />
 
       <label className="flex items-start gap-2 text-xs text-ba-text/70">

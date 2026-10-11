@@ -23,14 +23,20 @@ export async function POST(request: Request) {
   // que só considera 1 hop - o do Next, único caminho pra chegar até ele.
   // Vai um único IP, o que o Nginx acrescentou, e nunca o header recebido do
   // cliente (ver lib/clientIp.ts).
-  const res = await fetch(`${API_URL}/api/admin/login`, {
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/admin/login`, {
     method: "POST",
+    signal: AbortSignal.timeout(15_000),
     headers: {
       "Content-Type": "application/json",
       ...forwardedForHeader(request),
     },
     body: JSON.stringify(body),
-  });
+    });
+  } catch {
+    return NextResponse.json({ error: "upstream_unavailable" }, { status: 502 });
+  }
 
   const data = await res.json().catch(() => ({}));
 

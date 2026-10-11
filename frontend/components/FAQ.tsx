@@ -20,7 +20,7 @@ export default function FAQ({ faqs }: { faqs: Faq[] }) {
       <div className="mx-auto max-w-4xl">
         <Reveal className="mx-auto mb-12 max-w-xl text-center sm:mb-16">
           <p className="ba-eyebrow mb-5">Dúvidas</p>
-          <h2 className="mb-4 text-ba-cta uppercase text-ba-bg [text-wrap:balance]">Perguntas frequentes</h2>
+          <h2 className="mb-4 text-ba-cta uppercase text-ba-bg text-balance">Perguntas frequentes</h2>
           <p className="text-ba-body text-ba-slate">O que os clientes perguntam antes de fechar.</p>
         </Reveal>
 
@@ -52,7 +52,7 @@ export default function FAQ({ faqs }: { faqs: Faq[] }) {
                     </span>
                   </button>
                   <div
-                    className="grid transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+                    className="grid transition-[grid-template-rows] duration-300 ease-in-out"
                     style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
                   >
                     <div className="overflow-hidden">

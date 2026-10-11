@@ -67,7 +67,7 @@ function Pagination({ page, pages }: { page: number; pages: number }) {
       ) : (
         <span />
       )}
-      <p className="order-last w-full text-center text-ba-nav uppercase text-ba-text/55 sm:order-none sm:w-auto">
+      <p className="order-last w-full text-center text-ba-nav uppercase text-ba-text/55 sm:order-0 sm:w-auto">
         Página {page} de {pages}
       </p>
       {page < pages ? (

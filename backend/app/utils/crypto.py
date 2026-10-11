@@ -14,10 +14,19 @@ campos de texto livre/PII (`name`, `phone`, `email`, `message`) usam
 `EncryptedText`, nunca campos usados em `WHERE`/`ORDER BY`.
 """
 
+import logging
+
 from cryptography.fernet import Fernet, InvalidToken
 from flask import current_app
 from sqlalchemy import Text
 from sqlalchemy.types import TypeDecorator
+
+
+logger = logging.getLogger(__name__)
+
+# O aviso de campo ilegível sai uma vez por processo: a listagem de leads
+# decifra 4 campos por linha e inundaria o log com a mesma frase.
+_unreadable_warned = False
 
 
 def cipher() -> Fernet:
@@ -50,4 +59,12 @@ class EncryptedText(TypeDecorator):
             # Chave errada/rotacionada, ou dado corrompido - nunca deixa o
             # ciphertext bruto vazar pra fora nem derruba a request inteira
             # só porque 1 registro específico ficou ilegível.
+            global _unreadable_warned
+            if not _unreadable_warned:
+                _unreadable_warned = True
+                logger.warning(
+                    "Campo criptografado ilegível (FIELD_ENCRYPTION_KEY diferente da "
+                    "usada na gravação, ou dado corrompido): devolvido como vazio. "
+                    "Confira a chave antes de salvar qualquer coisa por cima."
+                )
             return None

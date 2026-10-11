@@ -427,6 +427,9 @@ def delete_article(article_id):
 
 @bp.post("/admin/uploads")
 @require_admin
+# Sem teto de quantidade, um token vazado (ou um script com defeito) enchia
+# o disco do volume `uploads_data` a 5 MB por requisição.
+@limiter.limit("60 per 10 minutes")
 def upload_image():
     max_bytes = current_app.config["UPLOAD_MAX_BYTES"]
 
@@ -570,4 +573,8 @@ def serve_media(filename):
     # cacheado "para sempre".
     response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
     response.headers["X-Content-Type-Options"] = "nosniff"
+    # O arquivo só é validado pelo começo (magic bytes): um polyglot "imagem +
+    # HTML" servido por este caminho, aberto direto no navegador, não pode
+    # executar nada nem carregar recurso algum.
+    response.headers["Content-Security-Policy"] = "default-src 'none'; sandbox"
     return response

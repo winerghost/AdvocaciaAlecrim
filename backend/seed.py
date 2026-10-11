@@ -25,6 +25,7 @@ from app.extensions import db
 from app.models import AdminUser, Faq, Service, Testimonial
 from app.utils.boot_checks import PLACEHOLDER_ADMIN_EMAILS, is_known_placeholder
 from app.utils.password_policy import password_problem
+from app.utils.sanitize import sanitize_text
 from app.utils.schema_upgrades import apply_schema_upgrades
 
 SERVICES = [
@@ -161,7 +162,7 @@ def admin_credentials_problems(email: str, password: str) -> list[str]:
     """
     problems = []
 
-    normalized_email = email.strip().lower()
+    normalized_email = sanitize_text(email, allow_newline=False).strip().lower()
     if normalized_email in PLACEHOLDER_ADMIN_EMAILS:
         problems.append(
             "ADMIN_EMAIL é o e-mail de exemplo do .env.example - use o "
@@ -244,7 +245,10 @@ def run(app=None) -> None:
                         + "\n".join(f"  - {problem}" for problem in problems)
                     )
                 admin = AdminUser(
-                    email=admin_email.strip().lower(),
+                    # Mesma normalização do login (sanitize_text + minúsculas):
+                    # um e-mail gravado diferente do que o login procura
+                    # deixaria o admin inicial sem conseguir entrar.
+                    email=sanitize_text(admin_email, allow_newline=False).strip().lower(),
                     password_hash=generate_password_hash(admin_password),
                 )
                 db.session.add(admin)

@@ -15,16 +15,16 @@ import { extractList } from "@/lib/adminTypes";
 import { IMAGE_ACCEPT_ATTR, uploadAdminImage } from "@/lib/adminUpload";
 
 const INPUT_CLASS =
-  "w-full rounded border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-none focus:ring focus:ring-adm-accent/25";
+  "w-full rounded-sm border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-hidden focus:ring-3 focus:ring-adm-accent/25";
 const LABEL_CLASS = "mb-1 block text-xs font-semibold text-adm-body";
 const BTN_PRIMARY =
-  "rounded bg-adm-accent px-5 py-2 text-sm font-semibold text-white transition hover:bg-adm-accent-strong disabled:opacity-60";
+  "rounded-sm bg-adm-accent px-5 py-2 text-sm font-semibold text-white transition hover:bg-adm-accent-strong disabled:opacity-60";
 const BTN_SUCCESS =
-  "rounded bg-adm-success px-5 py-2 text-sm font-semibold text-white transition hover:bg-adm-success-strong disabled:opacity-60";
+  "rounded-sm bg-adm-success px-5 py-2 text-sm font-semibold text-white transition hover:bg-adm-success-strong disabled:opacity-60";
 const BTN_NEUTRAL =
-  "rounded border border-adm-border-strong bg-white px-5 py-2 text-sm text-adm-body transition hover:bg-adm-canvas disabled:opacity-60";
+  "rounded-sm border border-adm-border-strong bg-white px-5 py-2 text-sm text-adm-body transition hover:bg-adm-canvas disabled:opacity-60";
 const BTN_ROW =
-  "rounded border px-2.5 py-2.5 text-xs lg:py-1 font-semibold transition disabled:opacity-60";
+  "rounded-sm border px-2.5 py-2.5 text-xs lg:py-1 font-semibold transition disabled:opacity-60";
 
 const TITLE_MAX = 200;
 const EXCERPT_MAX = 500;
@@ -838,7 +838,7 @@ export default function ArticlesManager() {
   const alerts = (
     <>
       {sessionExpired && (
-        <div className="rounded border border-adm-warning-line bg-adm-warning-soft px-4 py-3 text-sm text-adm-warning-ink">
+        <div className="rounded-sm border border-adm-warning-line bg-adm-warning-soft px-4 py-3 text-sm text-adm-warning-ink">
           Sua sessão expirou. Suas alterações continuam nesta tela:{" "}
           <a href="/login" target="_blank" rel="noopener noreferrer" className="font-semibold underline">
             entre novamente em outra aba
@@ -847,12 +847,12 @@ export default function ArticlesManager() {
         </div>
       )}
       {error && (
-        <p className="rounded border border-adm-danger-line bg-adm-danger-soft px-4 py-3 text-sm text-adm-danger-ink">
+        <p className="rounded-sm border border-adm-danger-line bg-adm-danger-soft px-4 py-3 text-sm text-adm-danger-ink">
           {error}
         </p>
       )}
       {success && (
-        <p className="rounded border border-adm-success-line bg-adm-success-soft px-4 py-3 text-sm text-adm-success-ink">
+        <p className="rounded-sm border border-adm-success-line bg-adm-success-soft px-4 py-3 text-sm text-adm-success-ink">
           {success}
         </p>
       )}
@@ -871,7 +871,7 @@ export default function ArticlesManager() {
                 href={preview.publicUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded border border-adm-accent px-4 py-2 text-sm font-semibold text-adm-accent transition hover:bg-adm-accent hover:text-white"
+                className="rounded-sm border border-adm-accent px-4 py-2 text-sm font-semibold text-adm-accent transition hover:bg-adm-accent hover:text-white"
               >
                 Abrir no site ↗
               </a>
@@ -882,7 +882,7 @@ export default function ArticlesManager() {
           </div>
         </div>
 
-        <p className="rounded border border-adm-info-line bg-adm-info-soft px-4 py-3 text-sm text-adm-info-ink">
+        <p className="rounded-sm border border-adm-info-line bg-adm-info-soft px-4 py-3 text-sm text-adm-info-ink">
           <span className={`mr-2 rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_BADGE[preview.status]}`}>
             {STATUS_LABELS[preview.status]}
           </span>
@@ -893,14 +893,14 @@ export default function ArticlesManager() {
               : "Este artigo ainda não está visível no site."}
         </p>
 
-        <div className="rounded border border-adm-border bg-white shadow-sm">
-          <article className="article-preview mx-auto max-w-3xl break-words px-5 py-10 sm:px-8">
+        <div className="rounded-sm border border-adm-border bg-white shadow-xs">
+          <article className="article-preview mx-auto max-w-3xl wrap-break-word px-5 py-10 sm:px-8">
             {preview.cover_image && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={preview.cover_image}
                 alt=""
-                className="mb-8 aspect-[16/9] w-full rounded object-cover"
+                className="mb-8 aspect-video w-full rounded-sm object-cover"
               />
             )}
             <h1 className="text-3xl font-bold leading-tight text-adm-ink sm:text-4xl">
@@ -957,21 +957,21 @@ export default function ArticlesManager() {
         {pendingLeave && (
           <div
             role="alert"
-            className="flex flex-wrap items-center justify-between gap-3 rounded border border-adm-warning-line bg-adm-warning-soft px-4 py-3 text-sm text-adm-warning-ink"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-sm border border-adm-warning-line bg-adm-warning-soft px-4 py-3 text-sm text-adm-warning-ink"
           >
             <span>Há alterações não salvas. Se sair agora, elas serão perdidas.</span>
             <span className="flex gap-2">
               <button
                 type="button"
                 onClick={() => setPendingLeave(null)}
-                className="rounded border border-adm-border-strong bg-white whitespace-nowrap px-3 py-2.5 text-xs font-semibold lg:py-1.5 text-adm-body transition hover:bg-adm-canvas"
+                className="rounded-sm border border-adm-border-strong bg-white whitespace-nowrap px-3 py-2.5 text-xs font-semibold lg:py-1.5 text-adm-body transition hover:bg-adm-canvas"
               >
                 Continuar editando
               </button>
               <button
                 type="button"
                 onClick={confirmLeave}
-                className="rounded bg-adm-danger whitespace-nowrap px-3 py-2.5 text-xs font-semibold lg:py-1.5 text-white transition hover:bg-adm-danger-strong"
+                className="rounded-sm bg-adm-danger whitespace-nowrap px-3 py-2.5 text-xs font-semibold lg:py-1.5 text-white transition hover:bg-adm-danger-strong"
               >
                 Sair sem salvar
               </button>
@@ -984,7 +984,7 @@ export default function ArticlesManager() {
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
           {/* Coluna principal: título + conteúdo */}
           <div className="min-w-0 space-y-4">
-            <div className="rounded border border-adm-border bg-white p-4 shadow-sm">
+            <div className="rounded-sm border border-adm-border bg-white p-4 shadow-xs">
               <label htmlFor="article-title" className={LABEL_CLASS}>
                 Título
               </label>
@@ -1038,7 +1038,7 @@ export default function ArticlesManager() {
 
           {/* Coluna lateral: publicação, endereço, resumo, capa */}
           <div className="space-y-4">
-            <div className="space-y-4 rounded border border-adm-border bg-white p-4 shadow-sm">
+            <div className="space-y-4 rounded-sm border border-adm-border bg-white p-4 shadow-xs">
               <div>
                 <label htmlFor="article-slug" className={LABEL_CLASS}>
                   Endereço (slug)
@@ -1086,7 +1086,7 @@ export default function ArticlesManager() {
               </div>
             </div>
 
-            <div className="rounded border border-adm-border bg-white p-4 shadow-sm">
+            <div className="rounded-sm border border-adm-border bg-white p-4 shadow-xs">
               <label htmlFor="article-excerpt" className={LABEL_CLASS}>
                 Resumo
               </label>
@@ -1123,7 +1123,7 @@ export default function ArticlesManager() {
               />
             </div>
 
-            <div className="rounded border border-adm-border bg-white p-4 shadow-sm">
+            <div className="rounded-sm border border-adm-border bg-white p-4 shadow-xs">
               <span className={LABEL_CLASS}>Imagem de capa</span>
 
               {coverValid ? (
@@ -1131,10 +1131,10 @@ export default function ArticlesManager() {
                 <img
                   src={coverValue}
                   alt="Pré-visualização da capa"
-                  className="mb-3 aspect-[16/9] w-full rounded border border-adm-border object-cover"
+                  className="mb-3 aspect-video w-full rounded-sm border border-adm-border object-cover"
                 />
               ) : (
-                <div className="mb-3 flex aspect-[16/9] w-full items-center justify-center rounded border border-dashed border-adm-border-strong bg-adm-canvas text-xs text-adm-muted">
+                <div className="mb-3 flex aspect-video w-full items-center justify-center rounded-sm border border-dashed border-adm-border-strong bg-adm-canvas text-xs text-adm-muted">
                   {coverUploading ? "Enviando imagem..." : "Sem imagem de capa"}
                 </div>
               )}
@@ -1144,7 +1144,7 @@ export default function ArticlesManager() {
                   type="button"
                   disabled={coverUploading}
                   onClick={() => coverInputRef.current?.click()}
-                  className="rounded border border-adm-accent whitespace-nowrap px-3 py-2.5 text-xs font-semibold lg:py-1.5 text-adm-accent transition hover:bg-adm-accent hover:text-white disabled:opacity-60"
+                  className="rounded-sm border border-adm-accent whitespace-nowrap px-3 py-2.5 text-xs font-semibold lg:py-1.5 text-adm-accent transition hover:bg-adm-accent hover:text-white disabled:opacity-60"
                 >
                   {coverUploading ? "Enviando..." : coverValid ? "Trocar imagem" : "Enviar imagem"}
                 </button>
@@ -1152,7 +1152,7 @@ export default function ArticlesManager() {
                   type="button"
                   disabled={coverUploading}
                   onClick={() => setPickerOpen(true)}
-                  className="rounded border border-adm-border-strong whitespace-nowrap px-3 py-2.5 text-xs font-semibold lg:py-1.5 text-adm-body transition hover:bg-adm-canvas disabled:opacity-60"
+                  className="rounded-sm border border-adm-border-strong whitespace-nowrap px-3 py-2.5 text-xs font-semibold lg:py-1.5 text-adm-body transition hover:bg-adm-canvas disabled:opacity-60"
                 >
                   Escolher imagem já enviada
                 </button>
@@ -1164,7 +1164,7 @@ export default function ArticlesManager() {
                       clearFieldError("cover_image");
                       patch({ cover_image: "" });
                     }}
-                    className="rounded border border-adm-danger whitespace-nowrap px-3 py-2.5 text-xs font-semibold lg:py-1.5 text-adm-danger transition hover:bg-adm-danger hover:text-white disabled:opacity-60"
+                    className="rounded-sm border border-adm-danger whitespace-nowrap px-3 py-2.5 text-xs font-semibold lg:py-1.5 text-adm-danger transition hover:bg-adm-danger hover:text-white disabled:opacity-60"
                   >
                     Remover
                   </button>
@@ -1234,7 +1234,7 @@ export default function ArticlesManager() {
                 type="button"
                 disabled={blocked}
                 onClick={() => save("unpublish")}
-                className="rounded border border-adm-danger bg-white px-5 py-2 text-sm font-semibold text-adm-danger transition hover:bg-adm-danger hover:text-white disabled:opacity-60"
+                className="rounded-sm border border-adm-danger bg-white px-5 py-2 text-sm font-semibold text-adm-danger transition hover:bg-adm-danger hover:text-white disabled:opacity-60"
               >
                 {saving === "unpublish" ? "Despublicando..." : "Despublicar"}
               </button>
@@ -1270,7 +1270,7 @@ export default function ArticlesManager() {
 
       {alerts}
 
-      <div className="rounded border border-adm-border bg-white shadow-sm">
+      <div className="rounded-sm border border-adm-border bg-white shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-adm-border px-4 py-3">
           <h2 className="text-sm font-bold uppercase tracking-wide text-adm-ink">
             Artigos do blog
@@ -1278,7 +1278,7 @@ export default function ArticlesManager() {
           <button
             type="button"
             onClick={startCreate}
-            className="rounded bg-adm-accent whitespace-nowrap px-3 py-2.5 text-xs font-semibold lg:py-1.5 text-white transition hover:bg-adm-accent-strong"
+            className="rounded-sm bg-adm-accent whitespace-nowrap px-3 py-2.5 text-xs font-semibold lg:py-1.5 text-white transition hover:bg-adm-accent-strong"
           >
             + Novo artigo
           </button>
@@ -1297,7 +1297,7 @@ export default function ArticlesManager() {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
             aria-label="Filtrar por status"
-            className={`${INPUT_CLASS} max-w-[12rem] bg-white`}
+            className={`${INPUT_CLASS} max-w-48 bg-white`}
           >
             <option value="all">Todos os status</option>
             <option value="published">Publicados</option>
@@ -1334,10 +1334,10 @@ export default function ArticlesManager() {
                             src={item.cover_image}
                             alt=""
                             loading="lazy"
-                            className="h-12 w-20 rounded border border-adm-border object-cover"
+                            className="h-12 w-20 rounded-sm border border-adm-border object-cover"
                           />
                         ) : (
-                          <div className="flex h-12 w-20 items-center justify-center rounded border border-dashed border-adm-border-strong bg-adm-canvas text-[10px] text-adm-faint">
+                          <div className="flex h-12 w-20 items-center justify-center rounded-sm border border-dashed border-adm-border-strong bg-adm-canvas text-[10px] text-adm-faint">
                             sem capa
                           </div>
                         )}
@@ -1366,14 +1366,14 @@ export default function ArticlesManager() {
                               <button
                                 type="button"
                                 onClick={() => handleDelete(item.id)}
-                                className="rounded bg-adm-danger px-2.5 py-2.5 text-xs lg:py-1 font-semibold text-white transition hover:bg-adm-danger-strong"
+                                className="rounded-sm bg-adm-danger px-2.5 py-2.5 text-xs lg:py-1 font-semibold text-white transition hover:bg-adm-danger-strong"
                               >
                                 Confirmar
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setConfirmingId(null)}
-                                className="rounded border border-adm-border-strong px-2.5 py-2.5 text-xs lg:py-1 text-adm-body transition hover:bg-adm-canvas"
+                                className="rounded-sm border border-adm-border-strong px-2.5 py-2.5 text-xs lg:py-1 text-adm-body transition hover:bg-adm-canvas"
                               >
                                 Cancelar
                               </button>

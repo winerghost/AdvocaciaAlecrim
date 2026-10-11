@@ -127,7 +127,7 @@ export default function MediaPickerModal({ open, selectedUrl, onClose, onSelect,
         role="dialog"
         aria-modal="true"
         aria-labelledby="media-picker-title"
-        className="flex w-full max-w-4xl flex-col bg-white shadow-lg sm:max-h-[85vh] sm:rounded sm:border sm:border-adm-border"
+        className="flex w-full max-w-4xl flex-col bg-white shadow-lg sm:max-h-[85vh] sm:rounded-sm sm:border sm:border-adm-border"
       >
         <div className="flex items-center justify-between gap-3 border-b border-adm-border px-4 py-3">
           <h2 id="media-picker-title" className="text-sm font-semibold text-adm-ink">
@@ -137,7 +137,7 @@ export default function MediaPickerModal({ open, selectedUrl, onClose, onSelect,
             ref={closeRef}
             type="button"
             onClick={onClose}
-            className="rounded border border-adm-border px-3 py-2.5 text-xs font-semibold text-adm-ink transition hover:bg-adm-canvas lg:py-1.5"
+            className="rounded-sm border border-adm-border px-3 py-2.5 text-xs font-semibold text-adm-ink transition hover:bg-adm-canvas lg:py-1.5"
           >
             Fechar
           </button>
@@ -145,12 +145,12 @@ export default function MediaPickerModal({ open, selectedUrl, onClose, onSelect,
 
         <div className="flex-1 overflow-y-auto p-4" aria-live="polite" aria-busy={loading}>
           {error && (
-            <div className="mb-3 flex flex-wrap items-center gap-3 rounded border border-adm-danger px-3 py-2 text-xs text-adm-danger-ink">
+            <div className="mb-3 flex flex-wrap items-center gap-3 rounded-sm border border-adm-danger px-3 py-2 text-xs text-adm-danger-ink">
               <span>{error}</span>
               <button
                 type="button"
                 onClick={() => void load(items.length === 0 ? 1 : page + 1)}
-                className="rounded border border-adm-danger px-3 py-1.5 font-semibold transition hover:bg-adm-danger hover:text-white"
+                className="rounded-sm border border-adm-danger px-3 py-1.5 font-semibold transition hover:bg-adm-danger hover:text-white"
               >
                 Tentar novamente
               </button>
@@ -175,7 +175,7 @@ export default function MediaPickerModal({ open, selectedUrl, onClose, onSelect,
                       aria-pressed={selected}
                       aria-label={`Usar esta imagem. ${label}`}
                       onClick={() => onSelect(image.url)}
-                      className={`block w-full overflow-hidden rounded border text-left transition hover:border-adm-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-adm-accent ${
+                      className={`block w-full overflow-hidden rounded border text-left transition hover:border-adm-accent focus:outline-hidden focus-visible:ring-2 focus-visible:ring-adm-accent ${
                         selected ? "border-adm-accent ring-2 ring-adm-accent" : "border-adm-border"
                       }`}
                     >
@@ -211,7 +211,7 @@ export default function MediaPickerModal({ open, selectedUrl, onClose, onSelect,
               <button
                 type="button"
                 onClick={() => void load(page + 1)}
-                className="rounded border border-adm-accent px-4 py-2.5 text-xs font-semibold text-adm-accent transition hover:bg-adm-accent hover:text-white lg:py-1.5"
+                className="rounded-sm border border-adm-accent px-4 py-2.5 text-xs font-semibold text-adm-accent transition hover:bg-adm-accent hover:text-white lg:py-1.5"
               >
                 Carregar mais
               </button>

@@ -41,7 +41,7 @@ const AUTHOR = {
 
 // Selo arredondado dos metadados (autor, data, tempo de leitura).
 const BADGE =
-  "inline-flex items-center gap-2.5 rounded-[10px] bg-ba-steel/[0.22] px-5 py-[11px] text-base shadow-[inset_0_0_0_1px_rgb(var(--ba-steel)/0.85)] transition-[color,box-shadow] duration-300";
+  "inline-flex items-center gap-2.5 rounded-[10px] bg-ba-steel/22 px-5 py-[11px] text-base shadow-[inset_0_0_0_1px_rgb(var(--ba-steel)/0.85)] transition-[color,box-shadow] duration-300";
 
 const SHARE_BTN =
   "inline-flex h-11 w-11 items-center justify-center rounded-full text-ba-steel shadow-[inset_0_0_0_1px_rgb(var(--ba-steel)/0.3)] transition-[color,background-color,box-shadow] duration-300 hover:bg-ba-accent hover:text-white hover:shadow-ba-ring-accent";
@@ -140,10 +140,10 @@ export default async function ArticlePage({ params }: Props) {
       <article>
         <header className="relative overflow-hidden px-6 pb-14 pt-[84px] lg:px-8 lg:pb-[72px] lg:pt-24">
           <div className="ba-backdrop" aria-hidden="true" />
-          <div className="relative mx-auto flex max-w-[860px] flex-col gap-[26px] break-words">
+          <div className="relative mx-auto flex max-w-[860px] flex-col gap-[26px] wrap-break-word">
             <nav
               aria-label="Trilha de navegação"
-              className="flex flex-wrap items-center gap-2.5 text-xs font-semibold uppercase tracking-ba-nav text-ba-text/[0.42]"
+              className="flex flex-wrap items-center gap-2.5 text-xs font-semibold uppercase tracking-ba-nav text-ba-text/42"
             >
               <Link href="/" className="-my-3 py-3 text-ba-text/55 transition-colors duration-300 hover:text-ba-accent">
                 Início
@@ -154,10 +154,10 @@ export default async function ArticlePage({ params }: Props) {
               </Link>
             </nav>
 
-            <h1 className="text-ba-title uppercase text-ba-text [text-wrap:balance]">{article.title}</h1>
+            <h1 className="text-ba-title uppercase text-ba-text text-balance">{article.title}</h1>
 
             {article.excerpt && (
-              <p className="text-xl leading-[1.6] text-ba-text/[0.72] [text-wrap:balance]">{article.excerpt}</p>
+              <p className="text-xl leading-[1.6] text-ba-text/72 text-balance">{article.excerpt}</p>
             )}
 
             <div className="flex flex-wrap items-center gap-2.5 border-t border-ba-steel/55 pt-[26px]">
@@ -190,7 +190,7 @@ export default async function ArticlePage({ params }: Props) {
 
         {cover && (
           <div className="mx-auto max-w-ba-article px-6 pb-16 lg:px-8">
-            <Cover src={cover} eager className="aspect-[16/9] shadow-ba-ring-strong" />
+            <Cover src={cover} eager className="aspect-video shadow-ba-ring-strong" />
           </div>
         )}
 
@@ -243,7 +243,7 @@ export default async function ArticlePage({ params }: Props) {
                 >
                   {AUTHOR.name}
                 </Link>
-                <p className="text-base leading-[1.72] text-ba-slate [text-wrap:pretty]">{AUTHOR.bio}</p>
+                <p className="text-base leading-[1.72] text-ba-slate text-pretty">{AUTHOR.bio}</p>
                 <ul className="mt-1 flex flex-col gap-[9px]">
                   {AUTHOR.highlights.map((item) => (
                     <li
@@ -275,10 +275,10 @@ export default async function ArticlePage({ params }: Props) {
         <Reveal>
           <div className="relative mx-auto flex max-w-[820px] flex-col items-center gap-6 text-center">
             <p className="ba-eyebrow">Próximo passo</p>
-            <h2 className="text-ba-cta uppercase text-ba-text [text-wrap:balance]">
+            <h2 className="text-ba-cta uppercase text-ba-text text-balance">
               Precisa de <span className="text-ba-accent">orientação</span> para o seu caso?
             </h2>
-            <p className="max-w-[620px] text-lg leading-[1.65] text-ba-text/70 [text-wrap:balance]">
+            <p className="max-w-[620px] text-lg leading-[1.65] text-ba-text/70 text-balance">
               Cada situação tem detalhes que um artigo não alcança. Fale com o escritório e receba uma análise
               do seu caso.
             </p>

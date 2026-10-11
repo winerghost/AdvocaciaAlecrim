@@ -24,14 +24,20 @@ export async function POST(request: Request) {
   // Flask vê sempre o IP interno do container do Next e vira um limite
   // global compartilhado por todo mundo em vez de por remetente. Vai um
   // único IP, o que o Nginx acrescentou (ver lib/clientIp.ts).
-  const res = await fetch(`${API_URL}/api/leads`, {
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api/leads`, {
     method: "POST",
+    signal: AbortSignal.timeout(15_000),
     headers: {
       "Content-Type": "application/json",
       ...forwardedForHeader(request),
     },
     body: JSON.stringify(body),
-  });
+    });
+  } catch {
+    return NextResponse.json({ error: "upstream_unavailable" }, { status: 502 });
+  }
 
   const data = await res.json().catch(() => ({}));
   return NextResponse.json(data, { status: res.status });

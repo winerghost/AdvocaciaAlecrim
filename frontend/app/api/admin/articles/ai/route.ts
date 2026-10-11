@@ -21,6 +21,8 @@ export async function POST(request: Request) {
   try {
     return await proxyAdmin("/api/admin/articles/ai", {
       method: "POST",
+      // O backend limita a IA a ~1 min (504 ai_timeout); isto é só o teto.
+      signal: AbortSignal.timeout(120_000),
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(parsed.body),
     });

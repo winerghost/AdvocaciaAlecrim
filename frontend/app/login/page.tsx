@@ -13,7 +13,7 @@ export default function LoginPage() {
     <main className="theme-adm flex min-h-screen items-center justify-center bg-adm-canvas px-4 py-12">
       <div className="w-full max-w-sm">
         <div className="mb-4 flex flex-col items-center text-center">
-          <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-adm-accent text-white shadow-sm">
+          <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-adm-accent text-white shadow-xs">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -33,7 +33,7 @@ export default function LoginPage() {
           <p className="mt-1 text-sm text-adm-muted">Entre para gerenciar o conteúdo do site</p>
         </div>
 
-        <div className="rounded-md border border-adm-border bg-white p-6 shadow-sm">
+        <div className="rounded-md border border-adm-border bg-white p-6 shadow-xs">
           <LoginForm />
         </div>
 

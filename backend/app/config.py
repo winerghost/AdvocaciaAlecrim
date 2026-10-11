@@ -68,6 +68,24 @@ def openai_timeout(raw) -> int:
     return max(OPENAI_TIMEOUT_MIN, min(OPENAI_TIMEOUT_MAX, value))
 
 
+def database_uri(raw) -> str:
+    """URL do banco, com o driver do PostgreSQL sempre explícito.
+
+    A partir do SQLAlchemy 2.1, `postgresql://` (sem `+driver`) passa a usar
+    o psycopg 3 em vez do psycopg2 - que é o único instalado aqui (ver
+    requirements.txt) - e o app morreria no boot com "No module named
+    'psycopg'". O docker-compose já manda `postgresql+psycopg2://`; isto cobre
+    quem roda fora dele com a forma curta (ou `postgres://`, de provedores).
+    """
+    if not isinstance(raw, str) or not raw.strip():
+        return "sqlite:///dev.db"
+    value = raw.strip()
+    for prefix in ("postgresql://", "postgres://"):
+        if value.lower().startswith(prefix):
+            return "postgresql+psycopg2://" + value[len(prefix):]
+    return value
+
+
 class Config:
     # Sem default: um valor embutido no código é público. Ausente, curta
     # ou de exemplo, a chave derruba o boot - ver app/__init__.py e
@@ -86,7 +104,7 @@ class Config:
     # de um cron externo, ver DEPLOY-HOSTINGER.md).
     LEAD_RETENTION_DAYS = int(os.environ.get("LEAD_RETENTION_DAYS", "180"))
 
-    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "sqlite:///dev.db")
+    SQLALCHEMY_DATABASE_URI = database_uri(os.environ.get("DATABASE_URL"))
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     CORS_ORIGINS = [

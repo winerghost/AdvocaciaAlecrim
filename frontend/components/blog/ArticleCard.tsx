@@ -65,18 +65,18 @@ function ReadMore() {
 // área de clique até as bordas do card (um link só por card para leitores
 // de tela e teclado, em vez de envolver tudo num <a>).
 const STRETCHED_LINK =
-  "after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-ba-accent";
+  "after:absolute after:inset-0 after:content-[''] focus-visible:outline-hidden focus-visible:after:outline-solid focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-ba-accent";
 
 const CARD =
-  "group relative bg-ba-steel/[0.14] shadow-ba-ring transition-[background-color,box-shadow] duration-300 ease-in-out hover:bg-ba-steel/[0.22] hover:shadow-ba-ring-accent";
+  "group relative bg-ba-steel/[0.14] shadow-ba-ring transition-[background-color,box-shadow] duration-300 ease-in-out hover:bg-ba-steel/22 hover:shadow-ba-ring-accent";
 
 export function ArticleCard({ article }: { article: ArticleSummary }) {
   return (
     <article className={`${CARD} flex h-full flex-col`}>
-      <Cover src={article.cover_image} className="aspect-[16/10]" />
-      <div className="flex flex-1 flex-col gap-4 p-6 [overflow-wrap:anywhere] sm:p-7">
+      <Cover src={article.cover_image} className="aspect-16/10" />
+      <div className="flex flex-1 flex-col gap-4 p-6 wrap-anywhere sm:p-7">
         <CardDate article={article} />
-        <h3 className="text-ba-item text-ba-text [text-wrap:balance]">
+        <h3 className="text-ba-item text-ba-text text-balance">
           <Link href={`/blog/${article.slug}`} className={STRETCHED_LINK}>
             {article.title}
           </Link>
@@ -100,15 +100,15 @@ export function FeaturedArticle({ article }: { article: ArticleSummary }) {
     // para desenhar a borda interna de 1px.
     <div className="shadow-ba-card">
     <article className={`${CARD} grid lg:grid-cols-[1.15fr_1fr]`}>
-      <Cover src={article.cover_image} eager className="aspect-[16/10] lg:aspect-auto lg:min-h-[420px]" />
-      <div className="flex flex-col justify-center gap-5 p-6 [overflow-wrap:anywhere] sm:p-10 lg:p-14">
+      <Cover src={article.cover_image} eager className="aspect-16/10 lg:aspect-auto lg:min-h-[420px]" />
+      <div className="flex flex-col justify-center gap-5 p-6 wrap-anywhere sm:p-10 lg:p-14">
         <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
           <span className="rounded-ba-pill bg-ba-accent/20 px-3.5 py-2 text-[11px] font-bold uppercase leading-none tracking-[0.16em] text-ba-text shadow-ba-ring-accent">
             Mais recente
           </span>
           <CardDate article={article} />
         </div>
-        <h2 className="text-[clamp(1.625rem,1.2rem+1.8vw,2.5rem)] font-extrabold leading-[1.1] tracking-[-0.025em] text-ba-text [text-wrap:balance]">
+        <h2 className="text-[clamp(1.625rem,1.2rem+1.8vw,2.5rem)] font-extrabold leading-[1.1] tracking-tight text-ba-text text-balance">
           <Link href={`/blog/${article.slug}`} className={STRETCHED_LINK}>
             {article.title}
           </Link>

@@ -6,7 +6,7 @@ import { extractList } from "@/lib/adminTypes";
 import { ADMIN_PASSWORD_MIN_LENGTH, WEAK_PASSWORD_MESSAGE } from "@/lib/adminConstants";
 
 const INPUT_CLASS =
-  "w-full rounded border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-none focus:ring focus:ring-adm-accent/25";
+  "w-full rounded-sm border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-hidden focus:ring-3 focus:ring-adm-accent/25";
 
 const CREATE_ERRORS: Record<string, string> = {
   invalid_email: "E-mail inválido.",
@@ -135,18 +135,18 @@ export default function UsersManager() {
       <h1 className="text-lg font-bold text-adm-ink">Usuários do painel</h1>
 
       {error && (
-        <p className="rounded border border-adm-danger-line bg-adm-danger-soft px-4 py-3 text-sm text-adm-danger-ink">
+        <p className="rounded-sm border border-adm-danger-line bg-adm-danger-soft px-4 py-3 text-sm text-adm-danger-ink">
           {error}
         </p>
       )}
       {success && (
-        <p className="rounded border border-adm-success-line bg-adm-success-soft px-4 py-3 text-sm text-adm-success-ink">
+        <p className="rounded-sm border border-adm-success-line bg-adm-success-soft px-4 py-3 text-sm text-adm-success-ink">
           {success}
         </p>
       )}
 
       {creating && (
-        <div className="rounded border border-adm-border bg-white shadow-sm">
+        <div className="rounded-sm border border-adm-border bg-white shadow-xs">
           <div className="border-b border-adm-border px-4 py-3">
             <h2 className="text-sm font-bold uppercase tracking-wide text-adm-ink">
               Novo usuário
@@ -154,8 +154,8 @@ export default function UsersManager() {
           </div>
           <form onSubmit={handleSubmit} className="grid gap-4 p-4">
             <div className="max-w-md">
-              <label className="mb-1 block text-xs font-semibold text-adm-body">E-mail</label>
-              <input
+              <label htmlFor="usr-field-1" className="mb-1 block text-xs font-semibold text-adm-body">E-mail</label>
+              <input id="usr-field-1"
                 required
                 type="email"
                 autoComplete="off"
@@ -166,10 +166,10 @@ export default function UsersManager() {
               />
             </div>
             <div className="max-w-md">
-              <label className="mb-1 block text-xs font-semibold text-adm-body">
+              <label htmlFor="usr-field-2" className="mb-1 block text-xs font-semibold text-adm-body">
                 Senha inicial (mínimo {ADMIN_PASSWORD_MIN_LENGTH} caracteres)
               </label>
-              <input
+              <input id="usr-field-2"
                 required
                 type="password"
                 minLength={ADMIN_PASSWORD_MIN_LENGTH}
@@ -181,10 +181,10 @@ export default function UsersManager() {
               />
             </div>
             <div className="max-w-md">
-              <label className="mb-1 block text-xs font-semibold text-adm-body">
+              <label htmlFor="usr-field-3" className="mb-1 block text-xs font-semibold text-adm-body">
                 Sua senha atual (confirmação)
               </label>
-              <input
+              <input id="usr-field-3"
                 required
                 type="password"
                 autoComplete="current-password"
@@ -198,14 +198,14 @@ export default function UsersManager() {
               <button
                 type="submit"
                 disabled={saving}
-                className="rounded bg-adm-accent px-5 py-2 text-sm font-semibold text-white transition hover:bg-adm-accent-strong disabled:opacity-60"
+                className="rounded-sm bg-adm-accent px-5 py-2 text-sm font-semibold text-white transition hover:bg-adm-accent-strong disabled:opacity-60"
               >
                 {saving ? "Criando..." : "Criar usuário"}
               </button>
               <button
                 type="button"
                 onClick={cancelCreate}
-                className="rounded border border-adm-border-strong px-5 py-2 text-sm text-adm-body transition hover:bg-adm-canvas"
+                className="rounded-sm border border-adm-border-strong px-5 py-2 text-sm text-adm-body transition hover:bg-adm-canvas"
               >
                 Cancelar
               </button>
@@ -214,7 +214,7 @@ export default function UsersManager() {
         </div>
       )}
 
-      <div className="rounded border border-adm-border bg-white shadow-sm">
+      <div className="rounded-sm border border-adm-border bg-white shadow-xs">
         <div className="flex items-center justify-between gap-3 border-b border-adm-border px-4 py-3">
           <h2 className="text-sm font-bold uppercase tracking-wide text-adm-ink">
             Usuários cadastrados
@@ -227,7 +227,7 @@ export default function UsersManager() {
                 setError(null);
                 setSuccess(null);
               }}
-              className="rounded bg-adm-accent whitespace-nowrap px-3 py-2.5 text-xs font-semibold lg:py-1.5 text-white transition hover:bg-adm-accent-strong"
+              className="rounded-sm bg-adm-accent whitespace-nowrap px-3 py-2.5 text-xs font-semibold lg:py-1.5 text-white transition hover:bg-adm-accent-strong"
             >
               + Novo usuário
             </button>
@@ -249,7 +249,7 @@ export default function UsersManager() {
               <tbody className="divide-y divide-adm-border">
                 {items.map((item) => (
                   <tr key={item.id} className="hover:bg-adm-canvas">
-                    <td className="min-w-[9rem] break-all px-4 py-3 font-medium text-adm-ink">{item.email}</td>
+                    <td className="min-w-36 break-all px-4 py-3 font-medium text-adm-ink">{item.email}</td>
                     <td className="px-4 py-3 text-adm-body">{formatDate(item.created_at)}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap justify-end gap-2">
@@ -263,20 +263,20 @@ export default function UsersManager() {
                               value={deletePassword}
                               maxLength={128}
                               onChange={(e) => setDeletePassword(e.target.value)}
-                              className="w-40 rounded border border-adm-border-strong px-2 py-2.5 text-xs text-adm-ink lg:py-1 focus:border-adm-focus focus:outline-none"
+                              className="w-40 rounded-sm border border-adm-border-strong px-2 py-2.5 text-xs text-adm-ink lg:py-1 focus:border-adm-focus focus:outline-hidden"
                             />
                             <button
                               type="button"
                               disabled={!deletePassword}
                               onClick={() => handleDelete(item.id)}
-                              className="rounded bg-adm-danger px-2.5 py-2.5 text-xs lg:py-1 font-semibold text-white transition hover:bg-adm-danger-strong disabled:opacity-60"
+                              className="rounded-sm bg-adm-danger px-2.5 py-2.5 text-xs lg:py-1 font-semibold text-white transition hover:bg-adm-danger-strong disabled:opacity-60"
                             >
                               Confirmar
                             </button>
                             <button
                               type="button"
                               onClick={cancelDelete}
-                              className="rounded border border-adm-border-strong px-2.5 py-2.5 text-xs lg:py-1 text-adm-body transition hover:bg-adm-canvas"
+                              className="rounded-sm border border-adm-border-strong px-2.5 py-2.5 text-xs lg:py-1 text-adm-body transition hover:bg-adm-canvas"
                             >
                               Cancelar
                             </button>
@@ -288,7 +288,7 @@ export default function UsersManager() {
                               setDeletePassword("");
                               setConfirmingId(item.id);
                             }}
-                            className="rounded border border-adm-danger px-2.5 py-2.5 text-xs lg:py-1 font-semibold text-adm-danger transition hover:bg-adm-danger hover:text-white"
+                            className="rounded-sm border border-adm-danger px-2.5 py-2.5 text-xs lg:py-1 font-semibold text-adm-danger transition hover:bg-adm-danger hover:text-white"
                           >
                             Excluir
                           </button>

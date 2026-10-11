@@ -285,10 +285,10 @@ export type AiAssistController = ReturnType<typeof useAiAssist>;
 export type AiNextStep = { label: string; onClick: () => void };
 
 const DISABLED_STYLE = "aria-disabled:cursor-not-allowed aria-disabled:opacity-50";
-const AI_BTN = `whitespace-nowrap rounded border border-adm-border-strong bg-white px-2.5 py-2.5 text-xs font-semibold text-adm-body transition hover:border-adm-accent hover:text-adm-accent ${DISABLED_STYLE} aria-disabled:hover:border-adm-border-strong aria-disabled:hover:text-adm-body lg:py-1.5`;
+const AI_BTN = `whitespace-nowrap rounded-sm border border-adm-border-strong bg-white px-2.5 py-2.5 text-xs font-semibold text-adm-body transition hover:border-adm-accent hover:text-adm-accent ${DISABLED_STYLE} aria-disabled:hover:border-adm-border-strong aria-disabled:hover:text-adm-body lg:py-1.5`;
 // Ação indicada para o estado atual do campo (vazio: redigir; com texto: melhorar/corrigir).
-const AI_BTN_LEAD = `whitespace-nowrap rounded border border-adm-accent bg-white px-2.5 py-2.5 text-xs font-semibold text-adm-accent transition hover:bg-adm-accent hover:text-white ${DISABLED_STYLE} aria-disabled:hover:bg-white aria-disabled:hover:text-adm-accent lg:py-1.5`;
-const AI_BTN_PRIMARY = `whitespace-nowrap rounded border border-adm-accent bg-adm-accent px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-adm-accent-strong ${DISABLED_STYLE} aria-disabled:hover:bg-adm-accent lg:py-1.5`;
+const AI_BTN_LEAD = `whitespace-nowrap rounded-sm border border-adm-accent bg-white px-2.5 py-2.5 text-xs font-semibold text-adm-accent transition hover:bg-adm-accent hover:text-white ${DISABLED_STYLE} aria-disabled:hover:bg-white aria-disabled:hover:text-adm-accent lg:py-1.5`;
+const AI_BTN_PRIMARY = `whitespace-nowrap rounded-sm border border-adm-accent bg-adm-accent px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-adm-accent-strong ${DISABLED_STYLE} aria-disabled:hover:bg-adm-accent lg:py-1.5`;
 const AI_LINK = "whitespace-nowrap py-1 text-xs font-semibold underline";
 
 const SPARKLE = (
@@ -562,7 +562,7 @@ export default function AiAssist({
 
       {composing && (
         <div
-          className="space-y-2 rounded border border-adm-border bg-adm-surface p-3"
+          className="space-y-2 rounded-sm border border-adm-border bg-adm-surface p-3"
           onKeyDown={(e) => {
             if (e.key === "Escape") {
               e.preventDefault();
@@ -583,10 +583,10 @@ export default function AiAssist({
             value={instructions}
             onChange={(e) => ai.setInstructions(e.target.value)}
             placeholder="Ex.: Artigo para passageiros que tiveram o voo cancelado. Explicar em linguagem simples o direito a reembolso ou reacomodação, a assistência que a companhia deve dar no aeroporto, quando cabe indenização e quais documentos guardar."
-            className="w-full rounded border border-adm-border-strong bg-white px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-none focus:ring focus:ring-adm-accent/25"
+            className="w-full rounded-sm border border-adm-border-strong bg-white px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-hidden focus:ring-3 focus:ring-adm-accent/25"
           />
           <div className="flex flex-wrap justify-between gap-x-3 gap-y-1 text-xs text-adm-muted">
-            <span className="min-w-0 break-words">
+            <span className="min-w-0 wrap-break-word">
               {hasTitle
                 ? `A IA parte do título “${title.trim()}”. Diga aqui o assunto, para quem é o texto e os pontos a cobrir.`
                 : "Diga o assunto, para quem é o texto e os pontos a cobrir."}
@@ -620,7 +620,7 @@ export default function AiAssist({
       {/* Sempre montada, pra leitores de tela anunciarem a troca de estado. */}
       <div aria-live="polite" role="status">
         {state.phase === "loading" && (
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded border border-adm-info-line bg-adm-info-soft px-3 py-2 text-xs text-adm-info-ink">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-sm border border-adm-info-line bg-adm-info-soft px-3 py-2 text-xs text-adm-info-ink">
             <span
               aria-hidden="true"
               className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-adm-info-line border-t-adm-info-ink"
@@ -661,7 +661,7 @@ export default function AiAssist({
         )}
 
         {state.phase === "applied" && (
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded border border-adm-success-line bg-adm-success-soft px-3 py-2 text-xs text-adm-success-ink">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-sm border border-adm-success-line bg-adm-success-soft px-3 py-2 text-xs text-adm-success-ink">
             <span className="min-w-0 flex-1 basis-40">
               {field === "content"
                 ? "Sugestão aplicada ao conteúdo. Revise o texto; para voltar ao anterior, use o botão Desfazer do editor (Ctrl+Z)."
@@ -694,13 +694,13 @@ export default function AiAssist({
       {state.phase === "suggestion" && (
         <section
           aria-labelledby={`${baseId}-title`}
-          className="space-y-3 rounded border border-adm-info-line bg-adm-surface p-3"
+          className="space-y-3 rounded-sm border border-adm-info-line bg-adm-surface p-3"
         >
           <h2
             ref={headingRef}
             id={`${baseId}-title`}
             tabIndex={-1}
-            className="text-sm font-bold text-adm-ink focus:outline-none"
+            className="text-sm font-bold text-adm-ink focus:outline-hidden"
           >
             {field !== "title"
               ? SUGGESTION_TITLES[state.action]
@@ -708,7 +708,7 @@ export default function AiAssist({
                 ? "Títulos sugeridos pela IA"
                 : "Título sugerido pela IA"}
           </h2>
-          <p className="rounded border border-adm-warning-line bg-adm-warning-soft px-3 py-2 text-xs text-adm-warning-ink">
+          <p className="rounded-sm border border-adm-warning-line bg-adm-warning-soft px-3 py-2 text-xs text-adm-warning-ink">
             {REVIEW_NOTE}
           </p>
 
@@ -720,7 +720,7 @@ export default function AiAssist({
               role="region"
               aria-label="Texto sugerido"
               tabIndex={0}
-              className="max-h-[60vh] overflow-y-auto break-words rounded border border-adm-border bg-white px-5 py-6 sm:px-8"
+              className="max-h-[60vh] overflow-y-auto wrap-break-word rounded-sm border border-adm-border bg-white px-5 py-6 sm:px-8"
             >
               <div className="article-content" dangerouslySetInnerHTML={{ __html: suggestion }} />
             </div>
@@ -730,7 +730,7 @@ export default function AiAssist({
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
               <div className="min-w-0">
                 <p className="mb-1 text-xs font-semibold text-adm-muted">Resumo atual</p>
-                <p className="whitespace-pre-wrap break-words rounded border border-adm-border bg-adm-canvas px-3 py-2 text-sm text-adm-body">
+                <p className="whitespace-pre-wrap wrap-break-word rounded-sm border border-adm-border bg-adm-canvas px-3 py-2 text-sm text-adm-body">
                   {excerpt.trim() || "(vazio)"}
                 </p>
               </div>
@@ -739,7 +739,7 @@ export default function AiAssist({
                   Sugestão ({suggestion.length}
                   {maxLength ? `/${maxLength}` : ""} caracteres)
                 </p>
-                <p className="whitespace-pre-wrap break-words rounded border border-adm-focus bg-white px-3 py-2 text-sm text-adm-ink">
+                <p className="whitespace-pre-wrap wrap-break-word rounded-sm border border-adm-focus bg-white px-3 py-2 text-sm text-adm-ink">
                   {suggestion}
                 </p>
               </div>
@@ -750,7 +750,7 @@ export default function AiAssist({
             // Títulos são texto puro: entram como filhos de texto do React,
             // nunca como HTML.
             <div className="space-y-2">
-              <p className="break-words text-xs text-adm-muted">
+              <p className="wrap-break-word text-xs text-adm-muted">
                 Título atual:{" "}
                 <span className="font-semibold text-adm-body">{title.trim() || "(vazio)"}</span>
               </p>
@@ -760,9 +760,9 @@ export default function AiAssist({
                     <button
                       type="button"
                       onClick={() => apply(option)}
-                      className="group w-full rounded border border-adm-border-strong bg-white px-3 py-2 text-left transition hover:border-adm-accent"
+                      className="group w-full rounded-sm border border-adm-border-strong bg-white px-3 py-2 text-left transition hover:border-adm-accent"
                     >
-                      <span className="block break-words text-sm font-semibold text-adm-ink">
+                      <span className="block wrap-break-word text-sm font-semibold text-adm-ink">
                         {option}
                       </span>
                       <span className="text-xs font-semibold text-adm-accent group-hover:underline">

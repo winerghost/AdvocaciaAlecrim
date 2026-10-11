@@ -30,6 +30,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     const res = await fetch(`${API_URL}/api/admin/me`, {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
     });
     if (res.ok) {
       const data = await res.json().catch(() => ({}));

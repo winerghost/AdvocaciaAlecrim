@@ -1,6 +1,22 @@
+# Stack de produção: Postgres + Flask (gunicorn) + Next.js. O Nginx do host
+# (deploy/nginx/alecrim.conf) fica na frente e fala só com o frontend, em
+# 127.0.0.1:${FRONTEND_PORT}. Nenhuma porta é publicada fora do loopback.
+#
+# Limites de memória abaixo são um teto de segurança (um container fora de
+# controle não derruba a VPS inteira), não uma reserva: ajuste se a VPS
+# tiver bem mais ou bem menos RAM.
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   db:
-    image: postgres:16-alpine
+    # Patch fixado (mesma 16.x que já roda na VPS): um `up --build` não troca
+    # a versão do Postgres sozinho. Para subir de patch, mude aqui de propósito.
+    image: postgres:16.14-alpine
     container_name: alecrim_db
     restart: unless-stopped
     environment:
@@ -14,6 +30,25 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 20s
+    security_opt:
+      - no-new-privileges:true
+    # O entrypoint do Postgres roda como root só para ajustar o dono do
+    # volume e depois cai para o usuário `postgres`; só essas capabilities
+    # são necessárias para isso.
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    logging: *default-logging
     networks:
       - internal
 
@@ -37,11 +72,25 @@ services:
       # Imagens enviadas pelo painel (artigos) - mesmo caminho do default
       # de UPLOAD_DIR em backend/app/config.py. Sobrevive a rebuild.
       - uploads_data:/app/uploads
+    # Sistema de arquivos da imagem somente leitura: só o volume de uploads
+    # e o /tmp (tmpfs, buffer de multipart do Werkzeug) são graváveis.
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     depends_on:
       db:
         condition: service_healthy
     ports:
       - "127.0.0.1:${BACKEND_PORT:-8002}:8000"
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    logging: *default-logging
     networks:
       - internal
 
@@ -49,17 +98,35 @@ services:
     build:
       context: ./frontend
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8002}
+        # Valor público: vira código do bundle do navegador. Nada secreto aqui.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://www.advocaciaalecrim.com.br/api}
     container_name: alecrim_frontend
     restart: unless-stopped
     env_file:
       - ./frontend/.env
     environment:
       API_INTERNAL_URL: http://backend:8000
+    # Imagem somente leitura; o Next precisa gravar o cache de otimização de
+    # imagens em .next/cache, e o /tmp (ambos tmpfs, descartados a cada
+    # restart - é só cache). uid/gid 1001 = usuário `nextjs` da imagem.
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+      - /app/.next/cache:size=128m,uid=1001,gid=1001
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     ports:
       - "127.0.0.1:${FRONTEND_PORT:-3002}:3000"
+    deploy:
+      resources:
+        limits:
+          memory: 768m
+    logging: *default-logging
     networks:
       - internal
 

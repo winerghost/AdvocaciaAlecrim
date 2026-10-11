@@ -75,6 +75,14 @@ _EXCERPT_SOURCE_MAX_CHARS = 20000
 _MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 _MAX_ERROR_BYTES = 64 * 1024
 
+# Chamadas à OpenAI em andamento ao mesmo tempo, somando todos os admins. Cada
+# uma segura uma das threads do gunicorn por até OPENAI_TIMEOUT_SECONDS (50 s
+# por padrão); sem teto, poucas sugestões simultâneas ocupariam todas as
+# threads e o site inteiro (inclusive o formulário de contato) ficaria sem
+# resposta. O que passa do teto recebe `ai_rate_limited` (429) na hora.
+_MAX_CONCURRENT_CALLS = 3
+_call_slots = threading.BoundedSemaphore(_MAX_CONCURRENT_CALLS)
+
 
 class AIError(Exception):
     """Falha do assistente, já no formato da resposta da rota: `code` vai
@@ -845,7 +853,13 @@ def suggest(
     system, user = build_prompt(
         field, action, title=title, content=content, excerpt=excerpt, instructions=instructions
     )
-    data = request_completion(system, user, max_output_tokens(field, action, content))
+    if not _call_slots.acquire(blocking=False):
+        current_app.logger.warning("IA: limite de chamadas simultâneas atingido")
+        raise AIError("ai_rate_limited", 429)
+    try:
+        data = request_completion(system, user, max_output_tokens(field, action, content))
+    finally:
+        _call_slots.release()
     text, complete = extract_output_text(data)
 
     usage = data.get("usage") if isinstance(data.get("usage"), dict) else {}

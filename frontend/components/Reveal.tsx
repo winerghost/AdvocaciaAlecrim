@@ -43,7 +43,7 @@ export default function Reveal({
   return (
     <div
       ref={ref}
-      className={`transition-all duration-[800ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
+      className={`transition-all duration-800 ease-[cubic-bezier(0.16,1,0.3,1)] ${
         visible ? "translate-y-0 scale-100 opacity-100" : "translate-y-8 scale-[0.98] opacity-0"
       } ${className}`}
       style={delay ? { transitionDelay: `${delay}ms` } : undefined}

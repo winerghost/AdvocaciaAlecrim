@@ -80,12 +80,12 @@ export default function LeadsManager() {
       <h1 className="text-lg font-bold text-adm-ink">Leads</h1>
 
       {error && (
-        <p className="rounded border border-adm-danger-line bg-adm-danger-soft px-4 py-3 text-sm text-adm-danger-ink">
+        <p className="rounded-sm border border-adm-danger-line bg-adm-danger-soft px-4 py-3 text-sm text-adm-danger-ink">
           {error}
         </p>
       )}
 
-      <div className="rounded border border-adm-border bg-white shadow-sm">
+      <div className="rounded-sm border border-adm-border bg-white shadow-xs">
         <div className="flex items-center justify-between gap-3 border-b border-adm-border px-4 py-3">
           <h2 className="text-sm font-bold uppercase tracking-wide text-adm-ink">
             Leads recebidos
@@ -93,7 +93,7 @@ export default function LeadsManager() {
           <button
             type="button"
             onClick={load}
-            className="rounded border border-adm-border-strong whitespace-nowrap px-3 py-2.5 text-xs font-semibold lg:py-1.5 text-adm-body transition hover:bg-adm-canvas"
+            className="rounded-sm border border-adm-border-strong whitespace-nowrap px-3 py-2.5 text-xs font-semibold lg:py-1.5 text-adm-body transition hover:bg-adm-canvas"
           >
             Atualizar
           </button>
@@ -131,7 +131,7 @@ export default function LeadsManager() {
                       <select
                         value={item.status}
                         onChange={(e) => handleStatusChange(item.id, e.target.value as LeadStatus)}
-                        className="rounded border border-adm-border-strong bg-white px-2 py-2.5 text-xs font-medium text-adm-ink lg:py-1"
+                        className="rounded-sm border border-adm-border-strong bg-white px-2 py-2.5 text-xs font-medium text-adm-ink lg:py-1"
                       >
                         {STATUS_OPTIONS.map((status) => (
                           <option key={status} value={status}>
@@ -145,7 +145,7 @@ export default function LeadsManager() {
                         <button
                           type="button"
                           onClick={() => handleDelete(item.id)}
-                          className="rounded border border-adm-danger px-2.5 py-2.5 text-xs lg:py-1 font-semibold text-adm-danger transition hover:bg-adm-danger hover:text-white"
+                          className="rounded-sm border border-adm-danger px-2.5 py-2.5 text-xs lg:py-1 font-semibold text-adm-danger transition hover:bg-adm-danger hover:text-white"
                         >
                           Excluir
                         </button>

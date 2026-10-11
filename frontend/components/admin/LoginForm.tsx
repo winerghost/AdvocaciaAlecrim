@@ -72,7 +72,7 @@ export default function LoginForm() {
             required
             autoComplete="username"
             placeholder="E-mail"
-            className="w-full rounded border border-adm-border-strong bg-white py-2.5 pl-9 pr-3 text-sm text-adm-ink placeholder:text-adm-faint focus:border-adm-focus focus:outline-none focus:ring focus:ring-adm-accent/25"
+            className="w-full rounded-sm border border-adm-border-strong bg-white py-2.5 pl-9 pr-3 text-sm text-adm-ink placeholder:text-adm-faint focus:border-adm-focus focus:outline-hidden focus:ring-3 focus:ring-adm-accent/25"
           />
         </div>
       </div>
@@ -106,13 +106,13 @@ export default function LoginForm() {
             required
             autoComplete="current-password"
             placeholder="Senha"
-            className="w-full rounded border border-adm-border-strong bg-white py-2.5 pl-9 pr-3 text-sm text-adm-ink placeholder:text-adm-faint focus:border-adm-focus focus:outline-none focus:ring focus:ring-adm-accent/25"
+            className="w-full rounded-sm border border-adm-border-strong bg-white py-2.5 pl-9 pr-3 text-sm text-adm-ink placeholder:text-adm-faint focus:border-adm-focus focus:outline-hidden focus:ring-3 focus:ring-adm-accent/25"
           />
         </div>
       </div>
 
       {status === "error" && (
-        <p className="rounded border border-adm-danger-line bg-adm-danger-soft px-3 py-2 text-sm text-adm-danger-ink">
+        <p className="rounded-sm border border-adm-danger-line bg-adm-danger-soft px-3 py-2 text-sm text-adm-danger-ink">
           E-mail ou senha inválidos.
         </p>
       )}
@@ -120,7 +120,7 @@ export default function LoginForm() {
       <button
         type="submit"
         disabled={status === "loading"}
-        className="w-full rounded bg-adm-accent px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-adm-accent-strong disabled:opacity-60"
+        className="w-full rounded-sm bg-adm-accent px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-adm-accent-strong disabled:opacity-60"
       >
         {status === "loading" ? "Entrando..." : "Entrar"}
       </button>

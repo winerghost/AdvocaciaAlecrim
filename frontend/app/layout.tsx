@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Figtree } from "next/font/google";
 import { connection } from "next/server";
+import { SITE_NAME, SITE_URL } from "@/components/blog/utils";
 import "./globals.css";
 
 // Fonte do design system (.theme-ba). O next/font baixa a fonte no BUILD e
@@ -20,10 +21,31 @@ const figtree = Figtree({
   fallback: ["Helvetica", "Arial", "sans-serif"],
 });
 
+const TITLE = "Dr. Alecrim | Advocacia em Palmas e todo o Tocantins";
+const DESCRIPTION =
+  "Advogado atuante em Palmas e em todo o Tocantins, com foco em Direito das Sucessões, Previdenciário, Trabalhista e Cível.";
+
 export const metadata: Metadata = {
-  title: "Dr. Alecrim | Advocacia em Palmas e todo o Tocantins",
-  description:
-    "Advogado atuante em Palmas e em todo o Tocantins, com foco em Direito das Sucessões, Previdenciário, Trabalhista e Cível.",
+  // Base para canonical/OpenGraph relativos (SITE_URL vem do ambiente).
+  metadataBase: new URL(SITE_URL),
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    siteName: SITE_NAME,
+    title: TITLE,
+    description: DESCRIPTION,
+    url: "/",
+    images: [{ url: "/images/dr-alecrim-hero.png" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: ["/images/dr-alecrim-hero.png"],
+  },
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

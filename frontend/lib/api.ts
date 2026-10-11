@@ -65,7 +65,10 @@ type ApiResult<T> = { status: number; ok: boolean; data?: T; meta?: unknown };
 
 async function fetchEnvelope<T>(path: string): Promise<ApiResult<T> | null> {
   try {
-    const res = await fetch(`${API_URL}${path}`, { cache: "no-store" });
+    const res = await fetch(`${API_URL}${path}`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
+    });
     if (!res.ok) return { status: res.status, ok: false };
     const json = await res.json();
     return { status: res.status, ok: true, data: json?.data as T, meta: json?.meta };

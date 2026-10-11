@@ -142,7 +142,7 @@ export default function AdminSidebar({
   return (
     <div className="theme-adm min-h-screen bg-adm-canvas md:flex">
       {/* Sidebar fixa (telas md+) */}
-      <aside className="hidden md:flex md:w-60 md:flex-shrink-0 md:flex-col md:bg-adm-ink">
+      <aside className="hidden md:flex md:w-60 md:shrink-0 md:flex-col md:bg-adm-ink">
         <div className="border-b border-white/10 px-4 py-5">
           <span className="text-sm font-bold leading-tight text-white">
             Painel · Advocacia Alecrim
@@ -191,7 +191,7 @@ export default function AdminSidebar({
 
       {/* Coluna de conteúdo */}
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between border-b border-adm-border bg-white px-4 py-3 shadow-sm sm:px-6">
+        <header className="flex items-center justify-between border-b border-adm-border bg-white px-4 py-3 shadow-xs sm:px-6">
           <button
             type="button"
             onClick={() => setOpen(true)}
