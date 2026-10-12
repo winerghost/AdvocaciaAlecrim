@@ -1,17 +1,84 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type Status = "idle" | "loading" | "error";
+type Step = "credentials" | "mfa";
+
+const INPUT_CLASS =
+  "w-full rounded-sm border border-adm-border-strong bg-white px-3 py-2.5 text-sm text-adm-ink placeholder:text-adm-faint focus:border-adm-focus focus:outline-hidden focus:ring-3 focus:ring-adm-accent/25";
 
 export default function LoginForm() {
   const router = useRouter();
   const [status, setStatus] = useState<Status>("idle");
+  const [step, setStep] = useState<Step>("credentials");
+  const [useRecovery, setUseRecovery] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const mfaInputRef = useRef<HTMLInputElement>(null);
+
+  // Ao entrar no 2º passo (ou trocar código <-> recuperação) leva o foco ao
+  // campo, para quem usa teclado/leitor de tela seguir direto.
+  useEffect(() => {
+    if (step === "mfa") mfaInputRef.current?.focus();
+  }, [step, useRecovery]);
+
+  function backToCredentials(message: string | null = null) {
+    setStep("credentials");
+    setUseRecovery(false);
+    setErrorMsg(message);
+    setStatus(message ? "error" : "idle");
+  }
+
+  async function handleMfaSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setStatus("loading");
+    setErrorMsg(null);
+
+    const data = new FormData(event.currentTarget);
+    const value = String(data.get("mfa_value") || "").trim();
+    // O mfa_token não passa por aqui: está num cookie httpOnly que só o
+    // servidor Next lê (app/api/admin/login/mfa/route.ts).
+    const payload = useRecovery ? { recovery_code: value } : { code: value };
+
+    try {
+      const res = await fetch("/api/admin/login/mfa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        router.push("/admin");
+        router.refresh();
+        return;
+      }
+
+      const body = await res.json().catch(() => ({}));
+      if (res.status === 401 && body?.error === "invalid_mfa_token") {
+        // O passo expirou (5 min) ou o token foi invalidado: recomeça.
+        backToCredentials("A verificação expirou. Entre novamente com e-mail e senha.");
+        return;
+      }
+      if (res.status === 429) {
+        setErrorMsg("Muitas tentativas. Aguarde alguns minutos e tente novamente.");
+      } else if (res.status === 400 || res.status === 401) {
+        setErrorMsg("Código inválido ou expirado.");
+      } else {
+        // 403 (bloqueio cross-site), 502 (backend fora), 5xx etc.
+        setErrorMsg("Não foi possível verificar agora. Tente novamente.");
+      }
+      setStatus("error");
+    } catch {
+      setErrorMsg("Falha de conexão. Tente novamente.");
+      setStatus("error");
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setStatus("loading");
+    setErrorMsg(null);
 
     const form = event.currentTarget;
     const data = new FormData(form);
@@ -34,11 +101,107 @@ export default function LoginForm() {
         return;
       }
 
+      const body = await res.json().catch(() => ({}));
+      if (body?.mfa_required === true) {
+        // Senha ok, falta o 2º fator. A senha sai do formulário agora.
+        form.reset();
+        setStep("mfa");
+        setStatus("idle");
+        return;
+      }
+
       router.push("/admin");
       router.refresh();
     } catch {
       setStatus("error");
     }
+  }
+
+  if (step === "mfa") {
+    return (
+      <form onSubmit={handleMfaSubmit} className="space-y-4">
+        <p className="text-sm text-adm-body">
+          {useRecovery
+            ? "Digite um dos códigos de recuperação que você guardou."
+            : "Digite o código de 6 dígitos do seu aplicativo autenticador."}
+        </p>
+
+        <div>
+          <label className="sr-only" htmlFor="mfa_value">
+            {useRecovery ? "Código de recuperação" : "Código de verificação"}
+          </label>
+          {useRecovery ? (
+            <input
+              key="recovery"
+              ref={mfaInputRef}
+              id="mfa_value"
+              name="mfa_value"
+              type="text"
+              required
+              maxLength={64}
+              autoComplete="off"
+              autoCapitalize="none"
+              spellCheck={false}
+              placeholder="Código de recuperação"
+              className={INPUT_CLASS}
+            />
+          ) : (
+            <input
+              key="code"
+              ref={mfaInputRef}
+              id="mfa_value"
+              name="mfa_value"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]{6}"
+              required
+              maxLength={6}
+              autoComplete="one-time-code"
+              placeholder="000000"
+              className={`${INPUT_CLASS} tracking-widest`}
+            />
+          )}
+        </div>
+
+        {status === "error" && errorMsg && (
+          <p
+            role="alert"
+            className="rounded-sm border border-adm-danger-line bg-adm-danger-soft px-3 py-2 text-sm text-adm-danger-ink"
+          >
+            {errorMsg}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={status === "loading"}
+          className="w-full rounded-sm bg-adm-accent px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-adm-accent-strong disabled:opacity-60"
+        >
+          {status === "loading" ? "Verificando..." : "Verificar"}
+        </button>
+
+        <div className="flex items-center justify-between text-sm">
+          <button
+            type="button"
+            onClick={() => backToCredentials()}
+            className="font-medium text-adm-body underline-offset-2 hover:underline"
+          >
+            Voltar
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setUseRecovery((v) => !v);
+              setErrorMsg(null);
+              setStatus("idle");
+            }}
+            className="font-medium text-adm-accent underline-offset-2 hover:underline"
+          >
+            {useRecovery ? "Usar código do aplicativo" : "Usar código de recuperação"}
+          </button>
+        </div>
+      </form>
+    );
   }
 
   return (
@@ -112,8 +275,11 @@ export default function LoginForm() {
       </div>
 
       {status === "error" && (
-        <p className="rounded-sm border border-adm-danger-line bg-adm-danger-soft px-3 py-2 text-sm text-adm-danger-ink">
-          E-mail ou senha inválidos.
+        <p
+          role="alert"
+          className="rounded-sm border border-adm-danger-line bg-adm-danger-soft px-3 py-2 text-sm text-adm-danger-ink"
+        >
+          {errorMsg ?? "E-mail ou senha inválidos."}
         </p>
       )}
 

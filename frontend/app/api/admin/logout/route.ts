@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { ADMIN_COOKIE_NAME, proxyAdmin } from "@/lib/adminProxy";
+import { proxyAdmin } from "@/lib/adminProxy";
+import {
+  clearAdminMfaCookie,
+  clearAdminSessionCookie,
+  clearLegacyAdminSessionCookie,
+} from "@/lib/adminSession";
 
 // Sair = invalidar o token no Flask E apagar o cookie. O token é stateless,
 // mas o Flask guarda uma versão por admin (POST /api/admin/logout sobe essa
@@ -21,7 +25,9 @@ export async function POST() {
     // De propósito sem tratamento - ver comentário acima.
   }
 
-  const store = await cookies();
-  store.delete(ADMIN_COOKIE_NAME);
+  await clearAdminSessionCookie();
+  // Sobra do 2º passo do login, se o admin abandonou o fluxo no meio.
+  await clearAdminMfaCookie();
+  await clearLegacyAdminSessionCookie();
   return NextResponse.json({ ok: true });
 }

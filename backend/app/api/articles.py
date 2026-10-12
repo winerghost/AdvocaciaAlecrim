@@ -11,7 +11,7 @@ import re
 import uuid
 from datetime import datetime, timezone
 
-from flask import Blueprint, current_app, request, send_from_directory
+from flask import Blueprint, current_app, g, request, send_from_directory
 from marshmallow import ValidationError
 from sqlalchemy.exc import IntegrityError
 from werkzeug.exceptions import NotFound, RequestEntityTooLarge
@@ -37,6 +37,26 @@ bp = Blueprint("articles", __name__, url_prefix="/api")
 
 article_schema = ArticleSchema()
 article_ai_schema = ArticleAISchema()
+
+
+def _audit(event: str, **fields) -> None:
+    """Trilha de auditoria de quem mexeu em artigos/mídia (stdout do
+    container -> `docker compose logs backend`). Sem campo de autor no modelo
+    e com vários admins de mesmo nível, é o único jeito de saber QUEM
+    publicou ou apagou o quê. Mesmo formato `AUDIT <evento> ...` dos demais
+    módulos; `warning` porque o logger do Flask descarta `info`.
+    """
+    parts = " ".join(f"{key}={value}" for key, value in fields.items())
+    current_app.logger.warning(
+        "AUDIT %s by=#%s (%s) %s ip=%s",
+        event, g.admin_user.id, g.admin_user.email, parts, request.remote_addr,
+    )
+
+
+def _ai_account_key() -> str:
+    """Chave do teto diário da IA: por ADMIN, não por IP - quem troca de IP
+    (token vazado) não renova a cota. Só roda depois de `require_admin`."""
+    return f"ai-admin:{g.admin_user.id}"
 
 _DEFAULT_PER_PAGE = 9
 _MAX_PER_PAGE = 50
@@ -274,6 +294,9 @@ def preview_article():
 @bp.post("/admin/articles/ai")
 @require_admin
 @limiter.limit("30 per 10 minutes")
+# Teto diário por conta: o limite acima é por IP e um token vazado com IPs
+# rotativos gerava custo na OpenAI sem limite prático.
+@limiter.limit("200 per day", key_func=_ai_account_key, scope="ai-conta-dia")
 def article_ai_suggestion():
     """Sugestão de texto do assistente de IA para "Conteúdo", "Resumo" ou
     "Título" (este com até três opções em `options`).
@@ -350,6 +373,7 @@ def create_article():
     conflict = _commit_or_slug_conflict()
     if conflict is not None:
         return conflict
+    _audit("article_created", article=f"#{article.id}", published=bool(article.published))
     return {"data": _article_payload(article)}, 201
 
 
@@ -403,6 +427,7 @@ def update_article(article_id):
         return conflict
 
     payload_out = _article_payload(article)
+    _audit("article_updated", article=f"#{article.id}", published=bool(article.published))
     _purge_old_orphans()
     return {"data": payload_out}, 200
 
@@ -415,9 +440,11 @@ def delete_article(article_id):
         return {"error": "not_found"}, 404
 
     media_before = article_media_filenames(article.cover_image, article.content)
+    deleted_id, deleted_slug = article.id, article.slug
 
     db.session.delete(article)
     db.session.commit()
+    _audit("article_deleted", article=f"#{deleted_id}", slug=deleted_slug)
 
     _cleanup_media(media_before)
     return "", 204
@@ -462,6 +489,7 @@ def upload_image():
     with open(os.path.join(directory, filename), "wb") as handle:
         handle.write(data)
 
+    _audit("media_uploaded", file=filename, bytes=len(data))
     return {"data": {"url": f"/api/media/{filename}", "filename": filename}}, 201
 
 

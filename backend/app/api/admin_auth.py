@@ -1,13 +1,22 @@
 import hashlib
 from datetime import datetime, timezone
 
-from flask import Blueprint, g, request
+from flask import Blueprint, current_app, g, request
 from flask_limiter.util import get_remote_address
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..extensions import db, limiter
 from ..models import AdminUser
-from ..utils.auth import TOKEN_MAX_AGE_SECONDS, issue_token, require_admin, revoke_tokens
+from ..utils.auth import (
+    MFA_TOKEN_MAX_AGE_SECONDS,
+    TOKEN_MAX_AGE_SECONDS,
+    issue_mfa_token,
+    issue_token,
+    require_admin,
+    revoke_tokens,
+)
+from ..utils.mfa import recovery_codes_remaining, second_factor_gate
+from ..utils.mfa_limits import flagged_failure, mfa_limited
 from ..utils.password_policy import MAX_PASSWORD_LENGTH, password_problem
 from ..utils.sanitize import sanitize_text
 
@@ -15,17 +24,30 @@ bp = Blueprint("admin_auth", __name__, url_prefix="/api/admin")
 
 MAX_EMAIL_LENGTH = 255
 
-# Limites do login. O primeiro é por IP (chave padrão do limiter); o segundo
-# é por CONTA e não olha o IP - sem ele, quem troca de IP (ou forja
-# X-Forwarded-For) a cada tentativa renova a cota e testa senhas à vontade
-# contra o mesmo e-mail.
+# Limites do login (três camadas):
+# 1. por IP (chave padrão do limiter), qualquer e-mail;
+# 2. por CONTA + IP: a cota de quem erra a senha de um e-mail é do PRÓPRIO
+#    IP dele - um terceiro errando de outro IP gasta o balde dele, não o do
+#    admin legítimo (antes, 10 erros de qualquer lugar travavam o admin por
+#    1 h). A espera é progressiva: rajada curta pela camada 1, teto por hora
+#    aqui;
+# 3. teto por CONTA, qualquer IP e bem mais alto: segura ataque distribuído
+#    (muitos IPs, um e-mail) sem tornar o bloqueio trivial. Quando estoura,
+#    o log registra `rate_limited` - é o sinal para investigar.
 LOGIN_IP_RATE_LIMIT = "5 per 15 minutes"
-LOGIN_ACCOUNT_RATE_LIMIT = "10 per hour"
+LOGIN_ACCOUNT_IP_RATE_LIMIT = "10 per hour"
+LOGIN_ACCOUNT_CEILING_RATE_LIMIT = "30 per hour"
 
 # Hash "dummy" fixo, gerado uma única vez na importação do módulo (nunca a
 # partir de dado de request). Usado só para dar a `check_password_hash` algo
 # para comparar quando o e-mail não existe - ver comentário em `login()`.
 _DUMMY_PASSWORD_HASH = generate_password_hash("timing-attack-mitigation-dummy")
+
+# Prefixo "método:parâmetros" (ex. "scrypt:32768:8:1") que o Werkzeug usa
+# HOJE por padrão - derivado do hash acima, não escrito à mão, para acompanhar
+# o default da versão instalada. Hash de admin com prefixo diferente é legado
+# e é regravado no próximo login bem-sucedido.
+_CURRENT_HASH_METHOD = _DUMMY_PASSWORD_HASH.split("$", 1)[0]
 
 
 def _normalize_login_email(raw_email) -> str | None:
@@ -65,8 +87,34 @@ def _login_account_key() -> str:
     return "login-conta:" + hashlib.sha256(email.encode("utf-8")).hexdigest()
 
 
+def _login_account_ip_key() -> str:
+    """Chave do limite por conta + IP (ver `_login_account_key`)."""
+    return f"{_login_account_key()}|{get_remote_address()}"
+
+
 def _is_failed_login(response) -> bool:
     return response.status_code == 401
+
+
+def _email_tag(email: str | None) -> str:
+    """Identificador curto de um e-mail digitado no login, para o log.
+
+    Nunca o texto cru: é entrada de quem NÃO está autenticado (PII de
+    terceiros e vetor de log injection). O hash curto basta para ver que
+    várias tentativas miram a mesma conta.
+    """
+    if email is None:
+        return "-"
+    return hashlib.sha256(email.encode("utf-8")).hexdigest()[:12]
+
+
+def _audit(event: str, **fields) -> None:
+    """Linha de auditoria de autenticação (stdout -> `docker compose logs
+    backend`). `warning` porque o logger do Flask descarta `info` fora do
+    modo debug. Segue o formato `AUDIT <evento> chave=valor` do resto do app.
+    """
+    parts = " ".join(f"{key}={value}" for key, value in fields.items())
+    current_app.logger.warning("AUDIT %s %s ip=%s", event, parts, request.remote_addr)
 
 
 @bp.post("/login")
@@ -75,9 +123,16 @@ def _is_failed_login(response) -> bool:
 # várias vezes na mesma hora não se bloqueia sozinho. Estourada a cota, até
 # a senha certa leva 429 até a janela andar.
 @limiter.limit(
-    LOGIN_ACCOUNT_RATE_LIMIT,
+    LOGIN_ACCOUNT_IP_RATE_LIMIT,
+    key_func=_login_account_ip_key,
+    deduct_when=_is_failed_login,
+    scope="login-conta-ip",
+)
+@limiter.limit(
+    LOGIN_ACCOUNT_CEILING_RATE_LIMIT,
     key_func=_login_account_key,
     deduct_when=_is_failed_login,
+    scope="login-conta-teto",
 )
 def login():
     payload = request.get_json(silent=True)
@@ -89,8 +144,10 @@ def login():
 
     email = _normalize_login_email(raw_email)
     if email is None or not isinstance(password, str):
+        _audit("login_failed", reason="malformed", email=_email_tag(email))
         return {"error": "invalid_credentials"}, 401
     if len(password) > MAX_PASSWORD_LENGTH:
+        _audit("login_failed", reason="malformed", email=_email_tag(email))
         return {"error": "invalid_credentials"}, 401
 
     admin = AdminUser.query.filter_by(email=email).first()
@@ -110,8 +167,37 @@ def login():
     # Mesma mensagem genérica pros dois casos (e-mail inexistente ou senha
     # errada) - nunca revela se o e-mail existe.
     if admin is None or not password_ok:
+        # O log não distingue "e-mail inexistente" de "senha errada": o
+        # operador não precisa dessa diferença, e assim ela nunca vaza.
+        _audit("login_failed", reason="invalid_credentials", email=_email_tag(email))
         return {"error": "invalid_credentials"}, 401
 
+    # Hash legado (método/custo diferente do default atual do Werkzeug) é
+    # regravado agora, que a senha em texto está em mãos. Só acontece uma vez
+    # por conta; o fingerprint do token muda junto, então sessões antigas
+    # desse admin caem (aceitável, é uma migração única).
+    if admin.password_hash.split("$", 1)[0] != _CURRENT_HASH_METHOD:
+        admin.password_hash = generate_password_hash(password)
+        admin.updated_at = datetime.now(timezone.utc)
+        db.session.commit()
+        _audit("password_rehashed", admin=f"#{admin.id}")
+
+    # MFA ativo: a senha sozinha NÃO abre sessão. Só aqui (senha já correta)
+    # o cliente fica sabendo que a conta tem MFA - antes disso a resposta é
+    # a mesma de qualquer falha. Segundo passo em api/admin_mfa.py.
+    if admin.totp_enabled:
+        if not admin.totp_secret_enc:
+            # Segredo ilegível (FIELD_ENCRYPTION_KEY trocada?): o TOTP vai
+            # falhar fechado; só o código de recuperação ainda entra.
+            _audit("mfa_secret_unreadable", admin=f"#{admin.id}")
+        _audit("login_password_ok", admin=f"#{admin.id}", mfa="required")
+        return {
+            "mfa_required": True,
+            "mfa_token": issue_mfa_token(admin),
+            "expires_in": MFA_TOKEN_MAX_AGE_SECONDS,
+        }, 200
+
+    _audit("login_success", admin=f"#{admin.id}")
     token = issue_token(admin)
     return {
         "token": token,
@@ -123,7 +209,12 @@ def login():
 @bp.get("/me")
 @require_admin
 def me():
-    return {"email": g.admin_user.email}, 200
+    admin = g.admin_user
+    return {
+        "email": admin.email,
+        "mfa_enabled": bool(admin.totp_enabled),
+        "recovery_codes_remaining": recovery_codes_remaining(admin),
+    }, 200
 
 
 @bp.post("/logout")
@@ -132,12 +223,14 @@ def logout():
     # Sem isso o "Sair" só apagava o cookie no navegador, e um token
     # copiado antes continuava valendo até expirar sozinho (até 4h).
     revoke_tokens(g.admin_user)
+    _audit("logout", admin=f"#{g.admin_user.id}")
     return {"ok": True}, 200
 
 
 @bp.post("/change-password")
 @require_admin
 @limiter.limit("5 per 15 minutes")
+@mfa_limited("session", flagged_failure)
 def change_password():
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
@@ -155,7 +248,15 @@ def change_password():
     ):
         # Já autenticado (passou por `require_admin`), então 400 aqui não
         # vaza enumeração de usuário - é só "você errou a senha atual".
+        _audit("password_change_failed", admin=f"#{admin.id}", reason="invalid_current_password")
         return {"error": "invalid_current_password"}, 400
+
+    # MFA ativo: trocar a senha também exige o 2º fator (sessão roubada +
+    # senha vazada não bastam).
+    gate = second_factor_gate(admin, payload)
+    if gate is not None:
+        _audit("password_change_failed", admin=f"#{admin.id}", reason=gate[1])
+        return gate[0]
 
     # Regra única de senha - ver utils/password_policy.py.
     problem = password_problem(new_password, admin.email)
@@ -165,5 +266,6 @@ def change_password():
     admin.password_hash = generate_password_hash(new_password)
     admin.updated_at = datetime.now(timezone.utc)
     db.session.commit()
+    _audit("password_changed", admin=f"#{admin.id}")
 
     return {"ok": True}, 200

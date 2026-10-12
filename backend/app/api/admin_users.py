@@ -8,7 +8,9 @@ from ..models import AdminUser
 from ..utils.auth import require_admin
 from ..utils.password_policy import MAX_PASSWORD_LENGTH, password_problem
 from ..utils.sanitize import sanitize_text
-from .admin_auth import MAX_EMAIL_LENGTH
+from ..utils.mfa import second_factor_gate
+from ..utils.mfa_limits import flagged_failure, mfa_limited
+from .admin_auth import MAX_EMAIL_LENGTH, _audit
 
 bp = Blueprint("admin_users", __name__, url_prefix="/api/admin/users")
 
@@ -48,6 +50,7 @@ def list_users():
 @bp.post("")
 @require_admin
 @limiter.limit("20 per hour")
+@mfa_limited("session", flagged_failure)
 def create_user():
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):
@@ -55,6 +58,12 @@ def create_user():
 
     if not _current_password_ok(payload):
         return {"error": "invalid_current_password"}, 400
+
+    # MFA ativo: reautenticação também com o 2º fator.
+    gate = second_factor_gate(g.admin_user, payload)
+    if gate is not None:
+        _audit("admin_user_create_failed", admin=f"#{g.admin_user.id}", reason=gate[1])
+        return gate[0]
 
     raw_email = payload.get("email")
     password = payload.get("password")
@@ -105,9 +114,16 @@ def create_user():
 @bp.delete("/<int:user_id>")
 @require_admin
 @limiter.limit("20 per hour")
+@mfa_limited("session", flagged_failure)
 def delete_user(user_id: int):
-    if not _current_password_ok(request.get_json(silent=True)):
+    payload = request.get_json(silent=True)
+    if not _current_password_ok(payload):
         return {"error": "invalid_current_password"}, 400
+
+    gate = second_factor_gate(g.admin_user, payload)
+    if gate is not None:
+        _audit("admin_user_delete_failed", admin=f"#{g.admin_user.id}", reason=gate[1])
+        return gate[0]
 
     if user_id == g.admin_user.id:
         # Evita o admin se trancar para fora do painel sem querer.

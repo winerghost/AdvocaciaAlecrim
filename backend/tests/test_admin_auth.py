@@ -74,14 +74,17 @@ def _login_from(client, ip, email, password="errada"):
     )
 
 
-def test_login_account_limit_survives_ip_rotation(client, admin):
+CEILING = 30  # LOGIN_ACCOUNT_CEILING_RATE_LIMIT
+
+
+def test_login_account_ceiling_survives_ip_rotation(client, admin):
     statuses = [
-        _login_from(client, f"198.51.100.{i}", ADMIN_EMAIL).status_code for i in range(11)
+        _login_from(client, f"198.51.100.{i}", ADMIN_EMAIL).status_code for i in range(CEILING + 1)
     ]
 
-    assert statuses == [401] * 10 + [429]
+    assert statuses == [401] * CEILING + [429]
 
-    # Estourada a cota da conta, nem a senha certa entra (de mais um IP novo).
+    # Estourado o teto da conta, nem a senha certa entra (de mais um IP novo).
     blocked = _login_from(client, "203.0.113.7", ADMIN_EMAIL, ADMIN_PASSWORD)
     assert blocked.status_code == 429
 
@@ -90,9 +93,31 @@ def test_login_account_limit_survives_ip_rotation(client, admin):
     assert other.status_code == 401
 
 
+def test_login_failures_from_other_ips_do_not_lock_the_admin_below_the_ceiling(client, admin):
+    # Terceiros errando a senha da conta de vários IPs (abaixo do teto) não
+    # impedem o admin legítimo, no IP dele, de entrar.
+    for i in range(10):
+        assert _login_from(client, f"198.51.100.{i}", ADMIN_EMAIL).status_code == 401
+
+    ok = _login_from(client, "203.0.113.50", ADMIN_EMAIL, ADMIN_PASSWORD)
+    assert ok.status_code == 200
+
+
+def test_login_account_ip_limit_blocks_a_single_ip_hammering_one_account(client, admin):
+    # Mesmo IP, mesma conta: 10 falhas/h. Aqui o limite por IP (5 por 15 min)
+    # dispara antes - o que importa é que o IP insistente leva 429 e outro
+    # IP segue livre.
+    statuses = [
+        _login_from(client, "198.51.100.9", ADMIN_EMAIL).status_code for _ in range(6)
+    ]
+    assert statuses.count(429) >= 1
+
+    assert _login_from(client, "203.0.113.60", ADMIN_EMAIL, ADMIN_PASSWORD).status_code == 200
+
+
 def test_login_account_limit_normalizes_email(client, admin):
     variants = [ADMIN_EMAIL, ADMIN_EMAIL.upper(), f"  {ADMIN_EMAIL}  ", ADMIN_EMAIL.title()]
-    for i in range(10):
+    for i in range(CEILING):
         resp = _login_from(client, f"198.51.100.{i}", variants[i % len(variants)])
         assert resp.status_code == 401
 
@@ -105,10 +130,24 @@ def test_login_account_limit_is_the_same_for_unknown_email(client, admin):
     # serve para descobrir quais e-mails estão cadastrados.
     statuses = [
         _login_from(client, f"198.51.100.{i}", "nao-existe@example.com").status_code
-        for i in range(11)
+        for i in range(CEILING + 1)
     ]
 
-    assert statuses == [401] * 10 + [429]
+    assert statuses == [401] * CEILING + [429]
+
+
+def test_login_events_are_audited_without_leaking_the_typed_email(client, admin, caplog):
+    import logging
+
+    with caplog.at_level(logging.WARNING):
+        client.post("/api/admin/login", json={"email": "alvo@example.com", "password": "errada"})
+        client.post("/api/admin/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD})
+
+    text = caplog.text
+    assert "AUDIT login_failed" in text
+    assert "AUDIT login_success" in text
+    # Texto digitado por quem não está autenticado nunca vai cru para o log.
+    assert "alvo@example.com" not in text
 
 
 def test_login_account_limit_only_counts_failures(client, admin):
@@ -118,6 +157,38 @@ def test_login_account_limit_only_counts_failures(client, admin):
     ]
 
     assert statuses == [200] * 12
+
+
+def test_login_rehashes_a_legacy_password_hash(client, app, admin):
+    from werkzeug.security import generate_password_hash
+
+    from app.extensions import db
+
+    legacy = generate_password_hash(ADMIN_PASSWORD, method="pbkdf2:sha256:1000")
+    admin.password_hash = legacy
+    db.session.commit()
+
+    resp = client.post("/api/admin/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD})
+    assert resp.status_code == 200
+
+    refreshed = db.session.get(AdminUser, admin.id)
+    assert refreshed.password_hash != legacy
+    assert refreshed.password_hash.startswith("scrypt:")
+    assert check_password_hash(refreshed.password_hash, ADMIN_PASSWORD)
+
+    # O token emitido nesse mesmo login já vale com o hash novo.
+    me = client.get("/api/admin/me", headers=auth_headers(resp.get_json()["token"]))
+    assert me.status_code == 200
+
+
+def test_login_does_not_rehash_a_current_hash(client, admin):
+    from app.extensions import db
+
+    before = admin.password_hash
+    resp = client.post("/api/admin/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD})
+    assert resp.status_code == 200
+
+    assert db.session.get(AdminUser, admin.id).password_hash == before
 
 
 def test_login_account_limit_does_not_leak_between_tests(client, admin):
@@ -203,7 +274,11 @@ def test_me_with_valid_token_returns_email(client, admin, admin_token):
     resp = client.get("/api/admin/me", headers=auth_headers(admin_token))
 
     assert resp.status_code == 200
-    assert resp.get_json() == {"email": ADMIN_EMAIL}
+    assert resp.get_json() == {
+        "email": ADMIN_EMAIL,
+        "mfa_enabled": False,
+        "recovery_codes_remaining": 0,
+    }
 
 
 def test_expired_token_is_rejected(app, admin, admin_token, monkeypatch):
@@ -423,7 +498,7 @@ def test_logout_does_not_affect_another_admin(client, admin, admin_token):
 
     other_resp = client.get("/api/admin/me", headers=auth_headers(other_token))
     assert other_resp.status_code == 200
-    assert other_resp.get_json() == {"email": "outra@example.com"}
+    assert other_resp.get_json()["email"] == "outra@example.com"
     assert db.session.get(AdminUser, other.id).token_version == 0
 
 

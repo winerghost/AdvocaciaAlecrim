@@ -2,11 +2,16 @@ import { NextResponse } from "next/server";
 import { cookies, headers } from "next/headers";
 import { ADMIN_COOKIE_NAME } from "@/lib/adminConstants";
 import { forwardedForHeader } from "@/lib/clientIp";
+import { isCrossSiteRequest, isStateChangingMethod } from "@/lib/csrf";
 
 const API_URL =
   process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export { ADMIN_COOKIE_NAME };
+
+// Respostas do proxy carregam dados de conta (e-mail, estado do MFA, códigos
+// de recuperação, segredo TOTP): nunca devem ir para cache de navegador/CDN.
+const NO_STORE = { "Cache-Control": "no-store" };
 
 export async function getAdminToken(): Promise<string | null> {
   const store = await cookies();
@@ -27,9 +32,17 @@ export async function getAdminToken(): Promise<string | null> {
  * Se não houver cookie, responde 401 direto sem nem chamar o Flask.
  */
 export async function proxyAdmin(path: string, init?: RequestInit): Promise<NextResponse> {
+  const requestHeaders = await headers();
+
+  // Segunda camada contra CSRF (a primeira é SameSite=Strict): ação que muda
+  // estado só é aceita se veio do próprio site. Ver lib/csrf.ts.
+  if (isStateChangingMethod(init?.method) && isCrossSiteRequest(requestHeaders)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403, headers: NO_STORE });
+  }
+
   const token = await getAdminToken();
   if (!token) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "unauthorized" }, { status: 401, headers: NO_STORE });
   }
 
   // Sem resposta do Flask em 30 s (ou o prazo que o chamador der em
@@ -40,25 +53,25 @@ export async function proxyAdmin(path: string, init?: RequestInit): Promise<Next
     ...init,
     signal: init?.signal ?? AbortSignal.timeout(30_000),
     headers: {
-      ...forwardedForHeader(await headers()),
+      ...forwardedForHeader(requestHeaders),
       ...(init?.headers || {}),
       Authorization: `Bearer ${token}`,
     },
     cache: "no-store",
     });
   } catch {
-    return NextResponse.json({ error: "upstream_unavailable" }, { status: 502 });
+    return NextResponse.json({ error: "upstream_unavailable" }, { status: 502, headers: NO_STORE });
   }
 
   // 204 (DELETE bem-sucedido) não pode ter corpo - a spec HTTP proíbe, e
   // NextResponse.json(...) com status 204 lança um erro interno do Next
   // (Response with null body status cannot have body), virando 500.
   if (res.status === 204) {
-    return new NextResponse(null, { status: 204 });
+    return new NextResponse(null, { status: 204, headers: NO_STORE });
   }
 
   const data = await res.json().catch(() => ({}));
-  return NextResponse.json(data, { status: res.status });
+  return NextResponse.json(data, { status: res.status, headers: NO_STORE });
 }
 
 /**

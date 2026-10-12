@@ -1,18 +1,27 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { ADMIN_COOKIE_NAME } from "@/lib/adminProxy";
+import { setAdminMfaCookie, setAdminSessionCookie } from "@/lib/adminSession";
 import { forwardedForHeader } from "@/lib/clientIp";
+import { isCrossSiteRequest } from "@/lib/csrf";
+
+const NO_STORE = { "Cache-Control": "no-store" };
 
 const API_URL =
   process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-// Único route handler que SETA o cookie admin_session. O token do Flask
+// Junto com login/mfa, os únicos route handlers que SETAM o cookie
+// admin_session (via lib/adminSession.ts). O token do Flask
 // nunca é devolvido ao browser: fica só dentro do cookie httpOnly, e a
 // resposta ao client só confirma sucesso/falha.
 export async function POST(request: Request) {
+  // Login CSRF: página de outro site não pode logar o navegador do admin em
+  // uma conta escolhida por ela. Ver lib/csrf.ts.
+  if (isCrossSiteRequest(request.headers)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403, headers: NO_STORE });
+  }
+
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== "object" || Array.isArray(body)) {
-    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+    return NextResponse.json({ error: "invalid_json" }, { status: 400, headers: NO_STORE });
   }
 
   // Repassa o IP real do visitante (setado pelo Nginx do host, ver
@@ -35,7 +44,7 @@ export async function POST(request: Request) {
     body: JSON.stringify(body),
     });
   } catch {
-    return NextResponse.json({ error: "upstream_unavailable" }, { status: 502 });
+    return NextResponse.json({ error: "upstream_unavailable" }, { status: 502, headers: NO_STORE });
   }
 
   const data = await res.json().catch(() => ({}));
@@ -43,24 +52,24 @@ export async function POST(request: Request) {
   if (!res.ok) {
     // Repassa status (401 credenciais inválidas, 429 rate limit etc.) sem
     // vazar detalhe extra - o form no client mostra sempre mensagem genérica.
-    return NextResponse.json(data, { status: res.status });
+    return NextResponse.json(data, { status: res.status, headers: NO_STORE });
   }
 
-  const token = typeof data?.token === "string" ? data.token : null;
-  const expiresIn = typeof data?.expires_in === "number" ? data.expires_in : 14400;
-
-  if (!token) {
-    return NextResponse.json({ error: "invalid_response" }, { status: 502 });
+  // Admin com MFA: o Flask devolve `mfa_required` + `mfa_token` (sem `token`).
+  // O mfa_token vai só para um cookie httpOnly curto; o JavaScript recebe
+  // apenas a indicação de que falta o 2º passo (app/api/admin/login/mfa).
+  if (data?.mfa_required === true) {
+    const mfaToken = typeof data?.mfa_token === "string" ? data.mfa_token : null;
+    if (!mfaToken) {
+      return NextResponse.json({ error: "invalid_response" }, { status: 502, headers: NO_STORE });
+    }
+    await setAdminMfaCookie(mfaToken, data?.expires_in);
+    return NextResponse.json({ mfa_required: true }, { status: 200, headers: NO_STORE });
   }
 
-  const store = await cookies();
-  store.set(ADMIN_COOKIE_NAME, token, {
-    httpOnly: true,
-    sameSite: "strict",
-    path: "/",
-    secure: process.env.NODE_ENV === "production",
-    maxAge: expiresIn,
-  });
+  if (!(await setAdminSessionCookie(data))) {
+    return NextResponse.json({ error: "invalid_response" }, { status: 502, headers: NO_STORE });
+  }
 
-  return NextResponse.json({ ok: true }, { status: 200 });
+  return NextResponse.json({ ok: true }, { status: 200, headers: NO_STORE });
 }

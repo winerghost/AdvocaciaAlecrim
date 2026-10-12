@@ -53,6 +53,7 @@ ordered-set==4.1.0
 packaging==26.3
 psycopg2-binary==2.9.13
 pycparser==3.11
+pyotp==2.10.0
 python-dotenv==1.2.4
 SQLAlchemy==2.1.4
 typing_extensions==4.16.0

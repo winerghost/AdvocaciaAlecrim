@@ -14,10 +14,16 @@ from ..extensions import db
 from ..models import AdminUser
 
 _SALT = "admin-auth"
+# Salt DIFERENTE para o token intermediário do MFA: assinatura de um nunca
+# valida no outro, então token de sessão não serve de `mfa_token` e vice-versa.
+_MFA_SALT = "admin-mfa"
 
 # 4 horas - usado tanto para validar quanto para informar `expires_in` no
 # corpo da resposta de login.
 TOKEN_MAX_AGE_SECONDS = 4 * 60 * 60
+
+# Validade do `mfa_token` (entre a senha correta e o código do segundo fator).
+MFA_TOKEN_MAX_AGE_SECONDS = 5 * 60
 
 
 def _serializer() -> URLSafeTimedSerializer:
@@ -50,6 +56,67 @@ def issue_token(admin: AdminUser) -> str:
             "tv": admin.token_version,
         }
     )
+
+
+def issue_mfa_token(admin: AdminUser) -> str:
+    """Token curto emitido após a senha correta de um admin com MFA ativo.
+
+    Não dá acesso a nada: só prova que a senha foi aceita e é trocado por um
+    token de sessão em `POST /api/admin/login/mfa` junto com o código TOTP.
+    Leva `pv` e `tv` como o de sessão, então troca de senha e logout o
+    invalidam também.
+    """
+    return URLSafeTimedSerializer(current_app.config["SECRET_KEY"], salt=_MFA_SALT).dumps(
+        {
+            "admin_id": admin.id,
+            "pv": _password_fingerprint(admin),
+            "tv": admin.token_version,
+            "purpose": "mfa",
+        }
+    )
+
+
+def mfa_token_admin_id(token) -> int | None:
+    """`admin_id` de um mfa_token com assinatura e validade corretas, sem
+    tocar no banco (serve de chave do rate limit). `None` para qualquer falha.
+    """
+    if not isinstance(token, str) or not token or len(token) > 1024:
+        return None
+    try:
+        data = URLSafeTimedSerializer(
+            current_app.config["SECRET_KEY"], salt=_MFA_SALT
+        ).loads(token, max_age=MFA_TOKEN_MAX_AGE_SECONDS)
+    except Exception:
+        return None
+    if not isinstance(data, dict) or data.get("purpose") != "mfa":
+        return None
+    admin_id = data.get("admin_id")
+    return admin_id if type(admin_id) is int else None
+
+
+def verify_mfa_token(token) -> AdminUser | None:
+    """`AdminUser` do mfa_token, ou `None` para qualquer falha (assinatura,
+    expiração, admin removido, senha trocada, logout depois da emissão ou MFA
+    desativado nesse meio tempo). Nunca lança exceção.
+    """
+    admin_id = mfa_token_admin_id(token)
+    if admin_id is None:
+        return None
+    try:
+        data = URLSafeTimedSerializer(
+            current_app.config["SECRET_KEY"], salt=_MFA_SALT
+        ).loads(token, max_age=MFA_TOKEN_MAX_AGE_SECONDS)
+    except Exception:
+        return None
+    admin = db.session.get(AdminUser, admin_id)
+    if admin is None or not admin.totp_enabled:
+        return None
+    if data.get("pv") != _password_fingerprint(admin):
+        return None
+    token_version = data.get("tv")
+    if type(token_version) is not int or token_version != admin.token_version:
+        return None
+    return admin
 
 
 def revoke_tokens(admin: AdminUser) -> None:
@@ -116,6 +183,10 @@ def _extract_bearer_token() -> str | None:
         return None
     token = header[len("Bearer ") :].strip()
     return token or None
+
+
+def bearer_token() -> str | None:
+    return _extract_bearer_token()
 
 
 def require_admin(view_func):

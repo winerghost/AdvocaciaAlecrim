@@ -23,6 +23,11 @@ from ..extensions import db
 _MISSING_COLUMNS = (
     # Versão do token de sessão do admin - ver utils/auth.py (logout).
     ("admin_users", "token_version", "INTEGER NOT NULL DEFAULT 0"),
+    # MFA (TOTP) do admin - ver utils/mfa.py.
+    ("admin_users", "totp_secret_enc", "TEXT"),
+    ("admin_users", "totp_enabled", "BOOLEAN NOT NULL DEFAULT FALSE"),
+    ("admin_users", "totp_last_step", "INTEGER"),
+    ("admin_users", "recovery_codes_hash", "TEXT"),
     # Andamento do lead - banco anterior ao painel de leads não tinha.
     ("leads", "status", "VARCHAR(20) NOT NULL DEFAULT 'novo'"),
 )

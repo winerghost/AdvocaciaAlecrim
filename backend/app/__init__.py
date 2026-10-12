@@ -120,6 +120,7 @@ def create_app(config_class: type[Config] = Config) -> Flask:
 
     from .api.admin_auth import bp as admin_auth_bp
     from .api.admin_content import bp as admin_content_bp
+    from .api.admin_mfa import bp as admin_mfa_bp
     from .api.admin_users import bp as admin_users_bp
     from .api.articles import bp as articles_bp
     from .api.content import bp as content_bp
@@ -131,6 +132,7 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     app.register_blueprint(leads_bp)
     app.register_blueprint(admin_auth_bp)
     app.register_blueprint(admin_content_bp)
+    app.register_blueprint(admin_mfa_bp)
     app.register_blueprint(admin_users_bp)
     app.register_blueprint(articles_bp)
 
@@ -157,6 +159,12 @@ def create_app(config_class: type[Config] = Config) -> Flask:
 
     @app.errorhandler(HTTPException)
     def http_error(error: HTTPException):
+        # 429 em rota admin = alguém bateu num limite de autenticação: é o
+        # sinal de força bruta/credential stuffing que o operador precisa ver.
+        if error.code == 429 and request.path.startswith("/api/admin"):
+            app.logger.warning(
+                "AUDIT rate_limited path=%s ip=%s", request.path, request.remote_addr
+            )
         response = error.get_response()
         response.set_data(json.dumps({"error": _HTTP_ERROR_CODES.get(error.code, "http_error")}))
         response.content_type = "application/json"

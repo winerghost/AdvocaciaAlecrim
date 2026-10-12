@@ -2,12 +2,15 @@
 
 import { FormEvent, useState } from "react";
 import { ADMIN_PASSWORD_MIN_LENGTH, WEAK_PASSWORD_MESSAGE } from "@/lib/adminConstants";
+import { mfaErrorMessage, redirectIfUnauthorized, useMfaEnabled } from "@/lib/adminMfaClient";
+import MfaCodeField from "@/components/admin/MfaCodeField";
 
 type Status = "idle" | "loading" | "success" | "error";
 
 export default function ChangePasswordForm() {
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const { mfaEnabled, markRequired } = useMfaEnabled();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -18,6 +21,8 @@ export default function ChangePasswordForm() {
     const currentPassword = String(data.get("current_password") || "");
     const newPassword = String(data.get("new_password") || "");
     const confirmPassword = String(data.get("confirm_password") || "");
+    // Com MFA ativo o Flask exige também o 2º fator (TOTP ou recuperação).
+    const mfaCode = String(data.get("code") || "").trim();
 
     if (newPassword !== confirmPassword) {
       setErrorMsg("A nova senha e a confirmação não coincidem.");
@@ -34,19 +39,23 @@ export default function ChangePasswordForm() {
         body: JSON.stringify({
           current_password: currentPassword,
           new_password: newPassword,
+          ...(mfaEnabled && mfaCode ? { code: mfaCode } : {}),
         }),
       });
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
+        if (redirectIfUnauthorized(res.status, body?.error)) return;
+        if (body?.error === "mfa_code_required") markRequired();
         setErrorMsg(
-          body?.error === "invalid_current_password"
-            ? "Senha atual incorreta."
-            : body?.error === "weak_password"
-              ? WEAK_PASSWORD_MESSAGE
-              : body?.error === "password_too_long"
-                ? "A nova senha pode ter no máximo 128 caracteres."
-                : "Não foi possível trocar a senha agora."
+          mfaErrorMessage(res.status, body?.error) ??
+            (body?.error === "invalid_current_password"
+              ? "Senha atual incorreta."
+              : body?.error === "weak_password"
+                ? WEAK_PASSWORD_MESSAGE
+                : body?.error === "password_too_long"
+                  ? "A nova senha pode ter no máximo 128 caracteres."
+                  : "Não foi possível trocar a senha agora.")
         );
         setStatus("error");
         return;
@@ -125,6 +134,8 @@ export default function ChangePasswordForm() {
               className="w-full rounded-sm border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-hidden focus:ring-3 focus:ring-adm-accent/25"
             />
           </div>
+
+          {mfaEnabled && <MfaCodeField id="mfa_code" />}
 
           {status === "error" && errorMsg && (
             <p className="rounded-sm border border-adm-danger-line bg-adm-danger-soft px-3 py-2 text-sm text-adm-danger-ink">

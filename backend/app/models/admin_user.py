@@ -1,12 +1,14 @@
 from datetime import datetime, timezone
 
 from ..extensions import db
+from ..utils.crypto import EncryptedText
 
 
 class AdminUser(db.Model):
-    """Único usuário administrador do painel (`/admin`). Não é multiusuário -
-    o bootstrap (`seed.py`) só cria uma linha aqui, e não há rota de
-    cadastro/registro exposta pela API.
+    """Administrador do painel (`/admin`). Há mais de um: o bootstrap
+    (`seed.py`) cria o primeiro e os demais são criados/excluídos por um admin
+    já autenticado e reautenticado (`api/admin_users.py`). Não há cadastro
+    público nem papéis: todo admin tem o mesmo nível de acesso.
     """
 
     __tablename__ = "admin_users"
@@ -18,6 +20,16 @@ class AdminUser(db.Model):
     # deixa de valer quando ela muda (ver utils/auth.py). Em banco que já
     # existia, a coluna entra por utils/schema_upgrades.py.
     token_version = db.Column(db.Integer, nullable=False, default=0, server_default="0")
+    # MFA (TOTP) - ver utils/mfa.py. O segredo fica cifrado em repouso
+    # (Fernet, mesma FIELD_ENCRYPTION_KEY dos leads) e nunca é devolvido
+    # depois do setup. Em banco que já existia, as colunas entram por
+    # utils/schema_upgrades.py.
+    totp_secret_enc = db.Column(EncryptedText, nullable=True)
+    totp_enabled = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
+    # Último passo de 30 s aceito: recusa reuso do mesmo código (anti-replay).
+    totp_last_step = db.Column(db.Integer, nullable=True)
+    # JSON: lista de hashes (werkzeug) dos códigos de recuperação restantes.
+    recovery_codes_hash = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
         db.DateTime,

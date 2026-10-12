@@ -1485,3 +1485,25 @@ def test_update_rejects_missing_cover_but_keeps_unchanged_one(client, admin_toke
     (upload_dir / cover).unlink()
     same = client.put(url, json={"cover_image": f"/api/media/{cover}", "title": "Novo"}, headers=headers)
     assert same.status_code == 200
+
+
+# ------------------------------------------------------------------- audit --
+
+def test_article_and_media_changes_are_audited_with_the_actor(client, admin, admin_token, caplog):
+    import logging
+
+    with caplog.at_level(logging.WARNING):
+        article = make_article(client, admin_token, title="Auditado")
+        upload(client, admin_token, PNG_BYTES)
+        client.put(
+            f"/api/admin/articles/{article['id']}",
+            json={"title": "Auditado 2"},
+            headers=auth_headers(admin_token),
+        )
+        client.delete(f"/api/admin/articles/{article['id']}", headers=auth_headers(admin_token))
+
+    text = caplog.text
+    for event in ("article_created", "article_updated", "article_deleted", "media_uploaded"):
+        assert f"AUDIT {event}" in text
+    # Quem fez a ação aparece na linha.
+    assert f"by=#{admin.id}" in text

@@ -401,7 +401,13 @@ def test_schema_upgrade_adds_token_version_to_an_old_table(app):
         )
     assert "token_version" not in _admin_users_columns()
 
-    assert apply_schema_upgrades() == ["admin_users.token_version"]
+    assert apply_schema_upgrades() == [
+        "admin_users.token_version",
+        "admin_users.totp_secret_enc",
+        "admin_users.totp_enabled",
+        "admin_users.totp_last_step",
+        "admin_users.recovery_codes_hash",
+    ]
 
     assert "token_version" in _admin_users_columns()
     # a linha que já existia ganha versão 0 e volta a funcionar com o ORM.

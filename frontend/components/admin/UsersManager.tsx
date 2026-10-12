@@ -4,6 +4,8 @@ import { FormEvent, useEffect, useState } from "react";
 import type { AdminUserItem } from "@/lib/adminTypes";
 import { extractList } from "@/lib/adminTypes";
 import { ADMIN_PASSWORD_MIN_LENGTH, WEAK_PASSWORD_MESSAGE } from "@/lib/adminConstants";
+import { mfaErrorMessage, redirectIfUnauthorized, useMfaEnabled } from "@/lib/adminMfaClient";
+import MfaCodeField from "@/components/admin/MfaCodeField";
 
 const INPUT_CLASS =
   "w-full rounded-sm border border-adm-border-strong px-3 py-2 text-sm text-adm-ink focus:border-adm-focus focus:outline-hidden focus:ring-3 focus:ring-adm-accent/25";
@@ -43,6 +45,11 @@ export default function UsersManager() {
   const [deletePassword, setDeletePassword] = useState("");
   const [saving, setSaving] = useState(false);
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
+  // 2º fator (TOTP ou código de recuperação), exigido pelo Flask quando o
+  // admin logado tem MFA ativo.
+  const { mfaEnabled, markRequired } = useMfaEnabled();
+  const [createCode, setCreateCode] = useState("");
+  const [deleteCode, setDeleteCode] = useState("");
 
   async function load() {
     setLoading(true);
@@ -70,11 +77,13 @@ export default function UsersManager() {
     setEmail("");
     setPassword("");
     setCurrentPassword("");
+    setCreateCode("");
   }
 
   function cancelDelete() {
     setConfirmingId(null);
     setDeletePassword("");
+    setDeleteCode("");
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -87,12 +96,23 @@ export default function UsersManager() {
       const res = await fetch("/api/admin/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, current_password: currentPassword }),
+        body: JSON.stringify({
+          email,
+          password,
+          current_password: currentPassword,
+          ...(mfaEnabled && createCode.trim() ? { code: createCode.trim() } : {}),
+        }),
       });
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(CREATE_ERRORS[data?.error] ?? "Não foi possível criar o usuário.");
+        if (redirectIfUnauthorized(res.status, data?.error)) return;
+        if (data?.error === "mfa_code_required") markRequired();
+        setError(
+          mfaErrorMessage(res.status, data?.error) ??
+            CREATE_ERRORS[data?.error] ??
+            "Não foi possível criar o usuário."
+        );
         return;
       }
 
@@ -111,16 +131,23 @@ export default function UsersManager() {
     setError(null);
     setSuccess(null);
     const current_password = deletePassword;
+    const code = deleteCode.trim();
     cancelDelete();
     try {
       const res = await fetch(`/api/admin/users/${id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ current_password }),
+        body: JSON.stringify({ current_password, ...(mfaEnabled && code ? { code } : {}) }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(DELETE_ERRORS[data?.error] ?? "Não foi possível excluir.");
+        if (redirectIfUnauthorized(res.status, data?.error)) return;
+        if (data?.error === "mfa_code_required") markRequired();
+        setError(
+          mfaErrorMessage(res.status, data?.error) ??
+            DELETE_ERRORS[data?.error] ??
+            "Não foi possível excluir."
+        );
         return;
       }
       setSuccess("Usuário excluído.");
@@ -194,6 +221,11 @@ export default function UsersManager() {
                 className={INPUT_CLASS}
               />
             </div>
+            {mfaEnabled && (
+              <div className="max-w-md">
+                <MfaCodeField id="usr-mfa-create" value={createCode} onChange={setCreateCode} />
+              </div>
+            )}
             <div className="flex items-end gap-3">
               <button
                 type="submit"
@@ -265,9 +297,18 @@ export default function UsersManager() {
                               onChange={(e) => setDeletePassword(e.target.value)}
                               className="w-40 rounded-sm border border-adm-border-strong px-2 py-2.5 text-xs text-adm-ink lg:py-1 focus:border-adm-focus focus:outline-hidden"
                             />
+                            {mfaEnabled && (
+                              <div className="w-44">
+                                <MfaCodeField
+                                  id={`usr-mfa-delete-${item.id}`}
+                                  value={deleteCode}
+                                  onChange={setDeleteCode}
+                                />
+                              </div>
+                            )}
                             <button
                               type="button"
-                              disabled={!deletePassword}
+                              disabled={!deletePassword || (mfaEnabled === true && !deleteCode.trim())}
                               onClick={() => handleDelete(item.id)}
                               className="rounded-sm bg-adm-danger px-2.5 py-2.5 text-xs lg:py-1 font-semibold text-white transition hover:bg-adm-danger-strong disabled:opacity-60"
                             >
@@ -286,6 +327,7 @@ export default function UsersManager() {
                             type="button"
                             onClick={() => {
                               setDeletePassword("");
+                              setDeleteCode("");
                               setConfirmingId(item.id);
                             }}
                             className="rounded-sm border border-adm-danger px-2.5 py-2.5 text-xs lg:py-1 font-semibold text-adm-danger transition hover:bg-adm-danger hover:text-white"

@@ -19,10 +19,28 @@ const nextConfig = {
         headers: [
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          // `same-origin` (e não strict-origin-when-cross-origin): é o valor
+          // que outra camada à frente do Next (proxy/hospedagem) já injeta.
+          // Com valores diferentes a resposta saía com dois Referrer-Policy
+          // conflitantes e cada navegador resolvia de um jeito. O site não
+          // depende de Referer para links externos.
+          { key: "Referrer-Policy", value: "same-origin" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
           // Isola o contexto de navegação (sem janelas cruzadas com outras origens).
           { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+        ],
+      },
+      {
+        // O matcher de proxy.ts deixa /api/* de fora (a CSP com nonce é de
+        // documento). Sem isto, o 404 HTML que o Next devolve para uma rota
+        // /api/* inexistente saía sem nenhuma CSP. É a mesma política que o
+        // Flask aplica às respostas JSON: nada carrega, nada embute.
+        source: "/api/:path*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: "default-src 'none'; frame-ancestors 'none'",
+          },
         ],
       },
     ];
