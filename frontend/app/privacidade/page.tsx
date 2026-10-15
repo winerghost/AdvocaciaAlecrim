@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BlogFooter, BlogHeader } from "@/components/blog/BlogChrome";
-import { SITE_NAME, SITE_URL } from "@/components/blog/utils";
+import { OG_IMAGE, SITE_NAME, SITE_URL } from "@/components/blog/utils";
 import { CONTACT_EMAIL, PHONE_DISPLAY, PHONE_E164, PRIVACY_PATH } from "@/lib/constants";
 
 // Aviso de Privacidade (LGPD, Lei 13.709/2018) - linkado ao lado do aceite do
@@ -42,6 +42,7 @@ export const metadata: Metadata = {
     title: "Aviso de Privacidade",
     description: DESCRIPTION,
     url: PRIVACY_PATH,
+    images: [OG_IMAGE],
   },
 };
 

@@ -7,6 +7,7 @@ import { ArticleCard, Cover } from "@/components/blog/ArticleCard";
 import Reveal from "@/components/Reveal";
 import ScrollProgress from "@/components/ScrollProgress";
 import {
+  OG_IMAGE,
   SITE_NAME,
   absoluteUrl,
   articleDate,
@@ -79,13 +80,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       publishedTime: isoDate(articleDate(article)),
       modifiedTime: isoDate(article.updated_at),
       // Caminho relativo: o metadataBase de app/blog/layout.tsx o torna absoluto.
-      images: cover ? [{ url: cover }] : undefined,
+      // Sem capa, cai na imagem padrão do site.
+      images: [cover ? { url: cover } : OG_IMAGE],
     },
     twitter: {
-      card: cover ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title: article.title,
       description,
-      images: cover ? [cover] : undefined,
+      images: [cover ? cover : OG_IMAGE],
     },
   };
 }

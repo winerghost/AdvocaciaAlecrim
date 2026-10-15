@@ -7,6 +7,11 @@ export const SITE_URL = (process.env.SITE_URL || "https://www.advocaciaalecrim.c
 
 export const SITE_NAME = "Advocacia Alecrim";
 
+// Imagem padrão de compartilhamento (WhatsApp/redes), 1200x630, em public/.
+// Uma página que define o próprio `openGraph` substitui o do layout por
+// inteiro (imagens inclusive), então quem sobrescreve precisa repassar esta.
+export const OG_IMAGE = { url: "/og-image.png", width: 1200, height: 630, alt: SITE_NAME };
+
 // O backend manda ISO 8601 em UTC. Se vier sem designador de fuso
 // ("2026-01-05T12:00:00"), o JS interpretaria como horário local do
 // servidor - então assume UTC explicitamente.

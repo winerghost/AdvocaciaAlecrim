@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getArticles } from "@/lib/api";
 import { ArticleCard, FeaturedArticle } from "@/components/blog/ArticleCard";
 import Reveal from "@/components/Reveal";
+import { OG_IMAGE } from "@/components/blog/utils";
 
 // Mesmo motivo de app/page.tsx: o backend não existe durante o
 // `docker build`, então uma página estática/ISR congelaria a lista vazia.
@@ -42,7 +43,9 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
       title,
       description: DESCRIPTION,
       url: pageHref(page),
+      images: [OG_IMAGE],
     },
+    twitter: { card: "summary_large_image", title, description: DESCRIPTION, images: [OG_IMAGE] },
   };
 }
 
