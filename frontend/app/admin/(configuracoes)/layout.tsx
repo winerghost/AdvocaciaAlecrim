@@ -9,7 +9,7 @@ export default function AdminSettingsLayout({ children }: { children: React.Reac
       <div className="space-y-1">
         <h1 className="text-lg font-bold text-adm-ink">Configurações</h1>
         <p className="text-sm text-adm-muted">
-          Gerencie a segurança e o acesso da sua conta.
+          Segurança da sua conta, dados de contato do site e avisos de novos contatos.
         </p>
       </div>
       <SettingsTabs />

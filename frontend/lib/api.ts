@@ -1,3 +1,6 @@
+import { cache } from "react";
+import { normalizeSiteSettings, type SiteSettings } from "@/lib/siteContact";
+
 // URL usada em chamadas feitas pelo servidor Next (SSR / route handlers):
 // dentro do docker-compose aponta para o serviço "backend" na rede interna.
 const API_URL =
@@ -94,6 +97,13 @@ export function getTestimonials(): Promise<Testimonial[]> {
 export function getFaqs(): Promise<Faq[]> {
   return safeFetch<Faq[]>("/api/faqs", []);
 }
+
+// Contato e dados legais (Configurações > Site). `cache` faz uma única
+// chamada por request mesmo com vários componentes pedindo; backend fora do
+// ar cai nos defaults de lib/siteContact.ts (os valores de antes).
+export const getSiteSettings = cache(async (): Promise<SiteSettings> => {
+  return normalizeSiteSettings(await safeFetch<unknown>("/api/settings/site", null));
+});
 
 function toPositiveInt(value: unknown, fallback: number): number {
   const n = Number(value);

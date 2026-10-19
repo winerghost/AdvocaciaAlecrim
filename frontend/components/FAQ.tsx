@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import type { Faq } from "@/lib/api";
-import { WHATSAPP_URL } from "@/lib/constants";
 import Reveal from "./Reveal";
 import { ChevronDown } from "./icons";
 
@@ -10,7 +9,7 @@ import { ChevronDown } from "./icons";
 // nunca tinha sido portada para o Next.js (ver PLANO-MIGRACAO.md). O mockup
 // usava um loop de template sem conteúdo real (`{{ faqs }}` vazio); as
 // perguntas/respostas abaixo vêm do backend (tabela `faqs`, ver seed.py).
-export default function FAQ({ faqs }: { faqs: Faq[] }) {
+export default function FAQ({ faqs, whatsappUrl }: { faqs: Faq[]; whatsappUrl: string }) {
   const [openId, setOpenId] = useState<number | null>(null);
 
   if (faqs.length === 0) return null;
@@ -70,7 +69,7 @@ export default function FAQ({ faqs }: { faqs: Faq[] }) {
         <div className="mt-10 text-center sm:mt-14">
           <p className="mb-5 text-sm text-ba-slate">Ficou com outra dúvida?</p>
           <a
-            href={WHATSAPP_URL}
+            href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="ba-btn ba-btn-outline"

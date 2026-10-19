@@ -3,8 +3,11 @@
 // exports de Server Component com valores simples através da fronteira
 // client/server do Next.
 //
-// Telefone ÚNICO do escritório. Todo link tel:/WhatsApp e todo texto visível
-// deve sair daqui - não escreva o número direto em componentes.
+// Telefone e e-mail abaixo são o VALOR PADRÃO: o que vale no site é o que
+// foi salvo no painel (Configurações > Site), lido por getSiteSettings() em
+// lib/api.ts e montado por lib/siteContact.ts. Estes valores só aparecem se
+// nada foi salvo ou o backend estiver fora. Não escreva o número direto em
+// componentes - use contactLinks().
 export const PHONE_DIGITS = "5563999941821";
 export const PHONE_E164 = `+${PHONE_DIGITS}`;
 export const PHONE_DISPLAY = "(63) 99994-1821";

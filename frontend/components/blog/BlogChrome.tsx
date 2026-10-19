@@ -1,7 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import MobileNav from "@/components/MobileNav";
-import { PRIVACY_PATH, WHATSAPP_URL } from "@/lib/constants";
+import { getSiteSettings } from "@/lib/api";
+import { PRIVACY_PATH } from "@/lib/constants";
+import { contactLinks } from "@/lib/siteContact";
 
 // Cabeçalho e rodapé do blog, no tema .theme-ba. Mesma marca da landing
 // (ícone + nome tipografado, ver Nav em components/sections.tsx), com link
@@ -36,7 +38,8 @@ function Brand() {
   );
 }
 
-export function BlogHeader() {
+export async function BlogHeader() {
+  const { whatsappUrl } = contactLinks(await getSiteSettings());
   return (
     <header className="sticky top-0 z-50 border-b border-ba-steel/50 bg-ba-bg/90 backdrop-blur-md">
       <div className="mx-auto flex max-w-ba-container items-center justify-between gap-4 px-4 py-3 sm:px-8">
@@ -52,12 +55,12 @@ export function BlogHeader() {
               {link.label}
             </Link>
           ))}
-          <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="ba-btn ba-btn-primary ba-btn-sm">
+          <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="ba-btn ba-btn-primary ba-btn-sm">
             Falar
           </a>
         </nav>
 
-        <MobileNav links={NAV_LINKS} whatsappUrl={WHATSAPP_URL} />
+        <MobileNav links={NAV_LINKS} whatsappUrl={whatsappUrl} />
       </div>
     </header>
   );

@@ -1,6 +1,7 @@
 import Image from "next/image";
-import type { Service, Testimonial } from "@/lib/api";
-import { CONTACT_EMAIL, PHONE_DISPLAY, PHONE_E164, PRIVACY_PATH, WHATSAPP_URL } from "@/lib/constants";
+import { getSiteSettings, type Service, type Testimonial } from "@/lib/api";
+import { PRIVACY_PATH } from "@/lib/constants";
+import { contactLinks } from "@/lib/siteContact";
 import LeadForm from "./LeadForm";
 import MobileNav from "./MobileNav";
 import Reveal from "./Reveal";
@@ -22,7 +23,12 @@ const NAV_LINKS = [
 // Título de seção. `text-ba-bg` nas faixas claras, `text-ba-text` nas escuras.
 const SECTION_TITLE = "text-ba-cta uppercase text-balance";
 
-export function Nav() {
+async function getContact() {
+  return contactLinks(await getSiteSettings());
+}
+
+export async function Nav() {
+  const { whatsappUrl } = await getContact();
   return (
     <header className="sticky top-0 z-50 border-b border-ba-steel/50 bg-ba-bg/90 backdrop-blur-md">
       <div className="mx-auto flex max-w-ba-container items-center justify-between gap-4 px-4 py-2.5 sm:px-8">
@@ -63,19 +69,20 @@ export function Nav() {
               {link.label}
             </a>
           ))}
-          <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="ba-btn ba-btn-primary ba-btn-sm">
+          <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="ba-btn ba-btn-primary ba-btn-sm">
             Falar
           </a>
         </nav>
 
         {/* Mobile: menu sanduíche */}
-        <MobileNav links={NAV_LINKS} whatsappUrl={WHATSAPP_URL} />
+        <MobileNav links={NAV_LINKS} whatsappUrl={whatsappUrl} />
       </div>
     </header>
   );
 }
 
-export function Hero() {
+export async function Hero() {
+  const { whatsappUrl } = await getContact();
   return (
     <section id="top" className="relative flex min-h-[560px] items-center overflow-hidden">
       <div className="ba-backdrop" aria-hidden="true" />
@@ -126,7 +133,7 @@ export function Hero() {
             className="animate-fade-in-up mb-10 flex flex-col gap-3 sm:mb-12 sm:flex-row sm:flex-wrap sm:gap-3.5"
             style={{ animationDelay: "0.3s" }}
           >
-            <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="ba-btn ba-btn-primary">
+            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="ba-btn ba-btn-primary">
               Agendar Consulta
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M5 12h13M13 6l6 6-6 6" />
@@ -286,7 +293,8 @@ const CONTACT_LABEL = "mb-2 text-xs font-bold uppercase tracking-ba-eyebrow text
 // -my-2.5/py-2.5: área de toque de ~40px sem mexer no espaçamento visual.
 const CONTACT_VALUE = "-my-2.5 inline-block py-2.5 text-ba-text transition-colors duration-300 hover:text-ba-accent";
 
-export function Contact() {
+export async function Contact() {
+  const contact = await getContact();
   return (
     <section id="contato" className="relative overflow-hidden px-4 py-20 sm:px-8 sm:py-28">
       <div
@@ -301,31 +309,33 @@ export function Contact() {
           <div className="space-y-6 text-center sm:text-left">
             <div>
               <h3 className={CONTACT_LABEL}>Telefone</h3>
-              <a href={`tel:${PHONE_E164}`} className={CONTACT_VALUE}>
-                {PHONE_DISPLAY}
+              <a href={`tel:${contact.phoneE164}`} className={CONTACT_VALUE}>
+                {contact.phoneDisplay}
               </a>
             </div>
             <div>
               <h3 className={CONTACT_LABEL}>E-mail</h3>
-              <a href={`mailto:${CONTACT_EMAIL}`} className={CONTACT_VALUE}>
-                {CONTACT_EMAIL}
+              <a href={`mailto:${contact.email}`} className={CONTACT_VALUE}>
+                {contact.email}
               </a>
             </div>
             <div>
               <h3 className={CONTACT_LABEL}>Localização</h3>
-              <p className="text-ba-text">Palmas, Tocantins — atendimento em todo o estado</p>
+              <p className="text-ba-text">{contact.location}</p>
             </div>
-            <div>
-              <h3 className={CONTACT_LABEL}>Instagram</h3>
-              <a
-                href="https://www.instagram.com/advocaciaalecrim_/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={CONTACT_VALUE}
-              >
-                @advocaciaalecrim_
-              </a>
-            </div>
+            {contact.instagramUrl && (
+              <div>
+                <h3 className={CONTACT_LABEL}>Instagram</h3>
+                <a
+                  href={contact.instagramUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={CONTACT_VALUE}
+                >
+                  {contact.instagramHandle}
+                </a>
+              </div>
+            )}
           </div>
 
           <LeadForm />
@@ -351,10 +361,11 @@ export function Footer() {
   );
 }
 
-export function WhatsappButton() {
+export async function WhatsappButton() {
+  const { whatsappUrl } = await getContact();
   return (
     <a
-      href={WHATSAPP_URL}
+      href={whatsappUrl}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Fale conosco no WhatsApp"

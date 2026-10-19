@@ -1,4 +1,5 @@
-import { getFaqs, getServices, getTestimonials } from "@/lib/api";
+import { getFaqs, getServices, getSiteSettings, getTestimonials } from "@/lib/api";
+import { contactLinks } from "@/lib/siteContact";
 import {
   About,
   Contact,
@@ -22,11 +23,13 @@ export const dynamic = "force-dynamic";
 // Server Component: busca serviços e depoimentos direto do Flask (SSR),
 // com fallback vazio se a API estiver fora do ar.
 export default async function Home() {
-  const [services, testimonials, faqs] = await Promise.all([
+  const [services, testimonials, faqs, settings] = await Promise.all([
     getServices(),
     getTestimonials(),
     getFaqs(),
+    getSiteSettings(),
   ]);
+  const { whatsappUrl } = contactLinks(settings);
 
   return (
     // .theme-ba liga os tokens do design system (ver globals.css).
@@ -45,7 +48,7 @@ export default async function Home() {
       <Services services={services} />
       <Testimonials testimonials={testimonials} />
       {/* Sem link no menu (Nav) por escolha do cliente - acessível só por scroll. */}
-      <FAQ faqs={faqs} />
+      <FAQ faqs={faqs} whatsappUrl={whatsappUrl} />
       <Contact />
       <Footer />
       <WhatsappButton />

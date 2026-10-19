@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BlogFooter, BlogHeader } from "@/components/blog/BlogChrome";
 import { OG_IMAGE, SITE_NAME, SITE_URL } from "@/components/blog/utils";
-import { CONTACT_EMAIL, PHONE_DISPLAY, PHONE_E164, PRIVACY_PATH } from "@/lib/constants";
+import { getSiteSettings } from "@/lib/api";
+import { PRIVACY_PATH } from "@/lib/constants";
+import { contactLinks } from "@/lib/siteContact";
 
 // Aviso de Privacidade (LGPD, Lei 13.709/2018) - linkado ao lado do aceite do
 // formulário de contato (components/LeadForm.tsx) e nos rodapés.
@@ -10,22 +12,34 @@ import { CONTACT_EMAIL, PHONE_DISPLAY, PHONE_E164, PRIVACY_PATH } from "@/lib/co
 // O texto descreve o que o sistema FAZ hoje. Ao mudar o formulário
 // (LeadForm.tsx), o que é gravado (backend/app/models/lead.py) ou o prazo de
 // expurgo (LEAD_RETENTION_DAYS em backend/app/config.py, hoje 180 dias),
-// atualize esta página e a data abaixo.
-const LAST_UPDATED = "9 de outubro de 2026";
+// atualize esta página e a data abaixo (AAAA-MM-DD). Ao salvar os dados
+// legais no painel (Configurações > Site), o backend grava a data do
+// salvamento; vale a mais recente das duas.
+const TEXT_UPDATED_AT = "2026-10-09";
 
-// PENDENTE - dados que não constam no repositório e que o escritório precisa
-// informar antes da publicação. Enquanto estiverem assim, aparecem na página
-// entre colchetes, de propósito, para não passarem despercebidos.
+// Dados legais vêm do painel (Configurações > Site). Enquanto não forem
+// preenchidos, aparecem entre colchetes, de propósito, para não passarem
+// despercebidos.
 const PENDING = {
   // Nome completo do advogado ou razão social da sociedade de advogados.
   controllerName: "[PREENCHER: nome completo do advogado ou razão social]",
   // Inscrição na OAB (número e seccional) e, se for sociedade, o CNPJ.
   controllerRegistration: "[PREENCHER: nº de inscrição na OAB/TO e, se houver, CNPJ]",
-  // Endereço completo do escritório (o site só informa "Palmas, Tocantins").
+  // Endereço completo do escritório (o site só informa a cidade).
   controllerAddress: "[PREENCHER: endereço completo do escritório]",
   // Encarregado pelo tratamento de dados (art. 41 da LGPD).
   dpoName: "[PREENCHER: nome do encarregado pelo tratamento de dados]",
 };
+
+function formatLongDate(iso: string): string {
+  // Meio-dia de Brasília: a data não "volta" um dia por causa do fuso.
+  return new Date(`${iso}T12:00:00-03:00`).toLocaleDateString("pt-BR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "America/Sao_Paulo",
+  });
+}
 
 const DESCRIPTION =
   "Como o escritório Advocacia Alecrim trata os dados pessoais enviados pelo formulário de contato do site: quais dados, para quê, por quanto tempo e quais são os seus direitos pela LGPD.";
@@ -63,7 +77,14 @@ function List({ children }: { children: React.ReactNode }) {
   return <ul className="list-disc space-y-2 pl-5 marker:text-ba-accent">{children}</ul>;
 }
 
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
+  const settings = await getSiteSettings();
+  const contact = contactLinks(settings);
+  const lastUpdated = formatLongDate(
+    settings.legal_updated_at && settings.legal_updated_at > TEXT_UPDATED_AT
+      ? settings.legal_updated_at
+      : TEXT_UPDATED_AT
+  );
   return (
     // Mesma moldura do blog (app/blog/layout.tsx): tema .theme-ba, cabeçalho
     // e rodapé com link de volta para a home.
@@ -87,7 +108,7 @@ export default function PrivacyPage() {
               Este aviso explica, de forma direta, o que acontece com os dados pessoais que você envia pelo
               formulário de contato deste site, conforme a Lei Geral de Proteção de Dados (Lei nº 13.709/2018).
             </p>
-            <p className="mt-6 text-ba-nav uppercase text-ba-text/55">Última atualização: {LAST_UPDATED}</p>
+            <p className="mt-6 text-ba-nav uppercase text-ba-text/55">Última atualização: {lastUpdated}</p>
           </div>
         </section>
 
@@ -98,10 +119,12 @@ export default function PrivacyPage() {
               por este site.
             </p>
             <List>
-              <li>Responsável: {PENDING.controllerName}</li>
-              <li>Registro profissional: {PENDING.controllerRegistration}</li>
-              <li>Endereço: {PENDING.controllerAddress}</li>
-              <li>Encarregado pelo tratamento de dados: {PENDING.dpoName}</li>
+              <li>Responsável: {settings.controller_name || PENDING.controllerName}</li>
+              <li>
+                Registro profissional: {settings.controller_registration || PENDING.controllerRegistration}
+              </li>
+              <li>Endereço: {settings.controller_address || PENDING.controllerAddress}</li>
+              <li>Encarregado pelo tratamento de dados: {settings.dpo_name || PENDING.dpoName}</li>
             </List>
           </Section>
 
@@ -192,14 +215,14 @@ export default function PrivacyPage() {
             <List>
               <li>
                 E-mail:{" "}
-                <a href={`mailto:${CONTACT_EMAIL}`} className={LINK}>
-                  {CONTACT_EMAIL}
+                <a href={`mailto:${contact.email}`} className={LINK}>
+                  {contact.email}
                 </a>
               </li>
               <li>
                 Telefone / WhatsApp:{" "}
-                <a href={`tel:${PHONE_E164}`} className={LINK}>
-                  {PHONE_DISPLAY}
+                <a href={`tel:${contact.phoneE164}`} className={LINK}>
+                  {contact.phoneDisplay}
                 </a>
               </li>
             </List>

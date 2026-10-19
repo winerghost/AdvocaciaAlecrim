@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getArticle, getArticles } from "@/lib/api";
+import { getArticle, getArticles, getSiteSettings } from "@/lib/api";
 import { ArticleCard, Cover } from "@/components/blog/ArticleCard";
 import Reveal from "@/components/Reveal";
 import ScrollProgress from "@/components/ScrollProgress";
@@ -16,7 +16,7 @@ import {
   isoDate,
   readingMinutes,
 } from "@/components/blog/utils";
-import { WHATSAPP_URL } from "@/lib/constants";
+import { contactLinks } from "@/lib/siteContact";
 
 // Conteúdo vem do Flask a cada request (ver comentário em app/page.tsx).
 export const dynamic = "force-dynamic";
@@ -98,7 +98,11 @@ export default async function ArticlePage({ params }: Props) {
   if (!article) notFound();
 
   // Pede um a mais porque o artigo atual pode estar entre os mais recentes.
-  const { data: recent } = await getArticles(1, OTHERS_COUNT + 1);
+  const [{ data: recent }, settings] = await Promise.all([
+    getArticles(1, OTHERS_COUNT + 1),
+    getSiteSettings(),
+  ]);
+  const { whatsappUrl } = contactLinks(settings);
   const others = recent.filter((item) => item.slug !== article.slug).slice(0, OTHERS_COUNT);
 
   const date = articleDate(article);
@@ -288,7 +292,7 @@ export default async function ArticlePage({ params }: Props) {
               <Link href="/#contato" className="ba-btn ba-btn-primary">
                 Agendar consulta
               </Link>
-              <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="ba-btn ba-btn-secondary">
+              <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="ba-btn ba-btn-secondary">
                 Falar no WhatsApp
               </a>
             </div>

@@ -1,7 +1,9 @@
-// Páginas da seção "Configurações" do painel. Usado pelo grupo da sidebar
-// (AdminSidebar) e pelas abas do topo (SettingsTabs): para uma nova página
-// de configurações, basta criar a rota em app/admin/(configuracoes)/ e
-// adicionar uma entrada aqui.
+// Páginas da seção "Configurações" do painel. A sidebar (AdminSidebar) mostra
+// só um link "Configurações" (ADMIN_SETTINGS_HREF); as subpáginas aparecem
+// como abas no topo (SettingsTabs). Para uma nova página de configurações,
+// basta criar a rota em app/admin/(configuracoes)/ e adicionar uma entrada aqui.
+export const ADMIN_SETTINGS_HREF = "/admin/configuracoes";
+
 export type AdminSettingsItem = {
   href: string;
   label: string;
@@ -10,6 +12,8 @@ export type AdminSettingsItem = {
 export const ADMIN_SETTINGS_ITEMS: AdminSettingsItem[] = [
   { href: "/admin/seguranca", label: "Segurança" },
   { href: "/admin/senha", label: "Senha" },
+  { href: "/admin/site", label: "Site" },
+  { href: "/admin/notificacoes", label: "Notificações" },
 ];
 
 export function isAdminPathActive(pathname: string | null, href: string) {

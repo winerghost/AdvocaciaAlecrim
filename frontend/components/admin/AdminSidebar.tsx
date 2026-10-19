@@ -5,22 +5,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import LogoutButton from "@/components/admin/LogoutButton";
 import {
+  ADMIN_SETTINGS_HREF,
   ADMIN_SETTINGS_ITEMS,
   isAdminPathActive,
-  type AdminSettingsItem,
 } from "@/lib/adminSettingsNav";
 
 type NavItem = {
   href: string;
   label: string;
   icon: ReactNode;
-};
-
-type NavGroup = {
-  id: string;
-  label: string;
-  icon: ReactNode;
-  children: AdminSettingsItem[];
 };
 
 const ICON_PROPS = {
@@ -103,8 +96,10 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-const SETTINGS_GROUP: NavGroup = {
-  id: "configuracoes",
+// Configurações é um link único: as subpáginas (Segurança, Senha...) ficam nas
+// abas do topo da página (SettingsTabs), para não repetir o menu aqui.
+const SETTINGS_ITEM: NavItem = {
+  href: ADMIN_SETTINGS_HREF,
   label: "Configurações",
   icon: (
     <svg {...ICON_PROPS}>
@@ -112,7 +107,6 @@ const SETTINGS_GROUP: NavGroup = {
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
     </svg>
   ),
-  children: ADMIN_SETTINGS_ITEMS,
 };
 
 // Client Component: só cuida da apresentação (sidebar/topbar/drawer mobile)
@@ -176,12 +170,9 @@ export default function AdminSidebar({
     return isAdminPathActive(pathname, href);
   }
 
-  const settingsActive = SETTINGS_GROUP.children.some((c) => isActive(c.href));
-  // null = segue a rota (abre sozinho quando uma página filha está ativa);
-  // true/false = o usuário abriu/fechou manualmente.
-  const [settingsToggled, setSettingsToggled] = useState<boolean | null>(null);
-  const settingsExpanded = settingsToggled ?? settingsActive;
-  const settingsListId = `nav-group-${SETTINGS_GROUP.id}`;
+  // Fica ativo em /admin/configuracoes e em qualquer subpágina de configurações.
+  const settingsActive =
+    isActive(SETTINGS_ITEM.href) || ADMIN_SETTINGS_ITEMS.some((c) => isActive(c.href));
 
   const navList = (
     <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-4">
@@ -201,51 +192,19 @@ export default function AdminSidebar({
         </Link>
       ))}
 
-      <div>
-        <button
-          type="button"
-          onClick={() => setSettingsToggled(!settingsExpanded)}
-          aria-expanded={settingsExpanded}
-          aria-controls={settingsListId}
-          className={`flex w-full items-center gap-3 rounded px-3 py-2.5 text-left text-sm font-medium transition ${
-            settingsActive
-              ? "bg-adm-ink-soft text-white"
-              : "text-adm-on-dark hover:bg-white/5 hover:text-white"
-          }`}
-        >
-          {SETTINGS_GROUP.icon}
-          <span className="flex-1">{SETTINGS_GROUP.label}</span>
-          <svg
-            {...ICON_PROPS}
-            className={`h-4 w-4 shrink-0 transition-transform ${settingsExpanded ? "rotate-180" : ""}`}
-          >
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        </button>
-        {settingsExpanded && (
-          <ul id={settingsListId} className="mt-1 space-y-1 pl-8">
-            {SETTINGS_GROUP.children.map((child) => {
-              const active = isActive(child.href);
-              return (
-                <li key={child.href}>
-                  <Link
-                    href={child.href}
-                    onClick={() => setOpen(false)}
-                    aria-current={active ? "page" : undefined}
-                    className={`block rounded px-3 py-2 text-sm transition ${
-                      active
-                        ? "font-semibold text-white"
-                        : "text-adm-on-dark hover:bg-white/5 hover:text-white"
-                    }`}
-                  >
-                    {child.label}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
+      <Link
+        href={SETTINGS_ITEM.href}
+        onClick={() => setOpen(false)}
+        aria-current={settingsActive ? "page" : undefined}
+        className={`flex items-center gap-3 rounded px-3 py-2.5 text-sm font-medium transition ${
+          settingsActive
+            ? "bg-adm-ink-soft text-white"
+            : "text-adm-on-dark hover:bg-white/5 hover:text-white"
+        }`}
+      >
+        {SETTINGS_ITEM.icon}
+        <span>{SETTINGS_ITEM.label}</span>
+      </Link>
     </nav>
   );
 
