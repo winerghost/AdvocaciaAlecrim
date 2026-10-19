@@ -103,6 +103,9 @@ class Config:
     # expurgo automático quando o script roda (não roda sozinho - precisa
     # de um cron externo, ver DEPLOY-HOSTINGER.md).
     LEAD_RETENTION_DAYS = int(os.environ.get("LEAD_RETENTION_DAYS", "180"))
+    # Trilha de auditoria (tabela audit_events: IP e navegador dos admins).
+    # Expurgada junto com os leads pelo purge_leads.py.
+    AUDIT_RETENTION_DAYS = int(os.environ.get("AUDIT_RETENTION_DAYS", "90"))
 
     SQLALCHEMY_DATABASE_URI = database_uri(os.environ.get("DATABASE_URL"))
     SQLALCHEMY_TRACK_MODIFICATIONS = False

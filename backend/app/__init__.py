@@ -118,6 +118,7 @@ def create_app(config_class: type[Config] = Config) -> Flask:
 
     from . import models  # noqa: F401 - garante que os modelos sejam registrados no metadata
 
+    from .api.admin_account import bp as admin_account_bp
     from .api.admin_auth import bp as admin_auth_bp
     from .api.admin_content import bp as admin_content_bp
     from .api.admin_mfa import bp as admin_mfa_bp
@@ -133,6 +134,7 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     app.register_blueprint(content_bp)
     app.register_blueprint(leads_bp)
     app.register_blueprint(admin_auth_bp)
+    app.register_blueprint(admin_account_bp)
     app.register_blueprint(admin_content_bp)
     app.register_blueprint(admin_mfa_bp)
     app.register_blueprint(admin_users_bp)
@@ -168,6 +170,13 @@ def create_app(config_class: type[Config] = Config) -> Flask:
         if error.code == 429 and request.path.startswith("/api/admin"):
             app.logger.warning(
                 "AUDIT rate_limited path=%s ip=%s", request.path, request.remote_addr
+            )
+            from .utils.audit import actor_from_fields, persist_audit
+
+            persist_audit(
+                "rate_limited",
+                actor_id=actor_from_fields({}),
+                detail={"path": request.path[:120]},
             )
         response = error.get_response()
         response.set_data(json.dumps({"error": _HTTP_ERROR_CODES.get(error.code, "http_error")}))

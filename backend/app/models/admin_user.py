@@ -30,6 +30,11 @@ class AdminUser(db.Model):
     totp_last_step = db.Column(db.Integer, nullable=True)
     # JSON: lista de hashes (werkzeug) dos códigos de recuperação restantes.
     recovery_codes_hash = db.Column(db.Text, nullable=True)
+    # Perfil (Configurações > Perfil). Em banco que já existia, as colunas
+    # entram por utils/schema_upgrades.py.
+    name = db.Column(db.String(120), nullable=True)
+    last_login_at = db.Column(db.DateTime, nullable=True)
+    password_changed_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
         db.DateTime,

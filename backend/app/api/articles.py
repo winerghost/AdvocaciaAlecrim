@@ -22,6 +22,7 @@ from ..models.article import utcnow
 from ..schemas.article import CONTENT_MAX, SLUG_MAX, ArticleSchema, slugify
 from ..schemas.article_ai import ArticleAISchema
 from ..services import article_ai
+from ..utils.audit import clean_detail, persist_audit
 from ..services.media_cleanup import (
     article_media_filenames,
     list_upload_files,
@@ -50,6 +51,13 @@ def _audit(event: str, **fields) -> None:
     current_app.logger.warning(
         "AUDIT %s by=#%s (%s) %s ip=%s",
         event, g.admin_user.id, g.admin_user.email, parts, request.remote_addr,
+    )
+    target = fields.get("article")
+    persist_audit(
+        event,
+        actor_id=g.admin_user.id,
+        target=f"article{target}" if target else None,
+        detail=clean_detail({k: v for k, v in fields.items() if k != "article"}),
     )
 
 

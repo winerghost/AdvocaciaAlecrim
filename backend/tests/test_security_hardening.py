@@ -407,6 +407,9 @@ def test_schema_upgrade_adds_token_version_to_an_old_table(app):
         "admin_users.totp_enabled",
         "admin_users.totp_last_step",
         "admin_users.recovery_codes_hash",
+        "admin_users.name",
+        "admin_users.last_login_at",
+        "admin_users.password_changed_at",
     ]
 
     assert "token_version" in _admin_users_columns()

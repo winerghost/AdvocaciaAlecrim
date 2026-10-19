@@ -274,10 +274,15 @@ def test_me_with_valid_token_returns_email(client, admin, admin_token):
     resp = client.get("/api/admin/me", headers=auth_headers(admin_token))
 
     assert resp.status_code == 200
-    assert resp.get_json() == {
-        "email": ADMIN_EMAIL,
-        "mfa_enabled": False,
-        "recovery_codes_remaining": 0,
+    body = resp.get_json()
+    assert body["email"] == ADMIN_EMAIL
+    assert body["mfa_enabled"] is False
+    assert body["recovery_codes_remaining"] == 0
+    assert body["name"] == ""
+    # Perfil: só campos públicos da própria conta, nunca hash/segredo.
+    assert set(body) == {
+        "id", "email", "name", "mfa_enabled", "recovery_codes_remaining",
+        "created_at", "last_login_at", "password_changed_at",
     }
 
 

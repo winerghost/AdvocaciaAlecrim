@@ -8,6 +8,7 @@ from ..schemas.faq import FaqSchema
 from ..schemas.lead import LeadStatusSchema
 from ..schemas.service import ServiceSchema
 from ..schemas.testimonial import TestimonialSchema
+from ..utils.audit import clean_detail, persist_audit
 from ..utils.auth import require_admin
 
 bp = Blueprint("admin_content", __name__, url_prefix="/api/admin")
@@ -70,6 +71,7 @@ def create_service():
     db.session.add(service)
     if not _commit_or_slug_conflict():
         return {"error": "slug_already_exists"}, 400
+    _audit_content("service_created", "service", service.id)
     return {"data": service.to_dict()}, 201
 
 
@@ -97,6 +99,7 @@ def update_service(service_id):
     _apply_partial(service, data, payload, ("slug", "title", "icon", "description", "order"))
     if not _commit_or_slug_conflict():
         return {"error": "slug_already_exists"}, 400
+    _audit_content("service_updated", "service", service.id)
     return {"data": service.to_dict()}, 200
 
 
@@ -109,6 +112,7 @@ def delete_service(service_id):
 
     db.session.delete(service)
     db.session.commit()
+    _audit_content("service_deleted", "service", service_id)
     return "", 204
 
 
@@ -136,6 +140,7 @@ def create_testimonial():
     testimonial = Testimonial(**data)
     db.session.add(testimonial)
     db.session.commit()
+    _audit_content("testimonial_created", "testimonial", testimonial.id)
     return {"data": testimonial.to_admin_dict()}, 201
 
 
@@ -157,6 +162,7 @@ def update_testimonial(testimonial_id):
 
     _apply_partial(testimonial, data, payload, ("author", "role", "content", "rating", "approved"))
     db.session.commit()
+    _audit_content("testimonial_updated", "testimonial", testimonial.id)
     return {"data": testimonial.to_admin_dict()}, 200
 
 
@@ -169,6 +175,7 @@ def delete_testimonial(testimonial_id):
 
     db.session.delete(testimonial)
     db.session.commit()
+    _audit_content("testimonial_deleted", "testimonial", testimonial_id)
     return "", 204
 
 
@@ -196,6 +203,7 @@ def create_faq():
     faq = Faq(**data)
     db.session.add(faq)
     db.session.commit()
+    _audit_content("faq_created", "faq", faq.id)
     return {"data": faq.to_admin_dict()}, 201
 
 
@@ -217,6 +225,7 @@ def update_faq(faq_id):
 
     _apply_partial(faq, data, payload, ("question", "answer", "order"))
     db.session.commit()
+    _audit_content("faq_updated", "faq", faq.id)
     return {"data": faq.to_admin_dict()}, 200
 
 
@@ -229,6 +238,7 @@ def delete_faq(faq_id):
 
     db.session.delete(faq)
     db.session.commit()
+    _audit_content("faq_deleted", "faq", faq_id)
     return "", 204
 
 
@@ -248,6 +258,24 @@ def _audit_lead(action: str, detail: str) -> None:
         "AUDIT %s by=#%s (%s) %s ip=%s",
         action, g.admin_user.id, g.admin_user.email, detail, request.remote_addr,
     )
+    fields = dict(part.split("=", 1) for part in detail.split() if "=" in part)
+    target = fields.pop("target", None)
+    persist_audit(
+        action,
+        actor_id=g.admin_user.id,
+        target=f"lead{target}" if target else None,
+        detail=clean_detail(fields),
+    )
+
+
+def _audit_content(event: str, kind: str, item_id: int) -> None:
+    """Quem criou/editou/excluiu serviços, depoimentos e FAQs. Mesmo
+    formato `AUDIT ...` dos outros módulos, e também gravado no banco."""
+    current_app.logger.warning(
+        "AUDIT %s by=#%s (%s) target=%s#%s ip=%s",
+        event, g.admin_user.id, g.admin_user.email, kind, item_id, request.remote_addr,
+    )
+    persist_audit(event, actor_id=g.admin_user.id, target=f"{kind}#{item_id}")
 
 
 @bp.get("/leads")

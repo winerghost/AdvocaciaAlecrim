@@ -24,10 +24,18 @@ export function getClientIp(headers: Pick<Headers, "get">): string | null {
 }
 
 /**
- * Header pronto para espalhar no `fetch` ao Flask: `{}` quando não há IP
- * válido. Aceita o `Request` do route handler ou o resultado de `headers()`.
+ * Headers prontos para espalhar no `fetch` ao Flask: o IP (quando válido) e o
+ * navegador do visitante. O User-Agent só serve para a trilha de auditoria
+ * (Configurações > Atividade mostra de qual navegador veio cada acesso); sem
+ * ele, o Flask veria sempre o do Node. Vai cortado e sem quebras de linha.
+ * Aceita o `Request` do route handler ou o resultado de `headers()`.
  */
 export function forwardedForHeader(source: Request | Pick<Headers, "get">): Record<string, string> {
-  const ip = getClientIp(source instanceof Request ? source.headers : source);
-  return ip ? { "X-Forwarded-For": ip } : {};
+  const headers = source instanceof Request ? source.headers : source;
+  const result: Record<string, string> = {};
+  const ip = getClientIp(headers);
+  if (ip) result["X-Forwarded-For"] = ip;
+  const userAgent = headers.get("user-agent")?.replace(/[\r\n\x00-\x1f\x7f]/g, " ").slice(0, 200).trim();
+  if (userAgent) result["User-Agent"] = userAgent;
+  return result;
 }

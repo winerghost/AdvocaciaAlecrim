@@ -18,7 +18,7 @@ from ..utils import mfa
 from ..utils.auth import TOKEN_MAX_AGE_SECONDS, issue_token, require_admin, verify_mfa_token
 from ..utils.mfa_limits import mfa_limited
 from ..utils.password_policy import MAX_PASSWORD_LENGTH
-from .admin_auth import _audit
+from .admin_auth import _audit, mark_login
 
 bp = Blueprint("admin_mfa", __name__, url_prefix="/api/admin")
 
@@ -73,6 +73,7 @@ def login_mfa():
             admin=f"#{admin.id}",
             remaining=mfa.recovery_codes_remaining(admin),
         )
+    mark_login(admin)
     _audit("mfa_login_success", admin=f"#{admin.id}", method=kind)
     return {
         "token": issue_token(admin),

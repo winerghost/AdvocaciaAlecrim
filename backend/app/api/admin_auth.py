@@ -18,6 +18,7 @@ from ..utils.auth import (
 from ..utils.mfa import recovery_codes_remaining, second_factor_gate
 from ..utils.mfa_limits import flagged_failure, mfa_limited
 from ..utils.password_policy import MAX_PASSWORD_LENGTH, password_problem
+from ..utils.audit import actor_from_fields, clean_detail, persist_audit
 from ..utils.sanitize import sanitize_text
 
 bp = Blueprint("admin_auth", __name__, url_prefix="/api/admin")
@@ -108,6 +109,21 @@ def _email_tag(email: str | None) -> str:
     return hashlib.sha256(email.encode("utf-8")).hexdigest()[:12]
 
 
+def iso_utc(value: datetime | None) -> str | None:
+    """Datas saem do banco sem tzinfo, mas são sempre UTC."""
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.isoformat()
+
+
+def mark_login(admin: AdminUser) -> None:
+    """Registra a hora do login que abriu sessão (senha, ou senha + MFA)."""
+    admin.last_login_at = datetime.now(timezone.utc)
+    db.session.commit()
+
+
 def _audit(event: str, **fields) -> None:
     """Linha de auditoria de autenticação (stdout -> `docker compose logs
     backend`). `warning` porque o logger do Flask descarta `info` fora do
@@ -115,6 +131,11 @@ def _audit(event: str, **fields) -> None:
     """
     parts = " ".join(f"{key}={value}" for key, value in fields.items())
     current_app.logger.warning("AUDIT %s %s ip=%s", event, parts, request.remote_addr)
+    persist_audit(
+        event,
+        actor_id=actor_from_fields(fields),
+        detail=clean_detail({k: v for k, v in fields.items() if k != "admin"}),
+    )
 
 
 @bp.post("/login")
@@ -197,6 +218,7 @@ def login():
             "expires_in": MFA_TOKEN_MAX_AGE_SECONDS,
         }, 200
 
+    mark_login(admin)
     _audit("login_success", admin=f"#{admin.id}")
     token = issue_token(admin)
     return {
@@ -211,9 +233,14 @@ def login():
 def me():
     admin = g.admin_user
     return {
+        "id": admin.id,
         "email": admin.email,
+        "name": admin.name or "",
         "mfa_enabled": bool(admin.totp_enabled),
         "recovery_codes_remaining": recovery_codes_remaining(admin),
+        "created_at": iso_utc(admin.created_at),
+        "last_login_at": iso_utc(admin.last_login_at),
+        "password_changed_at": iso_utc(admin.password_changed_at),
     }, 200
 
 
@@ -265,6 +292,7 @@ def change_password():
 
     admin.password_hash = generate_password_hash(new_password)
     admin.updated_at = datetime.now(timezone.utc)
+    admin.password_changed_at = admin.updated_at
     db.session.commit()
     _audit("password_changed", admin=f"#{admin.id}")
 

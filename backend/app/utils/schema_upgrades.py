@@ -28,6 +28,10 @@ _MISSING_COLUMNS = (
     ("admin_users", "totp_enabled", "BOOLEAN NOT NULL DEFAULT FALSE"),
     ("admin_users", "totp_last_step", "INTEGER"),
     ("admin_users", "recovery_codes_hash", "TEXT"),
+    # Perfil do admin (Configurações > Perfil).
+    ("admin_users", "name", "VARCHAR(120)"),
+    ("admin_users", "last_login_at", "TIMESTAMP"),
+    ("admin_users", "password_changed_at", "TIMESTAMP"),
     # Andamento do lead - banco anterior ao painel de leads não tinha.
     ("leads", "status", "VARCHAR(20) NOT NULL DEFAULT 'novo'"),
 )

@@ -9,9 +9,12 @@ export type AdminSettingsItem = {
   label: string;
 };
 
+// A primeira entrada é o destino de /admin/configuracoes.
 export const ADMIN_SETTINGS_ITEMS: AdminSettingsItem[] = [
+  { href: "/admin/perfil", label: "Perfil" },
   { href: "/admin/seguranca", label: "Segurança" },
   { href: "/admin/senha", label: "Senha" },
+  { href: "/admin/atividade", label: "Atividade" },
   { href: "/admin/site", label: "Site" },
   { href: "/admin/notificacoes", label: "Notificações" },
 ];

@@ -143,11 +143,10 @@ def test_enable_returns_ten_recovery_codes_in_expected_format(mfa_admin):
 def test_me_reports_mfa_state(client, admin, mfa_admin):
     resp = client.get("/api/admin/me", headers=auth_headers(mfa_admin["token"]))
 
-    assert resp.get_json() == {
-        "email": ADMIN_EMAIL,
-        "mfa_enabled": True,
-        "recovery_codes_remaining": 10,
-    }
+    body = resp.get_json()
+    assert body["email"] == ADMIN_EMAIL
+    assert body["mfa_enabled"] is True
+    assert body["recovery_codes_remaining"] == 10
 
 
 # ----------------------------------------------------------------- login --

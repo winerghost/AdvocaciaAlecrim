@@ -5,6 +5,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..extensions import db, limiter
 from ..models import AdminUser
+from ..utils.audit import persist_audit
 from ..utils.auth import require_admin
 from ..utils.password_policy import MAX_PASSWORD_LENGTH, password_problem
 from ..utils.sanitize import sanitize_text
@@ -107,6 +108,10 @@ def create_user():
         "AUDIT admin_user_created by=#%s (%s) target=#%s (%s) ip=%s",
         g.admin_user.id, g.admin_user.email, user.id, user.email, request.remote_addr,
     )
+    persist_audit(
+        "admin_user_created", actor_id=g.admin_user.id, target=f"admin#{user.id}",
+        detail={"email": user.email},
+    )
 
     return _serialize(user), 201
 
@@ -142,5 +147,9 @@ def delete_user(user_id: int):
     current_app.logger.warning(
         "AUDIT admin_user_deleted by=#%s (%s) target=#%s (%s) ip=%s",
         g.admin_user.id, g.admin_user.email, deleted_id, deleted_email, request.remote_addr,
+    )
+    persist_audit(
+        "admin_user_deleted", actor_id=g.admin_user.id, target=f"admin#{deleted_id}",
+        detail={"email": deleted_email},
     )
     return "", 204
