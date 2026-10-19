@@ -17,7 +17,18 @@ export type SiteSettings = {
   controller_address: string;
   dpo_name: string;
   legal_updated_at: string | null; // AAAA-MM-DD
+  // SEO e compartilhamento: vazio = texto/imagem padrão do código.
+  seo_home_title: string;
+  seo_home_description: string;
+  seo_blog_title: string;
+  seo_blog_description: string;
+  og_image: string; // "" ou /api/media/<arquivo>
+  // Opções do campo "Área de interesse" (sem "Outro", que é fixo).
+  lead_areas: string[];
+  lead_retention_days: number;
 };
+
+export const OTHER_AREA = "Outro";
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   phone: PHONE_DIGITS,
@@ -29,7 +40,22 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   controller_address: "",
   dpo_name: "",
   legal_updated_at: null,
+  seo_home_title: "",
+  seo_home_description: "",
+  seo_blog_title: "",
+  seo_blog_description: "",
+  og_image: "",
+  lead_areas: ["Inventário Judicial", "Aposentadoria", "Ação Trabalhista", "Ação Cível"],
+  lead_retention_days: 180,
 };
+
+const MEDIA_RE = /^\/api\/media\/[0-9a-f]{32}\.(?:jpg|png|webp|gif)$/;
+
+function areas(value: unknown): string[] | null {
+  if (!Array.isArray(value) || value.length === 0 || value.length > 10) return null;
+  const list = value.filter((item): item is string => typeof item === "string" && item.length > 0 && item.length <= 60);
+  return list.length === value.length ? list : null;
+}
 
 const PHONE_RE = /^55[1-9][0-9]9?[0-9]{8}$/;
 const INSTAGRAM_RE = /^[A-Za-z0-9._]{1,30}$/;
@@ -58,6 +84,18 @@ export function normalizeSiteSettings(raw: unknown): SiteSettings {
     controller_address: str(data.controller_address, 300) ?? "",
     dpo_name: str(data.dpo_name, 200) ?? "",
     legal_updated_at: updated && DATE_RE.test(updated) ? updated : null,
+    seo_home_title: str(data.seo_home_title, 70) ?? "",
+    seo_home_description: str(data.seo_home_description, 170) ?? "",
+    seo_blog_title: str(data.seo_blog_title, 70) ?? "",
+    seo_blog_description: str(data.seo_blog_description, 170) ?? "",
+    og_image: typeof data.og_image === "string" && MEDIA_RE.test(data.og_image) ? data.og_image : "",
+    lead_areas: areas(data.lead_areas) ?? d.lead_areas,
+    lead_retention_days:
+      Number.isInteger(data.lead_retention_days) &&
+      (data.lead_retention_days as number) >= 30 &&
+      (data.lead_retention_days as number) <= 730
+        ? (data.lead_retention_days as number)
+        : d.lead_retention_days,
   };
 }
 
@@ -90,4 +128,12 @@ export function contactLinks(settings: SiteSettings): ContactLinks {
     email: settings.contact_email,
     location: settings.location,
   };
+}
+
+/** Imagem de compartilhamento: a escolhida no painel ou a padrão. */
+export function shareImage(
+  settings: SiteSettings,
+  fallback: { url: string; width?: number; height?: number; alt?: string }
+) {
+  return settings.og_image ? { url: settings.og_image, alt: fallback.alt } : fallback;
 }

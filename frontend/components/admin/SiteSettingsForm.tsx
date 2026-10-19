@@ -22,7 +22,16 @@ import {
   SUCCESS_BOX,
 } from "@/components/admin/settingsUi";
 
-type EditableKey = Exclude<keyof SiteSettings, "legal_updated_at">;
+// Só os campos de texto desta aba (SEO e formulário têm abas próprias).
+type EditableKey =
+  | "phone"
+  | "contact_email"
+  | "instagram"
+  | "location"
+  | "controller_name"
+  | "controller_registration"
+  | "controller_address"
+  | "dpo_name";
 
 type FieldDef = {
   key: EditableKey;

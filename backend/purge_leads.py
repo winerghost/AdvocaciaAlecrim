@@ -23,6 +23,7 @@ from app import create_app
 from app.extensions import db
 from app.models import AuditEvent, Lead
 from app.models.lead import LEAD_STATUSES
+from app.services.site_settings import lead_retention_days
 
 assert "convertido" in LEAD_STATUSES  # documenta a premissa do filtro abaixo
 
@@ -62,7 +63,8 @@ def run(dry_run: bool = False, app=None) -> int:
     with app.app_context():
         purge_old_audit_events(app.config["AUDIT_RETENTION_DAYS"], dry_run=dry_run)
 
-        retention_days = app.config["LEAD_RETENTION_DAYS"]
+        # Prazo de Configurações > Site (padrão: LEAD_RETENTION_DAYS do env).
+        retention_days = lead_retention_days()
         expired = find_expired_leads(retention_days).all()
         count = len(expired)
 

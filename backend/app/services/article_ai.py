@@ -37,8 +37,9 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from flask import current_app
 
-from ..config import openai_api_key, openai_model, openai_reasoning_effort, openai_timeout
+from ..config import openai_api_key, openai_reasoning_effort, openai_timeout
 from ..schemas.article import CONTENT_MAX, EXCERPT_MAX, TITLE_MAX, is_blank_html
+from . import site_settings
 from ..utils.sanitize import (
     _ALIGNABLE_TAGS,
     _HTML_ALLOWED_ATTRIBUTES,
@@ -531,6 +532,9 @@ def request_completion(system: str, user: str, output_tokens: int) -> dict:
     """
     config = current_app.config
     logger = current_app.logger
+    # Modelo, esforço e timeout: Configurações > Integrações, com o env
+    # como padrão (ver services/site_settings.py).
+    runtime = site_settings.ai_runtime()
     api_key = configured_api_key()
     if not api_key:
         raise _not_configured()
@@ -542,13 +546,13 @@ def request_completion(system: str, user: str, output_tokens: int) -> dict:
         raise AIError("ai_auth_error", 502)
 
     payload = {
-        "model": openai_model(config.get("OPENAI_MODEL")),
+        "model": runtime["ai_model"],
         "instructions": system,
         "input": user,
         "max_output_tokens": output_tokens,
         "store": False,
     }
-    effort = openai_reasoning_effort(config.get("OPENAI_REASONING_EFFORT"))
+    effort = openai_reasoning_effort(runtime["ai_reasoning_effort"])
     if effort:
         payload["reasoning"] = {"effort": effort}
 
@@ -563,7 +567,7 @@ def request_completion(system: str, user: str, output_tokens: int) -> dict:
             },
             method="POST",
         )
-        timeout = openai_timeout(config.get("OPENAI_TIMEOUT_SECONDS"))
+        timeout = openai_timeout(runtime["ai_timeout_seconds"])
         deadline = time.monotonic() + timeout
         status, body = _run_with_deadline(lambda: _fetch(req, timeout, deadline), timeout)
     except Exception as exc:

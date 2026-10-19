@@ -69,6 +69,8 @@ const REVIEW_NOTE =
 const AI_ERRORS: Record<string, string> = {
   ai_not_configured:
     "O assistente de IA ainda não foi configurado. Falta cadastrar a chave da OpenAI na configuração do servidor. O artigo pode ser escrito e salvo normalmente sem ele.",
+  ai_disabled:
+    "O assistente de IA está desligado em Configurações > Integrações. O artigo pode ser escrito e salvo normalmente sem ele.",
   ai_auth_error:
     "A OpenAI recusou a chave configurada no servidor. Ela pode estar incorreta ou ter sido revogada.",
   ai_rate_limited:

@@ -16,7 +16,10 @@ export const ADMIN_SETTINGS_ITEMS: AdminSettingsItem[] = [
   { href: "/admin/senha", label: "Senha" },
   { href: "/admin/atividade", label: "Atividade" },
   { href: "/admin/site", label: "Site" },
+  { href: "/admin/seo", label: "SEO" },
+  { href: "/admin/formulario", label: "Formulário" },
   { href: "/admin/notificacoes", label: "Notificações" },
+  { href: "/admin/integracoes", label: "Integrações" },
 ];
 
 export function isAdminPathActive(pathname: string | null, href: string) {

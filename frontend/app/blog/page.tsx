@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getArticles } from "@/lib/api";
+import { getArticles, getSiteSettings } from "@/lib/api";
+import { shareImage } from "@/lib/siteContact";
 import { ArticleCard, FeaturedArticle } from "@/components/blog/ArticleCard";
 import Reveal from "@/components/Reveal";
 import { OG_IMAGE } from "@/components/blog/utils";
@@ -29,23 +30,27 @@ function pageHref(page: number): string {
 }
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
-  const page = parsePage((await searchParams).page);
-  const title = page > 1 ? `Artigos - página ${page}` : "Artigos e orientações jurídicas";
+  const [{ page: rawPage }, settings] = await Promise.all([searchParams, getSiteSettings()]);
+  const page = parsePage(rawPage);
+  const baseTitle = settings.seo_blog_title || "Artigos e orientações jurídicas";
+  const title = page > 1 ? `${baseTitle} - página ${page}` : baseTitle;
+  const description = settings.seo_blog_description || DESCRIPTION;
+  const image = shareImage(settings, OG_IMAGE);
 
   return {
     title,
-    description: DESCRIPTION,
+    description,
     alternates: { canonical: pageHref(page) },
     openGraph: {
       type: "website",
       locale: "pt_BR",
       siteName: "Advocacia Alecrim",
       title,
-      description: DESCRIPTION,
+      description,
       url: pageHref(page),
-      images: [OG_IMAGE],
+      images: [image],
     },
-    twitter: { card: "summary_large_image", title, description: DESCRIPTION, images: [OG_IMAGE] },
+    twitter: { card: "summary_large_image", title, description, images: [image] },
   };
 }
 

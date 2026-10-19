@@ -164,3 +164,6 @@ class Config:
     OPENAI_MODEL = openai_model(os.environ.get("OPENAI_MODEL"))
     OPENAI_REASONING_EFFORT = openai_reasoning_effort(os.environ.get("OPENAI_REASONING_EFFORT"))
     OPENAI_TIMEOUT_SECONDS = openai_timeout(os.environ.get("OPENAI_TIMEOUT_SECONDS"))
+    # Outros modelos que o painel (Configurações > Integrações) pode escolher,
+    # separados por vírgula. OPENAI_MODEL sempre entra na lista.
+    OPENAI_MODEL_CHOICES = os.environ.get("OPENAI_MODEL_CHOICES", "")

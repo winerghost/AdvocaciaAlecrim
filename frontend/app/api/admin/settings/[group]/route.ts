@@ -4,7 +4,7 @@ import { proxyAdmin, readJsonBody } from "@/lib/adminProxy";
 type RouteContext = { params: Promise<{ group: string }> };
 
 // Allowlist dos grupos: o segmento nunca vira um caminho arbitrário no Flask.
-const GROUPS = new Set(["site", "notifications"]);
+const GROUPS = new Set(["site", "notifications", "integrations"]);
 
 export async function GET(_request: Request, { params }: RouteContext) {
   const { group } = await params;

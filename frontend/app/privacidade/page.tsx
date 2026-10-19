@@ -11,7 +11,7 @@ import { contactLinks } from "@/lib/siteContact";
 //
 // O texto descreve o que o sistema FAZ hoje. Ao mudar o formulário
 // (LeadForm.tsx), o que é gravado (backend/app/models/lead.py) ou o prazo de
-// expurgo (LEAD_RETENTION_DAYS em backend/app/config.py, hoje 180 dias),
+// expurgo (Configurações > Site; padrão LEAD_RETENTION_DAYS do env),
 // atualize esta página e a data abaixo (AAAA-MM-DD). Ao salvar os dados
 // legais no painel (Configurações > Site), o backend grava a data do
 // salvamento; vale a mais recente das duas.
@@ -166,8 +166,8 @@ export default async function PrivacyPage() {
 
           <Section id="retencao" title="5. Por quanto tempo guardamos e como protegemos">
             <p>
-              Os contatos recebidos pelo formulário são eliminados por uma rotina programada após 180 dias do
-              envio. A exceção são os contatos que resultam na contratação do escritório: nesse caso os dados
+              Os contatos recebidos pelo formulário são eliminados por uma rotina programada após{" "}
+              {settings.lead_retention_days} dias do envio. A exceção são os contatos que resultam na contratação do escritório: nesse caso os dados
               passam a integrar a relação entre cliente e advogado e são mantidos pelo prazo exigido por essa
               relação e pelas obrigações legais e profissionais aplicáveis.
             </p>

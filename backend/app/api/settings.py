@@ -13,7 +13,7 @@
 from flask import Blueprint, current_app, g, request
 
 from ..extensions import limiter
-from ..services import site_settings
+from ..services import article_ai, site_settings
 from ..services.email import mail_configured, send_test_message
 from ..utils.auth import require_admin
 from ..utils.mfa import second_factor_gate
@@ -40,6 +40,11 @@ def _admin_payload(group: str) -> dict:
         # O painel mostra se o envio funciona e para onde vai sem lista.
         data["mail_configured"] = mail_configured()
         data["fallback_recipient"] = current_app.config.get("MAIL_TO") or None
+    if group == "integrations":
+        # Só se a chave existe - nunca a chave, nem um pedaço dela.
+        data["ai_key_configured"] = article_ai.configured_api_key() is not None
+        data["model_choices"] = list(site_settings.ai_model_choices())
+        data["daily_limit_max"] = site_settings.AI_DAILY_LIMIT_MAX
     return data
 
 

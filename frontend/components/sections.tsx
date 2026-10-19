@@ -294,7 +294,8 @@ const CONTACT_LABEL = "mb-2 text-xs font-bold uppercase tracking-ba-eyebrow text
 const CONTACT_VALUE = "-my-2.5 inline-block py-2.5 text-ba-text transition-colors duration-300 hover:text-ba-accent";
 
 export async function Contact() {
-  const contact = await getContact();
+  const settings = await getSiteSettings();
+  const contact = contactLinks(settings);
   return (
     <section id="contato" className="relative overflow-hidden px-4 py-20 sm:px-8 sm:py-28">
       <div
@@ -338,7 +339,7 @@ export async function Contact() {
             )}
           </div>
 
-          <LeadForm />
+          <LeadForm areas={settings.lead_areas} />
         </Reveal>
       </div>
     </section>

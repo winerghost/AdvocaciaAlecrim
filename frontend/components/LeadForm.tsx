@@ -2,10 +2,12 @@
 
 import { FormEvent, useState } from "react";
 import { PRIVACY_PATH } from "@/lib/constants";
+import { OTHER_AREA } from "@/lib/siteContact";
 
 type Status = "idle" | "loading" | "success" | "error";
 
-export default function LeadForm() {
+// `areas` vem de Configurações > Site (o backend aceita só essas + "Outro").
+export default function LeadForm({ areas }: { areas: string[] }) {
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -102,11 +104,11 @@ export default function LeadForm() {
           <option value="" disabled className="text-ba-bg">
             Área de interesse
           </option>
-          <option className="text-ba-bg" value="Inventário Judicial">Inventário Judicial</option>
-          <option className="text-ba-bg" value="Aposentadoria">Aposentadoria</option>
-          <option className="text-ba-bg" value="Ação Trabalhista">Ação Trabalhista</option>
-          <option className="text-ba-bg" value="Ação Cível">Ação Cível</option>
-          <option className="text-ba-bg" value="Outro">Outro</option>
+          {[...areas, OTHER_AREA].map((area) => (
+            <option key={area} className="text-ba-bg" value={area}>
+              {area}
+            </option>
+          ))}
         </select>
       </div>
 

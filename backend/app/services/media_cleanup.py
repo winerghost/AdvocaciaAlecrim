@@ -69,6 +69,10 @@ def referenced_media_filenames() -> set[str]:
     rows = db.session.query(Article.cover_image, Article.content).yield_per(50)
     for cover_image, content in rows:
         names |= article_media_filenames(cover_image, content)
+    # Imagem de compartilhamento escolhida em Configurações > Site.
+    from .site_settings import referenced_setting_media
+
+    names |= referenced_setting_media()
     return names
 
 

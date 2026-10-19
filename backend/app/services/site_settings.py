@@ -18,10 +18,19 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Callable
 
 from email_validator import EmailNotValidError, validate_email
+from flask import current_app
 
+from ..config import (
+    OPENAI_REASONING_EFFORTS,
+    OPENAI_TIMEOUT_MAX,
+    OPENAI_TIMEOUT_MIN,
+    openai_model,
+    openai_reasoning_effort,
+    openai_timeout,
+)
 from ..extensions import db
 from ..models import SiteSetting
-from ..utils.sanitize import is_valid_br_phone, normalize_phone_digits, sanitize_text
+from ..utils.sanitize import is_media_path, is_valid_br_phone, normalize_phone_digits, sanitize_text
 
 
 class SettingError(ValueError):
@@ -100,6 +109,85 @@ def _bool(value):
     return value
 
 
+def _int_range(minimum: int, maximum: int) -> Validator:
+    def validate(value):
+        # bool é subclasse de int em Python: True não pode virar "1 dia".
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise SettingError("invalid_number")
+        if not minimum <= value <= maximum:
+            raise SettingError("out_of_range")
+        return value
+
+    return validate
+
+
+def _choice(options: Callable[[], tuple[str, ...]]) -> Validator:
+    def validate(value):
+        if not isinstance(value, str) or value not in options():
+            raise SettingError("invalid_choice")
+        return value
+
+    return validate
+
+
+def _media_or_empty(value):
+    """Imagem de compartilhamento: só um upload do próprio painel
+    (`/api/media/<arquivo>`), nunca URL externa. Vazio = imagem padrão."""
+    if not isinstance(value, str):
+        raise SettingError("invalid_image")
+    value = value.strip()
+    if value and not is_media_path(value):
+        raise SettingError("invalid_image")
+    return value
+
+
+# "Outro" fica sempre no fim do <select>, fora da lista editável.
+OTHER_AREA = "Outro"
+MAX_LEAD_AREAS = 10
+LEAD_AREA_MAX_LENGTH = 60  # cabe em leads.area (String(80))
+
+
+def _lead_areas(value):
+    if not isinstance(value, list) or len(value) > MAX_LEAD_AREAS:
+        raise SettingError("invalid_areas")
+    result: list[str] = []
+    for item in value:
+        if not isinstance(item, str) or len(item) > LEAD_AREA_MAX_LENGTH * 4:
+            raise SettingError("invalid_areas")
+        clean = sanitize_text(item, allow_newline=False)
+        if not clean or len(clean) > LEAD_AREA_MAX_LENGTH:
+            raise SettingError("invalid_areas")
+        if clean.lower() == OTHER_AREA.lower():
+            continue
+        if clean.lower() not in {r.lower() for r in result}:
+            result.append(clean)
+    if not result:
+        raise SettingError("invalid_areas")
+    return result
+
+
+def ai_model_choices() -> tuple[str, ...]:
+    """Modelos que o painel pode escolher: o do env (OPENAI_MODEL) e os de
+    OPENAI_MODEL_CHOICES. Lista fechada - um nome digitado errado custaria
+    erro (ou dinheiro) em todo pedido."""
+    config = current_app.config
+    choices = [openai_model(config.get("OPENAI_MODEL"))]
+    for item in str(config.get("OPENAI_MODEL_CHOICES") or "").split(","):
+        name = item.strip()
+        if name and name not in choices and re.fullmatch(r"[A-Za-z0-9._:-]{1,64}", name):
+            choices.append(name)
+    return tuple(choices)
+
+
+def _effort_choices() -> tuple[str, ...]:
+    return ("",) + OPENAI_REASONING_EFFORTS
+
+
+# Teto diário de pedidos à IA por admin. O painel só pode BAIXAR: o valor do
+# código é o máximo (custo na OpenAI).
+AI_DAILY_LIMIT_MAX = 200
+
+
 def _email_list(value):
     if not isinstance(value, list) or len(value) > MAX_RECIPIENTS:
         raise SettingError("invalid_recipients")
@@ -127,6 +215,37 @@ GROUPS: dict[str, dict[str, tuple[Any, Validator]]] = {
         "controller_registration": ("", _text(200)),
         "controller_address": ("", _text(300)),
         "dpo_name": ("", _text(200)),
+        # SEO e compartilhamento. Vazio = texto padrão do código.
+        "seo_home_title": ("", _text(70)),
+        "seo_home_description": ("", _text(170)),
+        "seo_blog_title": ("", _text(70)),
+        "seo_blog_description": ("", _text(170)),
+        "og_image": ("", _media_or_empty),
+        # Opções do campo "Área de interesse" do formulário ("Outro" é fixo).
+        "lead_areas": (
+            ["Inventário Judicial", "Aposentadoria", "Ação Trabalhista", "Ação Cível"],
+            _lead_areas,
+        ),
+        # Prazo do expurgo automático de leads (LGPD). Default = env.
+        "lead_retention_days": (
+            lambda: int(current_app.config.get("LEAD_RETENTION_DAYS") or 180),
+            _int_range(30, 730),
+        ),
+    },
+    "integrations": {
+        # Assistente de IA dos artigos. A chave da OpenAI NUNCA vem para cá:
+        # fica no env; o painel só vê se ela existe.
+        "ai_enabled": (True, _bool),
+        "ai_model": (lambda: openai_model(current_app.config.get("OPENAI_MODEL")), _choice(ai_model_choices)),
+        "ai_reasoning_effort": (
+            lambda: openai_reasoning_effort(current_app.config.get("OPENAI_REASONING_EFFORT")),
+            _choice(_effort_choices),
+        ),
+        "ai_timeout_seconds": (
+            lambda: openai_timeout(current_app.config.get("OPENAI_TIMEOUT_SECONDS")),
+            _int_range(OPENAI_TIMEOUT_MIN, OPENAI_TIMEOUT_MAX),
+        ),
+        "ai_daily_limit": (AI_DAILY_LIMIT_MAX, _int_range(1, AI_DAILY_LIMIT_MAX)),
     },
     "notifications": {
         # Liga/desliga o aviso por e-mail de novo lead.
@@ -138,17 +257,23 @@ GROUPS: dict[str, dict[str, tuple[Any, Validator]]] = {
 
 PUBLIC_GROUPS = frozenset({"site"})
 
-# Chaves que, ao mudar, atualizam a data do Aviso de Privacidade.
+# Chaves que, ao mudar, atualizam a data do Aviso de Privacidade (o prazo
+# de retenção está escrito no aviso).
 _LEGAL_KEYS = frozenset(
-    {"controller_name", "controller_registration", "controller_address", "dpo_name"}
+    {"controller_name", "controller_registration", "controller_address", "dpo_name", "lead_retention_days"}
 )
 # Campo calculado pelo servidor (somente leitura para o painel).
 LEGAL_UPDATED_AT = "legal_updated_at"
 
 
+def _default_value(default):
+    if callable(default):
+        return default()
+    return list(default) if isinstance(default, list) else default
+
+
 def _defaults(group: str) -> dict:
-    values = {key: (list(default) if isinstance(default, list) else default)
-              for key, (default, _validator) in GROUPS[group].items()}
+    values = {key: _default_value(default) for key, (default, _validator) in GROUPS[group].items()}
     if group == "site":
         values[LEGAL_UPDATED_AT] = None
     return values
@@ -233,3 +358,37 @@ def lead_notification_settings(fallback_recipient: str | None) -> tuple[bool, li
         [fallback_recipient] if fallback_recipient else []
     )
     return bool(settings["lead_email_enabled"]), recipients
+
+
+def _safe_settings(group: str) -> dict:
+    """get_settings que nunca levanta (banco fora, tabela ausente...): quem
+    chama é captura de lead, expurgo ou IA, que não podem quebrar por isso."""
+    try:
+        return get_settings(group)
+    except Exception:
+        db.session.rollback()
+        return _defaults(group)
+
+
+def lead_area_choices() -> tuple[str, ...]:
+    """Áreas aceitas no formulário de lead: as do painel + "Outro"."""
+    return tuple(_safe_settings("site")["lead_areas"]) + (OTHER_AREA,)
+
+
+def lead_retention_days() -> int:
+    return int(_safe_settings("site")["lead_retention_days"])
+
+
+def ai_runtime() -> dict:
+    """Configuração efetiva do assistente de IA (painel > env > default)."""
+    values = _safe_settings("integrations")
+    # O teto nunca passa do máximo do código, mesmo com valor antigo no banco.
+    values["ai_daily_limit"] = min(int(values["ai_daily_limit"]), AI_DAILY_LIMIT_MAX)
+    return values
+
+
+def referenced_setting_media() -> set[str]:
+    """Arquivos de /api/media usados pelas configurações (imagem de
+    compartilhamento) - o expurgo de órfãos não pode apagá-los."""
+    path = _safe_settings("site").get("og_image") or ""
+    return {path.rsplit("/", 1)[-1]} if path else set()

@@ -1,19 +1,13 @@
 from marshmallow import Schema, ValidationError, fields, pre_load, validate, validates
 
 from ..models.lead import LEAD_STATUSES
+from ..services.site_settings import lead_area_choices
 from ..utils.sanitize import is_valid_br_phone, sanitize_text
 
-# Precisa ficar em sincronia com as <option> do <select name="area"> em
-# frontend/components/LeadForm.tsx. O <select> é só UX: aqui é onde a regra
-# "quais áreas são aceitas" é de fato imposta, já que a API pode ser chamada
-# diretamente sem passar pelo <select>.
-AREA_CHOICES = (
-    "Inventário Judicial",
-    "Aposentadoria",
-    "Ação Trabalhista",
-    "Ação Cível",
-    "Outro",
-)
+# As áreas aceitas vêm do painel (Configurações > Site > Formulário de
+# contato), as mesmas que o <select> do LeadForm.tsx mostra. O <select> é só
+# UX: aqui é onde a regra é de fato imposta, já que a API pode ser chamada
+# diretamente sem passar por ele.
 
 # Limites de tamanho — além de UX, evitam payloads absurdamente grandes
 # sendo persistidos no Postgres ou indo parar em um e-mail de notificação.
@@ -34,12 +28,7 @@ class LeadSchema(Schema):
         load_default=None,
         validate=validate.Length(max=EMAIL_MAX),
     )
-    area = fields.Str(
-        required=False,
-        allow_none=True,
-        load_default=None,
-        validate=validate.OneOf(AREA_CHOICES),
-    )
+    area = fields.Str(required=False, allow_none=True, load_default=None)
     message = fields.Str(required=False, allow_none=True, load_default=None, validate=validate.Length(max=MESSAGE_MAX))
     consent = fields.Bool(required=True, validate=validate.Equal(True, error="É necessário aceitar o uso dos dados (LGPD)."))
     # Honeypot: campo invisível no formulário real; se vier preenchido, é bot.
@@ -94,6 +83,11 @@ class LeadSchema(Schema):
     def validate_phone_format(self, value, **kwargs):
         if not is_valid_br_phone(value):
             raise ValidationError("Telefone inválido. Use um número BR válido, ex.: (11) 91234-5678.")
+
+    @validates("area")
+    def validate_area_choice(self, value, **kwargs):
+        if value is not None and value not in lead_area_choices():
+            raise ValidationError("Área inválida.")
 
     @validates("name")
     def validate_name_not_blank(self, value, **kwargs):

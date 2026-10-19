@@ -6,12 +6,15 @@ import { mfaErrorMessage, redirectIfUnauthorized } from "@/lib/adminMfaClient";
 // Leitura/gravação das telas de Configurações > Site e Notificações
 // (proxy em app/api/admin/settings/[group]/route.ts).
 
-export type SettingsGroup = "site" | "notifications";
+export type SettingsGroup = "site" | "notifications" | "integrations";
 
 export type SettingsResponse<T> = {
   values: T;
   mail_configured?: boolean;
   fallback_recipient?: string | null;
+  ai_key_configured?: boolean;
+  model_choices?: string[];
+  daily_limit_max?: number;
 };
 
 type LoadState<T> =
@@ -99,9 +102,59 @@ const FIELD_ERRORS: Record<string, string> = {
   invalid_text: "Texto inválido.",
   invalid_recipients: "Informe até 5 e-mails válidos, um por linha.",
   invalid_boolean: "Valor inválido.",
+  invalid_number: "Informe um número inteiro.",
+  out_of_range: "Valor fora da faixa permitida.",
+  invalid_choice: "Opção inválida.",
+  invalid_image: "Escolha uma imagem enviada pelo painel.",
+  invalid_areas: "Informe de 1 a 10 áreas, uma por linha, com até 60 caracteres cada.",
 };
 
 export function fieldErrorMessage(code: string | undefined): string | null {
   if (!code) return null;
   return FIELD_ERRORS[code] ?? "Valor inválido.";
+}
+
+export type FormMessage = { kind: "ok" | "error"; text: string } | null;
+
+/** Estado comum das telas de configuração que salvam com reautenticação:
+ * carrega o grupo, envia só as mudanças + senha/2º fator lidos do form e
+ * remonta o formulário (`formKey`) depois de salvar. */
+export function useSettingsForm<T>(group: SettingsGroup, successText: string) {
+  const { state, reload, replace } = useSettingsGroup<T>(group);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<FormMessage>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [formKey, setFormKey] = useState(0);
+  const [mfaRequired, setMfaRequired] = useState(false);
+
+  /** Devolve true se salvou. */
+  async function submit(form: HTMLFormElement, changes: Record<string, unknown>): Promise<boolean> {
+    setMessage(null);
+    setFieldErrors({});
+    if (Object.keys(changes).length === 0) {
+      setMessage({ kind: "error", text: "Nenhuma alteração para salvar." });
+      return false;
+    }
+    const data = new FormData(form);
+    const code = String(data.get("code") ?? "").trim();
+    setSaving(true);
+    const result = await saveSettingsGroup<T>(group, changes, {
+      current_password: String(data.get("current_password") ?? ""),
+      ...(code ? { code } : {}),
+    });
+    setSaving(false);
+    if (!result) return false; // sessão expirou: já redirecionou
+    if (result.ok) {
+      replace(result.data);
+      setFormKey((k) => k + 1);
+      setMessage({ kind: "ok", text: successText });
+      return true;
+    }
+    if (result.mfaRequired) setMfaRequired(true);
+    setFieldErrors(result.fieldErrors);
+    setMessage({ kind: "error", text: result.message });
+    return false;
+  }
+
+  return { state, reload, saving, message, fieldErrors, formKey, mfaRequired, submit };
 }

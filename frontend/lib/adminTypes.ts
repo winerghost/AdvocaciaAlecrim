@@ -49,7 +49,7 @@ export type AdminArticle = {
   updated_at: string | null;
 };
 
-// Mesmo padrão de AREA_CHOICES em backend/app/schemas/lead.py: essa lista é
+// Mesmo padrão das áreas do formulário de lead (backend/app/schemas/lead.py): essa lista é
 // só UX (rótulo do <select> no painel) - quem de fato decide quais valores
 // são aceitos é o backend (LeadStatusSchema, validate.OneOf(LEAD_STATUSES)
 // em backend/app/models/lead.py). Mandar um status fora dessa lista pra API

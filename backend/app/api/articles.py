@@ -21,7 +21,7 @@ from ..models import Article
 from ..models.article import utcnow
 from ..schemas.article import CONTENT_MAX, SLUG_MAX, ArticleSchema, slugify
 from ..schemas.article_ai import ArticleAISchema
-from ..services import article_ai
+from ..services import article_ai, site_settings
 from ..utils.audit import clean_detail, persist_audit
 from ..services.media_cleanup import (
     article_media_filenames,
@@ -59,6 +59,10 @@ def _audit(event: str, **fields) -> None:
         target=f"article{target}" if target else None,
         detail=clean_detail({k: v for k, v in fields.items() if k != "article"}),
     )
+
+
+def _ai_daily_limit() -> str:
+    return f"{site_settings.ai_runtime()['ai_daily_limit']} per day"
 
 
 def _ai_account_key() -> str:
@@ -304,7 +308,9 @@ def preview_article():
 @limiter.limit("30 per 10 minutes")
 # Teto diário por conta: o limite acima é por IP e um token vazado com IPs
 # rotativos gerava custo na OpenAI sem limite prático.
-@limiter.limit("200 per day", key_func=_ai_account_key, scope="ai-conta-dia")
+# O número vem de Configurações > Integrações (só para baixo de 200). Mudar o
+# valor zera a contagem do dia (a chave do limite inclui o número).
+@limiter.limit(_ai_daily_limit, key_func=_ai_account_key, scope="ai-conta-dia")
 def article_ai_suggestion():
     """Sugestão de texto do assistente de IA para "Conteúdo", "Resumo" ou
     "Título" (este com até três opções em `options`).
@@ -319,6 +325,8 @@ def article_ai_suggestion():
     # recurso está desligado, qualquer que seja o pedido.
     if not article_ai.configured_api_key():
         return {"error": "ai_not_configured"}, 503
+    if not site_settings.ai_runtime()["ai_enabled"]:
+        return {"error": "ai_disabled"}, 503
 
     payload = request.get_json(silent=True)
     if not isinstance(payload, dict):

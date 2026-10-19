@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Figtree } from "next/font/google";
 import { connection } from "next/server";
 import { OG_IMAGE, SITE_NAME, SITE_URL } from "@/components/blog/utils";
+import { getSiteSettings } from "@/lib/api";
+import { shareImage } from "@/lib/siteContact";
 import "./globals.css";
 
 // Fonte do design system (.theme-ba). O next/font baixa a fonte no BUILD e
@@ -21,32 +23,39 @@ const figtree = Figtree({
   fallback: ["Helvetica", "Arial", "sans-serif"],
 });
 
+// Padrões do código; o painel (Configurações > Site > SEO) pode trocar.
 const TITLE = "Advocacia Alecrim";
 const DESCRIPTION =
   "Advogado atuante em Palmas e em todo o Tocantins, com foco em Direito das Sucessões, Previdenciário, Trabalhista e Cível.";
 
-export const metadata: Metadata = {
-  // Base para canonical/OpenGraph relativos (SITE_URL vem do ambiente).
-  metadataBase: new URL(SITE_URL),
-  title: TITLE,
-  description: DESCRIPTION,
-  alternates: { canonical: "/" },
-  openGraph: {
-    type: "website",
-    locale: "pt_BR",
-    siteName: SITE_NAME,
-    title: TITLE,
-    description: DESCRIPTION,
-    url: "/",
-    images: [OG_IMAGE],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: TITLE,
-    description: DESCRIPTION,
-    images: [OG_IMAGE],
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSiteSettings();
+  const title = settings.seo_home_title || TITLE;
+  const description = settings.seo_home_description || DESCRIPTION;
+  const image = shareImage(settings, OG_IMAGE);
+  return {
+    // Base para canonical/OpenGraph relativos (SITE_URL vem do ambiente).
+    metadataBase: new URL(SITE_URL),
+    title,
+    description,
+    alternates: { canonical: "/" },
+    openGraph: {
+      type: "website",
+      locale: "pt_BR",
+      siteName: SITE_NAME,
+      title,
+      description,
+      url: "/",
+      images: [image],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [image],
+    },
+  };
+}
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Obriga TODA página a ser renderizada a cada requisição, nunca no build.
