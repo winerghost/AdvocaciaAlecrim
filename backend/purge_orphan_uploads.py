@@ -13,6 +13,10 @@ A exclusão/edição de artigo pelo painel já remove na hora as imagens que
 eram dele (ver `app/api/articles.py`). Este script recolhe o resto: uploads
 de rascunhos abandonados sem salvar e sobras de versões anteriores.
 
+Também recolhe fotos de perfil (`UPLOAD_DIR/avatars/`) que nenhum admin
+usa e arquivos `.tmp` esquecidos, com mais de 1 h - sobra de uma queda no
+meio da troca de foto (ver `app/services/avatar.py`).
+
 Não roda sozinho: precisa de um agendador externo (cron na VPS), igual ao
 `purge_leads.py`.
 
@@ -28,7 +32,20 @@ import argparse
 import os
 
 from app import create_app
+from app.models import AdminUser
+from app.services.avatar import purge_orphan_avatars
 from app.services.media_cleanup import purge_orphan_uploads
+
+AVATAR_ORPHAN_MIN_AGE_SECONDS = 3600
+
+
+def _purge_avatars(dry_run: bool) -> list[str]:
+    referenced = {row[0] for row in AdminUser.query.with_entities(AdminUser.avatar).all() if row[0]}
+    names = purge_orphan_avatars(referenced, AVATAR_ORPHAN_MIN_AGE_SECONDS, dry_run=dry_run)
+    if names:
+        prefix = "[dry-run] seriam apagadas" if dry_run else "Apagadas"
+        print(f"{prefix} {len(names)} foto(s) de perfil sem dono: " + ", ".join(names))
+    return names
 
 
 def run(dry_run: bool = False, min_age_hours: float | None = None, app=None) -> int:
@@ -39,6 +56,7 @@ def run(dry_run: bool = False, min_age_hours: float | None = None, app=None) -> 
         if min_age_hours is None:
             min_age_hours = app.config["UPLOAD_ORPHAN_MIN_AGE_HOURS"]
         upload_dir = os.path.abspath(app.config["UPLOAD_DIR"])
+        _purge_avatars(dry_run)
 
         names = purge_orphan_uploads(upload_dir, min_age_hours, dry_run=dry_run)
         count = len(names)

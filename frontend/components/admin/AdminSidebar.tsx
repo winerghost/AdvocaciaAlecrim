@@ -3,7 +3,9 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import AdminAvatar from "@/components/admin/AdminAvatar";
 import LogoutButton from "@/components/admin/LogoutButton";
+import type { Avatar } from "@/lib/adminAvatar";
 import {
   ADMIN_SETTINGS_HREF,
   ADMIN_SETTINGS_ITEMS,
@@ -114,9 +116,13 @@ const SETTINGS_ITEM: NavItem = {
 // redirects continuam 100% em app/admin/layout.tsx (Server Component).
 export default function AdminSidebar({
   email,
+  name = null,
+  avatar = null,
   children,
 }: {
   email: string | null;
+  name?: string | null;
+  avatar?: Avatar;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -293,10 +299,13 @@ export default function AdminSidebar({
             </svg>
           </button>
 
-          <div className="hidden text-sm text-adm-muted md:block">
+          <div className="hidden items-center gap-2 text-sm text-adm-muted md:flex">
             {email && (
               <>
-                Logado como <span className="font-medium text-adm-ink">{email}</span>
+                <AdminAvatar avatar={avatar} name={name} email={email} size="sm" />
+                <span>
+                  Logado como <span className="font-medium text-adm-ink">{email}</span>
+                </span>
               </>
             )}
           </div>

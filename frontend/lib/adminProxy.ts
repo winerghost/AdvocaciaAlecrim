@@ -75,6 +75,46 @@ export async function proxyAdmin(path: string, init?: RequestInit): Promise<Next
 }
 
 /**
+ * Variante de `proxyAdmin` para respostas binárias (imagens que exigem login,
+ * como a foto de perfil). Só GET; repassa os bytes em stream e mantém os
+ * cabeçalhos de cache/segurança que o Flask definir. Content-Type que não
+ * seja imagem vira octet-stream.
+ */
+export async function proxyAdminBinary(path: string): Promise<NextResponse> {
+  const token = await getAdminToken();
+  if (!token) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401, headers: NO_STORE });
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      headers: { ...forwardedForHeader(await headers()), Authorization: `Bearer ${token}` },
+      cache: "no-store",
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch {
+    return NextResponse.json({ error: "upstream_unavailable" }, { status: 502, headers: NO_STORE });
+  }
+
+  if (!res.ok || !res.body) {
+    const data = await res.json().catch(() => ({ error: "not_found" }));
+    return NextResponse.json(data, { status: res.ok ? 404 : res.status, headers: NO_STORE });
+  }
+
+  const upstreamType = res.headers.get("content-type") || "";
+  const out = new Headers({
+    "Content-Type": upstreamType.startsWith("image/") ? upstreamType : "application/octet-stream",
+    "Cache-Control": res.headers.get("cache-control") || "private, no-store",
+  });
+  for (const name of ["content-length", "content-security-policy", "cross-origin-resource-policy", "etag", "last-modified"]) {
+    const value = res.headers.get(name);
+    if (value) out.set(name, value);
+  }
+  return new NextResponse(res.body, { status: 200, headers: out });
+}
+
+/**
  * Valida que o segmento `[id]` das rotas de proxy (faqs/leads/services/
  * testimonials) é só dígitos antes de compor a URL de destino no Flask.
  * Todo `id` real nesses modelos é um inteiro auto-increment do SQLAlchemy

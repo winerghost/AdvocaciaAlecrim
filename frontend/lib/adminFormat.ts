@@ -66,6 +66,7 @@ const EVENT_LABELS: Record<string, string> = {
   mfa_secret_unreadable: "Segredo do 2º fator ilegível",
   sessions_revoked_others: "Encerrou as outras sessões",
   profile_updated: "Atualizou o perfil",
+  profile_avatar_updated: "Mudou a foto do perfil",
   profile_update_failed: "Falha ao atualizar o perfil",
   rate_limited: "Bloqueado por excesso de tentativas",
   article_created: "Criou um artigo",

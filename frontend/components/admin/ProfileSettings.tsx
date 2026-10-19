@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { mfaErrorMessage, redirectIfUnauthorized } from "@/lib/adminMfaClient";
 import { fieldErrorMessage } from "@/lib/adminSettingsClient";
 import { formatDateTime } from "@/lib/adminFormat";
+import { type Avatar, parseAvatar } from "@/lib/adminAvatar";
+import AvatarSettings from "@/components/admin/AvatarSettings";
 import {
   ERROR_BOX,
   FieldError,
@@ -28,6 +31,8 @@ type Me = {
   created_at: string | null;
   last_login_at: string | null;
   password_changed_at: string | null;
+  avatar: Avatar;
+  avatar_presets: string[];
 };
 
 type Message = { kind: "ok" | "error"; text: string } | null;
@@ -35,6 +40,7 @@ type Message = { kind: "ok" | "error"; text: string } | null;
 const LOW_RECOVERY_CODES = 2;
 
 export default function ProfileSettings() {
+  const router = useRouter();
   const [me, setMe] = useState<Me | null>(null);
   const [loadState, setLoadState] = useState<"loading" | "error" | "ready">("loading");
   const [name, setName] = useState("");
@@ -55,7 +61,13 @@ export default function ProfileSettings() {
         setLoadState("error");
         return;
       }
-      setMe(body as Me);
+      setMe({
+        ...(body as Me),
+        avatar: parseAvatar(body.avatar),
+        avatar_presets: Array.isArray(body.avatar_presets)
+          ? body.avatar_presets.filter((id: unknown): id is string => typeof id === "string")
+          : [],
+      });
       setName(body.name ?? "");
       setEmail(body.email);
       setLoadState("ready");
@@ -119,6 +131,7 @@ export default function ProfileSettings() {
         setMfaRequired(false);
         setReauthKey((k) => k + 1);
         setMessage({ kind: "ok", text: "Perfil atualizado." });
+        router.refresh(); // nome/e-mail do topo do painel
         return;
       }
       const error = body?.error;
@@ -159,6 +172,14 @@ export default function ProfileSettings() {
           antes que acabem.
         </p>
       )}
+
+      <AvatarSettings
+        avatar={me.avatar}
+        presets={me.avatar_presets}
+        name={me.name}
+        email={me.email}
+        onChange={(avatar) => setMe({ ...me, avatar })}
+      />
 
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         <SettingsCard title="Seus dados" description="O e-mail é o que você usa para entrar no painel.">

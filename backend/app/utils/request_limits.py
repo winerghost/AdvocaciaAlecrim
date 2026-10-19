@@ -16,6 +16,7 @@ from flask import Request, current_app, request
 from werkzeug.exceptions import BadRequest
 
 UPLOADS_PATH = "/api/admin/uploads"
+AVATAR_UPLOAD_PATH = "/api/admin/me/avatar"
 ARTICLES_PATH_PREFIX = "/api/admin/articles"
 
 # Folga para o envelope multipart (boundaries/headers do campo) em cima do
@@ -29,6 +30,8 @@ class RouteLimitedRequest(Request):
         if current_app:
             if self.path == UPLOADS_PATH:
                 return current_app.config["UPLOAD_MAX_BYTES"] + _MULTIPART_OVERHEAD
+            if self.path == AVATAR_UPLOAD_PATH:
+                return current_app.config["AVATAR_MAX_BYTES"] + _MULTIPART_OVERHEAD
             if self.path.startswith(ARTICLES_PATH_PREFIX):
                 return current_app.config["ARTICLE_MAX_CONTENT_LENGTH"]
             return current_app.config["MAX_CONTENT_LENGTH"]

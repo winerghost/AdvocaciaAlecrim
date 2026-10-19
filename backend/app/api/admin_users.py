@@ -5,6 +5,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from ..extensions import db, limiter
 from ..models import AdminUser
+from ..services.avatar import remove_avatar_file
 from ..utils.audit import persist_audit
 from ..utils.auth import require_admin
 from ..utils.password_policy import MAX_PASSWORD_LENGTH, password_problem
@@ -140,9 +141,11 @@ def delete_user(user_id: int):
 
     # Tokens do usuário removido deixam de valer sozinhos: verify_token()
     # busca o admin_id no banco a cada request.
-    deleted_id, deleted_email = user.id, user.email
+    deleted_id, deleted_email, deleted_avatar = user.id, user.email, user.avatar
     db.session.delete(user)
     db.session.commit()
+    # A foto é dado pessoal de quem saiu: vai embora junto com a conta.
+    remove_avatar_file(deleted_avatar)
 
     current_app.logger.warning(
         "AUDIT admin_user_deleted by=#%s (%s) target=#%s (%s) ip=%s",

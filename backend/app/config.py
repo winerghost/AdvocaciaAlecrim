@@ -128,6 +128,9 @@ class Config:
     # o HTML inteiro do texto, e o upload carrega a imagem.
     ARTICLE_MAX_CONTENT_LENGTH = 2 * 1024 * 1024
     UPLOAD_MAX_BYTES = 5 * 1024 * 1024
+    # Foto de perfil do admin (POST /api/admin/me/avatar). O arquivo é
+    # recodificado para 256x256 WebP; o original nunca é guardado.
+    AVATAR_MAX_BYTES = 5 * 1024 * 1024
 
     # Onde ficam as imagens enviadas pelo painel (POST /api/admin/uploads),
     # servidas em /api/media/<arquivo>. O default é a pasta "uploads" ao

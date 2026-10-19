@@ -282,7 +282,7 @@ def test_me_with_valid_token_returns_email(client, admin, admin_token):
     # Perfil: só campos públicos da própria conta, nunca hash/segredo.
     assert set(body) == {
         "id", "email", "name", "mfa_enabled", "recovery_codes_remaining",
-        "created_at", "last_login_at", "password_changed_at",
+        "created_at", "last_login_at", "password_changed_at", "avatar", "avatar_presets",
     }
 
 

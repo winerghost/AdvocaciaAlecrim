@@ -410,6 +410,7 @@ def test_schema_upgrade_adds_token_version_to_an_old_table(app):
         "admin_users.name",
         "admin_users.last_login_at",
         "admin_users.password_changed_at",
+        "admin_users.avatar",
     ]
 
     assert "token_version" in _admin_users_columns()

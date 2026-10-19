@@ -17,7 +17,9 @@ COPY requirements.txt constraints.txt ./
 # requirements.txt lista só as dependências diretas; constraints.txt trava
 # a versão de todas (inclusive as transitivas), pra que dois builds do mesmo
 # commit instalem exatamente os mesmos pacotes.
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt -c constraints.txt
+# Pillow só como wheel pronto (já traz libjpeg/libwebp): compilar do fonte
+# sem as libs de sistema geraria um Pillow sem suporte a WebP, sem aviso.
+RUN pip install --no-cache-dir --prefix=/install --only-binary=Pillow -r requirements.txt -c constraints.txt
 # Um pacote instalado que não esteja em constraints.txt entrou com versão
 # livre (uma transitiva nova, por exemplo): falha o build em vez de deixar
 # passar - a correção é regenerar o constraints.txt (instruções no próprio

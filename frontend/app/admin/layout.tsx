@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ADMIN_COOKIE_NAME } from "@/lib/adminConstants";
 import AdminSidebar from "@/components/admin/AdminSidebar";
+import { type Avatar, parseAvatar } from "@/lib/adminAvatar";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -24,6 +25,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   let email: string | null = null;
+  let name: string | null = null;
+  let avatar: Avatar = null;
   let authorized = false;
 
   try {
@@ -35,6 +38,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     if (res.ok) {
       const data = await res.json().catch(() => ({}));
       email = typeof data?.email === "string" ? data.email : null;
+      name = typeof data?.name === "string" ? data.name : null;
+      avatar = parseAvatar(data?.avatar);
       authorized = true;
     }
   } catch {
@@ -47,5 +52,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect("/login");
   }
 
-  return <AdminSidebar email={email}>{children}</AdminSidebar>;
+  return (
+    <AdminSidebar email={email} name={name} avatar={avatar}>
+      {children}
+    </AdminSidebar>
+  );
 }

@@ -8,15 +8,23 @@
   conta (Configurações > Atividade, "Seus acessos").
 - `GET  /api/admin/audit`: trilha de todo o painel, paginada. Sem papéis
   (todo admin tem o mesmo nível), qualquer admin vê tudo.
+- `POST /api/admin/me/avatar`, `PUT /api/admin/me/avatar/preset`,
+  `DELETE /api/admin/me/avatar`: foto/avatar da PRÓPRIA conta. Não existe id
+  na URL: a rota só alcança `g.admin_user`, então ninguém troca a foto de
+  outro admin. Regras de arquivo em app/services/avatar.py.
+- `GET  /api/admin/avatars/<arquivo>`: serve a foto, só para admin logado.
 """
 
 from email_validator import EmailNotValidError, validate_email
-from flask import Blueprint, g, request
+from flask import Blueprint, current_app, g, request, send_from_directory
 from sqlalchemy import or_
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from werkzeug.exceptions import NotFound, RequestEntityTooLarge
 
 from ..extensions import db, limiter
 from ..models import AdminUser, AuditEvent
+from ..services import avatar as avatar_service
+from ..services.avatar import AvatarError
 from ..utils.auth import TOKEN_MAX_AGE_SECONDS, issue_token, require_admin, revoke_tokens
 from ..utils.mfa import second_factor_gate
 from ..utils.mfa_limits import flagged_failure, mfa_limited
@@ -43,6 +51,7 @@ ACCESS_EVENTS = (
     "mfa_recovery_codes_regenerated",
     "sessions_revoked_others",
     "profile_updated",
+    "profile_avatar_updated",
     "rate_limited",
 )
 
@@ -137,6 +146,111 @@ def update_profile():
 
     _audit("profile_updated", admin=f"#{admin.id}", keys=",".join(sorted(changes)))
     return {"data": {"email": admin.email, "name": admin.name or ""}}, 200
+
+
+# ------------------------------------------------------------------ avatar --
+
+def _set_avatar(new_value: str | None, kind: str, new_file: str | None = None):
+    """Troca o avatar do admin logado e apaga o arquivo anterior.
+
+    A linha é travada (FOR UPDATE) para que dois envios simultâneos não leiam
+    o mesmo "antigo" e deixem um arquivo sem dono. O arquivo antigo só é
+    apagado depois do commit; se o commit falhar, o novo é que vai embora.
+    """
+    admin = (
+        db.session.query(AdminUser)
+        .filter_by(id=g.admin_user.id)
+        .with_for_update()
+        .populate_existing()
+        .one_or_none()
+    )
+    if admin is None:  # conta excluída no meio da requisição
+        avatar_service.remove_avatar_file(new_file)
+        return {"error": "unauthorized"}, 401
+
+    old_value = admin.avatar
+    admin.avatar = new_value
+    try:
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        avatar_service.remove_avatar_file(new_file)
+        current_app.logger.exception("Falha ao salvar avatar do admin #%s", admin.id)
+        return {"error": "storage_error"}, 500
+
+    if old_value != new_value:
+        avatar_service.remove_avatar_file(old_value)
+    _audit("profile_avatar_updated", admin=f"#{admin.id}", kind=kind)
+    return {"data": {"avatar": avatar_service.avatar_payload(admin.avatar)}}, 200
+
+
+@bp.post("/me/avatar")
+@require_admin
+@limiter.limit("10 per hour")
+def upload_avatar():
+    max_bytes = current_app.config["AVATAR_MAX_BYTES"]
+    try:
+        uploaded = request.files.get("file")
+    except RequestEntityTooLarge:
+        return {"error": "file_too_large"}, 413
+    if uploaded is None:
+        return {"error": "invalid_image"}, 400
+
+    # No máximo 1 byte além do limite: sabe que passou sem carregar tudo.
+    data = uploaded.stream.read(max_bytes + 1)
+    if len(data) > max_bytes:
+        return {"error": "file_too_large"}, 413
+
+    # Nome e Content-Type enviados pelo cliente são ignorados: o formato é o
+    # que o Pillow reconhecer, e o arquivo salvo é um WebP gerado aqui.
+    try:
+        webp = avatar_service.process_image(data)
+        filename = avatar_service.write_avatar(webp)
+    except AvatarError as error:
+        return {"error": error.code}, error.status
+    return _set_avatar(filename, "upload", new_file=filename)
+
+
+@bp.put("/me/avatar/preset")
+@require_admin
+@limiter.limit("30 per hour")
+def choose_avatar_preset():
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return {"error": "invalid_json"}, 400
+    try:
+        value = avatar_service.preset_value(payload.get("preset"))
+    except AvatarError as error:
+        return {"error": error.code}, error.status
+    return _set_avatar(value, "preset")
+
+
+@bp.delete("/me/avatar")
+@require_admin
+@limiter.limit("30 per hour")
+def remove_avatar():
+    if g.admin_user.avatar is None:
+        return {"data": {"avatar": None}}, 200
+    return _set_avatar(None, "removed")
+
+
+@bp.get("/avatars/<filename>")
+@require_admin
+def serve_avatar(filename):
+    # Só o formato exato que o upload gera; nada mais toca o disco.
+    if not avatar_service.is_avatar_filename(filename):
+        return {"error": "not_found"}, 404
+    try:
+        response = send_from_directory(avatar_service.avatar_dir(), filename, mimetype="image/webp")
+    except NotFound:
+        return {"error": "not_found"}, 404
+    # Foto de pessoa: nunca em cache compartilhado (CDN/proxy). O nome muda a
+    # cada envio, então o navegador do próprio admin pode guardar.
+    response.headers["Cache-Control"] = "private, max-age=86400"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Content-Security-Policy"] = "default-src 'none'; sandbox"
+    response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+    return response
 
 
 # ----------------------------------------------------------------- sessões --

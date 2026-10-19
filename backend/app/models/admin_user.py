@@ -35,6 +35,8 @@ class AdminUser(db.Model):
     name = db.Column(db.String(120), nullable=True)
     last_login_at = db.Column(db.DateTime, nullable=True)
     password_changed_at = db.Column(db.DateTime, nullable=True)
+    # NULL | "preset:<id>" | "<32 hex>.webp" - ver app/services/avatar.py.
+    avatar = db.Column(db.String(80), nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(
         db.DateTime,

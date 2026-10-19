@@ -32,6 +32,8 @@ _MISSING_COLUMNS = (
     ("admin_users", "name", "VARCHAR(120)"),
     ("admin_users", "last_login_at", "TIMESTAMP"),
     ("admin_users", "password_changed_at", "TIMESTAMP"),
+    # Foto/avatar do admin - ver app/services/avatar.py.
+    ("admin_users", "avatar", "VARCHAR(80)"),
     # Andamento do lead - banco anterior ao painel de leads não tinha.
     ("leads", "status", "VARCHAR(20) NOT NULL DEFAULT 'novo'"),
 )

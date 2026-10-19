@@ -20,6 +20,7 @@ from ..utils.mfa_limits import flagged_failure, mfa_limited
 from ..utils.password_policy import MAX_PASSWORD_LENGTH, password_problem
 from ..utils.audit import actor_from_fields, clean_detail, persist_audit
 from ..utils.sanitize import sanitize_text
+from ..services.avatar import AVATAR_PRESETS, avatar_payload
 
 bp = Blueprint("admin_auth", __name__, url_prefix="/api/admin")
 
@@ -241,6 +242,8 @@ def me():
         "created_at": iso_utc(admin.created_at),
         "last_login_at": iso_utc(admin.last_login_at),
         "password_changed_at": iso_utc(admin.password_changed_at),
+        "avatar": avatar_payload(admin.avatar),
+        "avatar_presets": list(AVATAR_PRESETS),
     }, 200
 
 
