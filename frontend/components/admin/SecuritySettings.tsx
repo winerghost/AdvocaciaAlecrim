@@ -494,8 +494,6 @@ export default function SecuritySettings() {
 
   return (
     <div className="max-w-md space-y-6">
-      <h1 className="text-lg font-bold text-adm-ink">Segurança</h1>
-
       <div className="rounded-sm border border-adm-border bg-white shadow-xs">
         <div className="border-b border-adm-border px-4 py-3">
           <h2 className="text-sm font-bold uppercase tracking-wide text-adm-ink">

@@ -1,22 +1,10 @@
-import { NextResponse } from "next/server";
-import { proxyAdmin, readJsonBody } from "@/lib/adminProxy";
-import { forwardedForHeader } from "@/lib/clientIp";
+import { proxyAdminJsonPost } from "@/lib/adminMfaProxy";
 
+// Repassa o IP do visitante (rate limit do Flask) e, como a troca de senha
+// derruba todas as sessões, grava no cookie o token novo que o Flask devolve
+// e o remove do corpo enviado ao navegador (ver lib/adminMfaProxy.ts).
 export async function POST(request: Request) {
-  const parsed = await readJsonBody(request);
-  if (!parsed.ok) {
-    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
-  }
-
-  // Mesmo motivo do login (ver app/api/admin/login/route.ts): sem isso, o
-  // rate limit de "5 per 15 minutes" do Flask em /change-password enxerga
-  // sempre o IP interno do container do Next.
-  return proxyAdmin("/api/admin/change-password", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...forwardedForHeader(request),
-    },
-    body: JSON.stringify(parsed.body),
+  return proxyAdminJsonPost(request, "/api/admin/change-password", {
+    rotatesSession: true,
   });
 }

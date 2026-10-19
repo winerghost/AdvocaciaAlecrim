@@ -71,8 +71,6 @@ export default function ChangePasswordForm() {
 
   return (
     <div className="max-w-md space-y-6">
-      <h1 className="text-lg font-bold text-adm-ink">Trocar senha</h1>
-
       <div className="rounded-sm border border-adm-border bg-white shadow-xs">
         <div className="border-b border-adm-border px-4 py-3">
           <h2 className="text-sm font-bold uppercase tracking-wide text-adm-ink">
@@ -138,13 +136,20 @@ export default function ChangePasswordForm() {
           {mfaEnabled && <MfaCodeField id="mfa_code" />}
 
           {status === "error" && errorMsg && (
-            <p className="rounded-sm border border-adm-danger-line bg-adm-danger-soft px-3 py-2 text-sm text-adm-danger-ink">
+            <p
+              role="alert"
+              className="rounded-sm border border-adm-danger-line bg-adm-danger-soft px-3 py-2 text-sm text-adm-danger-ink"
+            >
               {errorMsg}
             </p>
           )}
           {status === "success" && (
-            <p className="rounded-sm border border-adm-success-line bg-adm-success-soft px-3 py-2 text-sm text-adm-success-ink">
-              Senha alterada com sucesso.
+            <p
+              role="status"
+              className="rounded-sm border border-adm-success-line bg-adm-success-soft px-3 py-2 text-sm text-adm-success-ink"
+            >
+              Senha alterada com sucesso. As sessões abertas em outros dispositivos foram
+              encerradas; esta continua ativa.
             </p>
           )}
 

@@ -1,14 +1,26 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import LogoutButton from "@/components/admin/LogoutButton";
+import {
+  ADMIN_SETTINGS_ITEMS,
+  isAdminPathActive,
+  type AdminSettingsItem,
+} from "@/lib/adminSettingsNav";
 
 type NavItem = {
   href: string;
   label: string;
   icon: ReactNode;
+};
+
+type NavGroup = {
+  id: string;
+  label: string;
+  icon: ReactNode;
+  children: AdminSettingsItem[];
 };
 
 const ICON_PROPS = {
@@ -89,26 +101,19 @@ const NAV_ITEMS: NavItem[] = [
       </svg>
     ),
   },
-  {
-    href: "/admin/senha",
-    label: "Trocar senha",
-    icon: (
-      <svg {...ICON_PROPS}>
-        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-      </svg>
-    ),
-  },
-  {
-    href: "/admin/seguranca",
-    label: "Segurança",
-    icon: (
-      <svg {...ICON_PROPS}>
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-      </svg>
-    ),
-  },
 ];
+
+const SETTINGS_GROUP: NavGroup = {
+  id: "configuracoes",
+  label: "Configurações",
+  icon: (
+    <svg {...ICON_PROPS}>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  ),
+  children: ADMIN_SETTINGS_ITEMS,
+};
 
 // Client Component: só cuida da apresentação (sidebar/topbar/drawer mobile)
 // e do estado de abrir/fechar o menu em telas pequenas. Autenticação e
@@ -122,11 +127,61 @@ export default function AdminSidebar({
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const openButtonRef = useRef<HTMLButtonElement>(null);
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const wasOpen = useRef(false);
+
+  // Drawer mobile: ao abrir, foco no botão de fechar; ao fechar, o foco
+  // volta para o botão que abriu o menu.
+  useEffect(() => {
+    if (open) {
+      closeButtonRef.current?.focus();
+    } else if (wasOpen.current) {
+      openButtonRef.current?.focus();
+    }
+    wasOpen.current = open;
+  }, [open]);
+
+  // Esc fecha e Tab fica preso dentro do drawer enquanto ele está aberto.
+  useEffect(() => {
+    if (!open) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setOpen(false);
+        return;
+      }
+      if (event.key !== "Tab" || !drawerRef.current) return;
+      const focusable = drawerRef.current.querySelectorAll<HTMLElement>(
+        "a[href], button:not([disabled])"
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const inside = drawerRef.current.contains(document.activeElement);
+      if (event.shiftKey && (document.activeElement === first || !inside)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !inside)) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open]);
 
   function isActive(href: string) {
-    if (!pathname) return false;
-    return pathname === href || pathname.startsWith(`${href}/`);
+    return isAdminPathActive(pathname, href);
   }
+
+  const settingsActive = SETTINGS_GROUP.children.some((c) => isActive(c.href));
+  // null = segue a rota (abre sozinho quando uma página filha está ativa);
+  // true/false = o usuário abriu/fechou manualmente.
+  const [settingsToggled, setSettingsToggled] = useState<boolean | null>(null);
+  const settingsExpanded = settingsToggled ?? settingsActive;
+  const settingsListId = `nav-group-${SETTINGS_GROUP.id}`;
 
   const navList = (
     <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-4">
@@ -145,6 +200,52 @@ export default function AdminSidebar({
           <span>{item.label}</span>
         </Link>
       ))}
+
+      <div>
+        <button
+          type="button"
+          onClick={() => setSettingsToggled(!settingsExpanded)}
+          aria-expanded={settingsExpanded}
+          aria-controls={settingsListId}
+          className={`flex w-full items-center gap-3 rounded px-3 py-2.5 text-left text-sm font-medium transition ${
+            settingsActive
+              ? "bg-adm-ink-soft text-white"
+              : "text-adm-on-dark hover:bg-white/5 hover:text-white"
+          }`}
+        >
+          {SETTINGS_GROUP.icon}
+          <span className="flex-1">{SETTINGS_GROUP.label}</span>
+          <svg
+            {...ICON_PROPS}
+            className={`h-4 w-4 shrink-0 transition-transform ${settingsExpanded ? "rotate-180" : ""}`}
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+        {settingsExpanded && (
+          <ul id={settingsListId} className="mt-1 space-y-1 pl-8">
+            {SETTINGS_GROUP.children.map((child) => {
+              const active = isActive(child.href);
+              return (
+                <li key={child.href}>
+                  <Link
+                    href={child.href}
+                    onClick={() => setOpen(false)}
+                    aria-current={active ? "page" : undefined}
+                    className={`block rounded px-3 py-2 text-sm transition ${
+                      active
+                        ? "font-semibold text-white"
+                        : "text-adm-on-dark hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    {child.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
     </nav>
   );
 
@@ -168,10 +269,17 @@ export default function AdminSidebar({
             onClick={() => setOpen(false)}
             aria-hidden="true"
           />
-          <div className="absolute inset-y-0 left-0 flex w-64 flex-col bg-adm-ink shadow-lg">
+          <div
+            ref={drawerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menu do painel"
+            className="absolute inset-y-0 left-0 flex w-64 flex-col bg-adm-ink shadow-lg"
+          >
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
               <span className="text-sm font-bold text-white">Painel · Advocacia Alecrim</span>
               <button
+                ref={closeButtonRef}
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Fechar menu"
@@ -202,9 +310,11 @@ export default function AdminSidebar({
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         <header className="flex items-center justify-between border-b border-adm-border bg-white px-4 py-3 shadow-xs sm:px-6">
           <button
+            ref={openButtonRef}
             type="button"
             onClick={() => setOpen(true)}
             aria-label="Abrir menu"
+            aria-expanded={open}
             className="-m-2.5 p-2.5 text-adm-body hover:text-adm-accent md:hidden"
           >
             <svg

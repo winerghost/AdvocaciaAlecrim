@@ -268,4 +268,7 @@ def change_password():
     db.session.commit()
     _audit("password_changed", admin=f"#{admin.id}")
 
-    return {"ok": True}, 200
+    # A senha nova muda o fingerprint `pv`, o que derruba TODAS as sessões,
+    # inclusive esta. Devolvemos um token novo (com o `pv` novo) para quem
+    # acabou de trocar a senha continuar logado; as outras sessões caem.
+    return {"ok": True, "token": issue_token(admin), "expires_in": TOKEN_MAX_AGE_SECONDS}, 200

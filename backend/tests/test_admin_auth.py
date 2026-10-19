@@ -314,7 +314,14 @@ def test_change_password_success_updates_hash(client, admin, admin_token):
     )
 
     assert resp.status_code == 200
-    assert resp.get_json() == {"ok": True}
+    body = resp.get_json()
+    assert body["ok"] is True
+    assert isinstance(body["token"], str) and body["token"]
+    assert body["expires_in"] > 0
+
+    # o token reemitido mantém quem trocou a senha logado.
+    me_resp = client.get("/api/admin/me", headers=auth_headers(body["token"]))
+    assert me_resp.status_code == 200
 
     from app.extensions import db
 
